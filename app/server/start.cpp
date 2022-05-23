@@ -11,6 +11,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <DH.h>
 
 #define PORT 1804
 
@@ -18,9 +19,12 @@ using namespace std;
 
 class Server {
 
-    // Variables
-    int socketfd;
+    // Sockets
+    int socketfd, clientfd;
     struct sockaddr_in serverAddr, clientAddr;
+
+    // Key
+    EVP_PKEY* prvKey;
 
 public:
 
@@ -66,10 +70,28 @@ public:
         cout << "Listening to port : " << PORT << "\n";
     }
 
-    // Establish session private key
-    void createSessionKey() {
+    // Handles client connexion request
+    void acceptClient() {
+
+        // Extract the first connexion in the queue
+        int len = sizeof(clientAddr);
+        clientfd = accept(socketfd, (sockaddr *)&clientAddr, (socklen_t *)&len);
+        if (!clientfd) {
+            cerr << "Error cannot accept client";
+        }
 
         
+    }
+
+    // Establish session private key using DH key exchange
+    void createSessionKey() {
+
+        // Creation of a new private key using standart DH parameters from OpenSSL
+        prvKey = EVP_PKEY_new();
+        EVP_PKEY_set1_DH(prvKey, DH_get_2048_224());
+
+        // Generation of a private/public key pair
+
     }
 
 };

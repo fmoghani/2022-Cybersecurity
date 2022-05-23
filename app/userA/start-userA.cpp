@@ -1,31 +1,71 @@
 #include <iostream> 
 #include <string>
-#include <stdio.h> // for fopen(), etc.
-#include <limits.h> // for INT_MAX
-#include <string.h> // for memset()
+#include <stdio.h>
+#include <limits.h>
+#include <string.h>
 #include <openssl/evp.h>
 #include <openssl/pem.h>
 #include <openssl/x509_vfy.h>
+#include <sys/socket.h>
+#include <sys/types.h>
+#include <netinet/in.h>
+#include <arpa/inet.h>
+#include <unistd.h>
 
 using namespace std;
+
+#define PORT 1804
 
 
 int main() {
 
     int ret;
 
+    // Create a socket connexion
+
+    // Variables
+    int socketfd;
+    struct sockaddr_in serverAddr, clientAddr;
+
+    // Socket creation
+    socketfd = socket(AF_INET, SOCK_STREAM, 0);
+    if (!socketfd) {
+        cerr << "Error creating socket";
+        exit(1);
+    }
+
+    // Socket parameters
+    memset(&serverAddr, 0, sizeof(serverAddr));
+    serverAddr.sin_family = AF_INET;
+    serverAddr.sin_port = htons(PORT);
+    serverAddr.sin_addr.s_addr = INADDR_ANY;
+
+    // Bind the socket to the adress
+    ret = bind(socketfd, (sockaddr*)&serverAddr, sizeof(serverAddr));
+    if (!ret) {
+        cerr << "Error binding socket";
+        close(socketfd);
+    }
+
+    // Start listening for requests
+    ret = listen(socketfd, 10);
+    if (!ret) {
+        cerr << "Error listening";
+        exit(1);
+    }
+
     // Authenticate the server using the certificate
 
     // Read CA certificate
-    string CA_cert_name = "CAcert.pem";
-    FILE* CA_cert_file = fopen(CA_cert_name.c_str(), "r");
-    if (!CA_cert_file) {
-        cerr << "Error : cannot open " << CA_cert_name << "certificate\n";
+    string CACertName = "CAcert.pem";
+    FILE* CACertFile = fopen(CACertName.c_str(), "r");
+    if (!CACertFile) {
+        cerr << "Error : cannot open " << CACertName << "certificate\n";
     }
-    X509* CAcert = PEM_read_X509(CA_cert_file, NULL, NULL, NULL);
-    fclose(CA_cert_file);
+    X509* CAcert = PEM_read_X509(CACertFile, NULL, NULL, NULL);
+    fclose(CACertFile);
     if (!CAcert) {
-        cerr << "Error : cannot read " << CA_cert_name << "certificate\n";
+        cerr << "Error : cannot read " << CACertName << "certificate\n";
     }
 
     // Create a store with CA certificate

@@ -22,6 +22,13 @@ class Client {
     int socketfd, clientfd;
     struct sockaddr_in serverAddr;
 
+    // Client variables
+    unsigned char * encryptedNonce;
+    unsigned char * clientResponse;
+
+    // Keys
+    EVP_PKEY * clientPrvKey;
+
     public :
 
     // Create a socket connexion
@@ -30,7 +37,7 @@ class Client {
         // Socket creation
         socketfd = socket(AF_INET, SOCK_STREAM, 0);
         if (!socketfd) {
-            cerr << "Error creating socket";
+            cerr << "Error creating socket\n";
             exit(1);
         }
 
@@ -43,8 +50,40 @@ class Client {
         // Connect client to the socket
         clientfd = connect(socketfd, (sockaddr *)&serverAddr, sizeof(serverAddr));
         if (!clientfd) {
-            cerr << "Error connecting client to the server";
+            cerr << "Error connecting client to the server\n";
         }
+    }
+
+    // Receive server's challenge and sends client's response
+    void generateResponse() {
+
+        int ret;
+
+        //  Receive server's challenge
+        bzero(encryptedNonce, 120);
+        ret = read(socketfd, encryptedNonce, 120);
+        if (ret < 0) {
+            cerr << "Error cannot read server's challenge\n";
+        }
+
+        // Retreive user's prvkey
+        string path = "user_infos/pubkey.pem";
+        FILE * keyFile = fopen(path.c_str(), "r");
+        if (!keyFile) {
+            cerr << "Error could not open client private key file\n";
+        }
+        clientPrvKey = PEM_read_PUBKEY(keyFile, NULL, NULL, NULL);
+        if (!clientPrvKey) {
+            cerr << "Error cannot read client private key from pem file\n";
+        }
+
+        // Decrypt the challenge
+        int prvKeyLength = i2d_PublicKey(clientPrvKey, NULL);
+        unsigned char * response = (unsigned char *) malloc(sizeof(prvKeyLength));
+        if (!response) {
+            cerr << "Error response buffer allocation failed";
+        }
+        
     }
 
     // Generate client Diffie Hellman key pair
@@ -80,7 +119,7 @@ int main() {
     }
     ret = X509_STORE_add_cert(store, CAcert);
     if (!ret) {
-        cerr << "Error : cannot add CA certificate to the store";
+        cerr << "Error : cannot add CA certificate to the store\n";
     }
 
     return 0;

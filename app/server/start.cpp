@@ -27,7 +27,7 @@ class Server {
 
     // Client infos
     string clientUsername;
-    string nonce;
+    char * nonce;
 
     // Keys
     EVP_PKEY* clientPubKey;
@@ -102,17 +102,15 @@ public:
         // Generate a char timestamp to ensure uniqueness
         char now[80];
         time_t currTime;
-        tm* currentTime;
+        tm * currentTime;
         time(&currTime);
         currentTime = localtime(&currTime);
         strftime(now, sizeof(now), "%Y%j%H%M%S", currentTime);
 
         // Concatenate random number and timestamp
-        char nonceBuff[sizeof(now) + sizeof(random)];
-        memcpy(nonceBuff, random, sizeof(random));
-        strcat(nonceBuff, now);
-        nonce = ""; // Reset the nonce in case it wasn't empty
-        nonce += nonceBuff;
+        bzero(nonce, sizeof(now) + sizeof(random));
+        memcpy(nonce, random, sizeof(random));
+        strcat(nonce, now);
 
         // Retreive user's pubkey
         string path = "users_infos/" + clientUsername + "/pubkey.pem";
@@ -127,9 +125,14 @@ public:
 
         // Encrypt nonce using client public key
         int pubKeyLength = i2d_PublicKey(clientPubKey, NULL);
-        unsigned char* buff = (unsigned char *)malloc(pubKeyLength);
+        unsigned char * buff = (unsigned char *) malloc(pubKeyLength); // Buffer for key
+        unsigned char * encryptedNonce = (unsigned char *) malloc(sizeof(nonce) + 16);
+        int encryptedSize; 
         if (!buff) {
             cerr << "Error allocation for public key buffer failed";
+        }
+        if (!encryptedNonce) {
+            cerr << "Error allocation for encrypted nonce buffer failed";
         }
         i2d_PublicKey(clientPubKey, &buff);
         EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
@@ -138,13 +141,24 @@ public:
         }
         ret = EVP_EncryptInit(ctx, EVP_aes_128_ecb(), buff, NULL);
         free(buff);
+        ret = EVP_EncryptUpdate(ctx, encryptedNonce, &encryptedSize, (unsigned char *) nonce, sizeof(nonce));
+        if (!ret) {
+            cerr << "Error during encryption update";
+        }
+        ret = EVP_EncryptFinal(ctx, encryptedNonce + encryptedSize, &encryptedSize);
+        if (!ret) {
+            cerr << "Error during encryption finalization";
+        }
+        free(buff);
+        EVP_CIPHER_CTX_free(ctx);
 
 
         // Send the challenge to the client
-        ret = send(clientfd, nonce, sizeof(nonce), 0);
+        ret = send(clientfd, encryptedNonce, sizeof(encryptedNonce), 0);
         if (ret < 0) {
             cerr << "Error sending challenge to the client";
         }
+        free(encryptedNonce);
 
     }
 

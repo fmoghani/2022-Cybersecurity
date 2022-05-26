@@ -11,7 +11,9 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
-#include "../DH.h"
+#include <fstream>
+#include <map>
+#include "user_infos/DH.h"
 #include "../utils.h"
 
 using namespace std;
@@ -25,16 +27,23 @@ class Client {
     struct sockaddr_in serverAddr;
 
     // Client variables
-    char * encryptedNonce;
-    char * clientResponse;
-
+    unsigned char * encryptedNonce;
+    unsigned char * clientResponse;
+    string username;
+    
     // Keys
     EVP_PKEY * clientPrvKey;
+    
+    // Diffie-Hellman session keys
+    EVP_PKEY * dhparams;
+    EVP_PKEY * tempKey;
 
     public :
 
     // Create a socket connexion
     void connectClient() {
+
+        int ret;
 
         // Socket creation
         socketfd = socket(AF_INET, SOCK_STREAM, 0);
@@ -53,6 +62,18 @@ class Client {
         clientfd = connect(socketfd, (sockaddr *)&serverAddr, sizeof(serverAddr));
         if (!clientfd) {
             cerr << "Error connecting client to the server\n";
+            exit(1);
+        }
+
+        // Send client username to the server
+        string path = "/user_infos/username.txt";
+        std::ifstream nameFileout;
+        nameFileout.open(path);
+        getline(nameFileout, username);
+        ret = send(socketfd, username.c_str(), sizeof(username.c_str()), 0);
+        nameFileout.close();
+        if (ret < 0) {
+            cerr << "Error cannot send username to server\n";
             exit(1);
         }
     }
@@ -125,12 +146,7 @@ class Client {
         int ret;
 
         //  Receive server's challenge
-        bzero(encryptedNonce, 120);
-        ret = read(socketfd, encryptedNonce, 120);
-        if (ret < 0) {
-            cerr << "Error cannot read server's challenge\n";
-            exit(1);
-        }
+        encryptedNonce = readChar(socketfd); // Function from utils.h
 
         // Retreive user's prvkey
         string path = "user_infos/pubkey.pem";
@@ -140,24 +156,15 @@ class Client {
             exit(1);
         }
         clientPrvKey = PEM_read_PUBKEY(keyFile, NULL, NULL, NULL);
+        fclose(keyFile);
         if (!clientPrvKey) {
             cerr << "Error cannot read client private key from pem file\n";
             exit(1);
         }
 
         // Decrypt the challenge
-        int prvKeyLength = i2d_PublicKey(clientPrvKey, NULL);
-        unsigned char * prvKey = (unsigned char *) malloc(sizeof(prvKeyLength));
+        unsigned char * prvKey = prvKeyToChar(clientPrvKey);
         int decryptedLength;
-        if (!prvKey) {
-            cerr << "Error private key buffer allocation failed\n";
-            exit(1);
-        }
-        ret = i2d_PrivateKey(clientPrvKey, &prvKey);
-        if (ret < 0) {
-            cerr << "Error converting private key into char\n";
-            exit(1);
-        }
         EVP_CIPHER_CTX * ctx = EVP_CIPHER_CTX_new();
         if (!ctx) {
             cerr << "Error creating context challenge decryption\n";
@@ -182,6 +189,7 @@ class Client {
 
         // Send the response to the server
         ret = send(socketfd, clientResponse, sizeof(clientResponse), 0);
+        sendChar(socketfd, clientResponse); // Function from utils.h
         if (ret < 0) {
             cerr << "Error sending response to the client\n";
             exit(1);
@@ -191,14 +199,46 @@ class Client {
     // Generate client Diffie Hellman key pair
     void generateKeyPair() {
 
-        
+        int ret;
+
+        // Get the DH params from from the DH.h file
+        DH * DH = get_DH2048();
+        ret = EVP_PKEY_set1_DH(dhparams, DH);
+        DH_free(DH);
+        if (!ret) {
+            cerr << "Error loading DH parameters\n";
+        }
+
+        // Generation of a DH key pair
+        EVP_PKEY_CTX * ctx = EVP_PKEY_CTX_new(dhparams, NULL);
+        ret = EVP_PKEY_keygen_init(ctx);
+        if (!ret) {
+            cerr << "Error during DH keypair generation (initialization failed)\n";
+            exit(1);
+        }
+        ret = EVP_PKEY_keygen(ctx, &tempKey);
+        if (!ret) {
+            cerr << "Error during DH keypair generation (generation failed)\n";
+        }
+        EVP_PKEY_CTX_free(ctx);
+
+        // Send the public key to the server
+        unsigned char * keychar = pubKeyToChar(tempKey);
+        sendChar(socketfd, keychar); // Function from utils.h
     }
 
 };
 
 int main() {
 
-    
+    Client user1;
+    cout << "Starting client...\n";
+    user1.connectClient();
+    cout << "Client successfuly connected to the server\n";
+    user1.authenticateServer();
+    cout << "Server authenticated, waiting for server's challenge...\n";
+    user1.generateKeyPair();
+    cout << "Response sent\n";
 
     return 0;
 }

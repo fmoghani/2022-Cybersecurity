@@ -66,6 +66,7 @@ public:
         if (!ret) {
             cerr << "Error binding socket" << "\n";
             close(socketfd);
+            exit(1);
         }
 
         // Start listening for requests
@@ -86,8 +87,6 @@ public:
         if (!clientfd) {
             cerr << "Error cannot accept client";
         }
-
-        
     }
 
     // Create and send a challenge to authenticate client
@@ -117,37 +116,48 @@ public:
         FILE * keyFile = fopen(path.c_str(), "r");
         if (!keyFile) {
             cerr << "Error could not open client " << clientUsername << " public key file\n";
+            close(clientfd);
         }
         clientPubKey = PEM_read_PUBKEY(keyFile, NULL, NULL, NULL);
         if (!clientPubKey) {
             cerr << "Error could not read client " << clientUsername << " public key from pem file\n";
+            close(clientfd);
         }
 
         // Encrypt nonce using client public key
         int pubKeyLength = i2d_PublicKey(clientPubKey, NULL);
         unsigned char * buff = (unsigned char *) malloc(pubKeyLength); // Buffer for key
         unsigned char * encryptedNonce = (unsigned char *) malloc(sizeof(nonce) + 16);
-        int encryptedSize; 
+        int encryptedLength; 
         if (!buff) {
-            cerr << "Error allocation for public key buffer failed";
+            cerr << "Error allocation for public key buffer failed\n";
+            close(clientfd);
         }
         if (!encryptedNonce) {
-            cerr << "Error allocation for encrypted nonce buffer failed";
+            cerr << "Error allocation for encrypted nonce buffer failed\n";
+            close(clientfd);
         }
-        i2d_PublicKey(clientPubKey, &buff);
+        ret = i2d_PublicKey(clientPubKey, &buff);
+        if (ret < 0) {
+            cerr << "Error converting key into a char\n";
+            close(clientfd);
+        }
         EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
         if (!ctx) {
-            cerr << "Error context creation failed";
+            cerr << "Error context creation failed\n";
+            close(clientfd);
         }
         ret = EVP_EncryptInit(ctx, EVP_aes_128_ecb(), buff, NULL);
         free(buff);
-        ret = EVP_EncryptUpdate(ctx, encryptedNonce, &encryptedSize, (unsigned char *) nonce, sizeof(nonce));
+        ret = EVP_EncryptUpdate(ctx, encryptedNonce, &encryptedLength, (unsigned char *) nonce, sizeof(nonce));
         if (!ret) {
-            cerr << "Error during encryption update";
+            cerr << "Error during encryption update\n";
+            close(clientfd);
         }
-        ret = EVP_EncryptFinal(ctx, encryptedNonce + encryptedSize, &encryptedSize);
+        ret = EVP_EncryptFinal(ctx, encryptedNonce + encryptedLength, &encryptedLength);
         if (!ret) {
-            cerr << "Error during encryption finalization";
+            cerr << "Error during encryption finalization\n";
+            close(clientfd);
         }
         free(buff);
         EVP_CIPHER_CTX_free(ctx);
@@ -156,7 +166,8 @@ public:
         // Send the challenge to the client
         ret = send(clientfd, encryptedNonce, sizeof(encryptedNonce), 0);
         if (ret < 0) {
-            cerr << "Error sending challenge to the client";
+            cerr << "Error sending challenge to the client\n";
+            close(clientfd);
         }
         free(encryptedNonce);
 
@@ -165,6 +176,24 @@ public:
     // Receive and check client response to the challenge
     void authenticateClient() {
         
+        int ret;
+
+        // Receive client's response
+        char * clientResponse;
+        bzero(clientResponse, 120);
+        ret = read(clientfd, clientResponse, 96); // Only reading 96 bytes since it is the size of the original nonce
+        if (ret < 0) {
+            cerr << "Error cannot read client response\n";
+            close(clientfd);
+        }
+
+        // Compare response with the nonce sent previously and if it does not match, disconnect client
+        ret = strcmp(nonce, clientResponse);
+        if (ret) {
+            cerr << "Client could not be authenticated";
+            close(clientfd);
+        }
+
     }
 
     // Establish session private key using DH key exchange

@@ -197,11 +197,13 @@ public:
             cerr << "Error during encryption finalization\n";
             close(clientfd);
         }
+        free(ctx);
         // PROBLEM HERE FREEING THE FUCKING BUFFER
-        free(buff);
+        // free(buff);
 
         // Send the challenge to the client
         sendChar(socketfd, encryptedNonce); // Function from utils.h
+        cout << "nonce sent\n";
         free(encryptedNonce);
     }
 

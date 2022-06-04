@@ -12,6 +12,7 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <fstream>
+#include <cerrno>
 #include <map>
 #include "user_infos/DH.h"
 #include "../utils.h"
@@ -140,6 +141,7 @@ class Client {
         int ret;
 
         //  Receive server's challenge
+        cout << "gonna start reading\n";
         encryptedNonce = readChar(socketfd); // Function from utils.h
 
         // Retreive user's prvkey

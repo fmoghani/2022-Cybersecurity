@@ -11,6 +11,7 @@
 #include <netinet/in.h>
 #include <arpa/inet.h>
 #include <unistd.h>
+#include <cerrno>
 
 using namespace std;
 
@@ -22,15 +23,15 @@ X509 *readCertificate(string path)
     if (!certFile)
     {
         cerr << "Error : cannot open " << path << " certificate\n";
-        exit(1);
     }
     X509 *CAcert = PEM_read_X509(certFile, NULL, NULL, NULL);
     fclose(certFile);
     if (!CAcert)
     {
         cerr << "Error : cannot read " << path << " certificate\n";
-        exit(1);
     }
+
+    return CAcert;
 }
 
 X509_CRL *readCrl(string path) {
@@ -39,15 +40,15 @@ X509_CRL *readCrl(string path) {
     if (!CACrlFile)
     {
         cerr << "Error cannot open " << path << " crl\n";
-        exit(1);
     }
     X509_CRL *CACrl = PEM_read_X509_CRL(CACrlFile, NULL, NULL, NULL);
     fclose(CACrlFile);
     if (!CACrl)
     {
         cerr << "Error cannot read " << path << " crl\n";
-        exit(1);
     }
+
+    return CACrl;
 }
 
 // Need to free the unsigned char * after using this fction
@@ -64,6 +65,8 @@ unsigned char * prvKeyToChar(EVP_PKEY * key) {
     if (!ret) {
         cerr << "Error writing key inside the buffer\n";
     }
+
+    return buffer;
 }
 
 // Need to free the unsigned char * after using this fction
@@ -80,15 +83,15 @@ unsigned char * pubKeyToChar(EVP_PKEY * key) {
     if (!ret) {
         cerr << "Error writing key inside the buffer\n";
     }
+
+    return buffer;
 }
 
 // Convert an unsigned char back to a EVP_PKEY *
 EVP_PKEY * charToPubkey(unsigned char * buffer) {
 
-    int ret;
-
     int bufferLength = sizeof(buffer);
-    EVP_PKEY * key = d2i_PublicKey(EVP_PKEY_RSA, NULL, &buffer, bufferLength);
+    EVP_PKEY * key = d2i_PublicKey(EVP_PKEY_RSA, NULL, (const unsigned char **) &buffer, bufferLength);
     if (!key) {
         cerr << "Error converting unsigned char into EVP_PKEY *";
     }

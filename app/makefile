@@ -1,16 +1,17 @@
 CC = g++
 CFLAGS = -Wall -g
 LDFLAGS = -lcrypto -lstdc++fs
-TARGET = user1 server
-DEPS = utils.h
+TARGET = user server
+DEPS = ./utils.h
 
-all : $(TARGET)
+all : start-server start-user
 
-server:
-	$(CC) $(CFLAGS) server/start.cpp -o server/start -I$(DEPS) $(LDFLAGS)
+start-server: server/start.cpp
+	$(CC) $(CFLAGS) $< -o server/$@ -I$(DEPS) $(LDFLAGS)
 
-user1:
-	$(CC) $(CFLAGS) user/start-user.cpp -o user/start-user -I$(DEPS) $(LDFLAGS)
+start-user: user/start-user.cpp
+	$(CC) $(CFLAGS) $< -o user/$@ -I$(DEPS) $(LDFLAGS)
 
 clean:
-	rm $(TARGET)
+	rm server/start-server
+	rm user/start-user

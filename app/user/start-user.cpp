@@ -18,7 +18,7 @@
 
 using namespace std;
 
-#define PORT 1804
+#define PORT 1805
 
 class Client {
 
@@ -43,8 +43,6 @@ class Client {
     // Create a socket connexion
     void connectClient() {
 
-        int ret;
-
         // Socket creation
         socketfd = socket(AF_INET, SOCK_STREAM, 0);
         if (!socketfd) {
@@ -60,22 +58,18 @@ class Client {
 
         // Connect client to the socket
         clientfd = connect(socketfd, (sockaddr *)&serverAddr, sizeof(serverAddr));
-        if (!clientfd) {
+        if (clientfd < 0) {
             cerr << "Error connecting client to the server\n";
             exit(1);
         }
 
         // Send client username to the server
-        string path = "/user_infos/username.txt";
-        std::ifstream nameFileout;
-        nameFileout.open(path);
-        getline(nameFileout, username);
-        ret = send(socketfd, username.c_str(), sizeof(username.c_str()), 0);
-        nameFileout.close();
-        if (ret < 0) {
-            cerr << "Error cannot send username to server\n";
-            exit(1);
-        }
+        string path = "./user_infos/username.txt";
+        std::ifstream file;
+        file.open(path);
+        getline(file, username);
+        sendChar(socketfd, (unsigned char *) username.c_str());
+        file.close();
     }
 
     // Authenticate server
@@ -116,8 +110,8 @@ class Client {
         }
 
         // Read server certificate
-        string serverCertPath = "../certificates/servcert.pem\n";
-        X509 * serverCert = readCertificate(serverCertPath); // Function fro utils.h
+        string serverCertPath = "../certificates/servcert.pem";
+        X509 * serverCert = readCertificate(serverCertPath); // Function from utils.h
 
         // Verify server's certificate
         X509_STORE_CTX * ctx = X509_STORE_CTX_new();
@@ -237,7 +231,7 @@ int main() {
     cout << "Client successfuly connected to the server\n";
     user1.authenticateServer();
     cout << "Server authenticated, waiting for server's challenge...\n";
-    user1.generateKeyPair();
+    user1.generateResponse();
     cout << "Response sent\n";
 
     return 0;

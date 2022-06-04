@@ -1,4 +1,6 @@
 make all --print-data-base --no-builtin-variables --no-builtin-rules --question
+make: *** No rule to make target 'all'.  Stop.
+
 # GNU Make 4.2.1
 # Built for x86_64-pc-linux-gnu
 # Copyright (C) 1988-2016 Free Software Foundation, Inc.
@@ -6,7 +8,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Tue May 31 00:47:53 2022
+# Make data base, printed on Sat Jun  4 18:26:24 2022
 
 # Variables
 
@@ -49,7 +51,7 @@ VTE_VERSION = 6003
 # environment
 VSCODE_NLS_CONFIG = {"locale":"en-us","availableLanguages":{},"_languagePackSupport":true}
 # environment
-JOURNAL_STREAM = 8:31202
+JOURNAL_STREAM = 8:30975
 # environment
 XDG_CONFIG_DIRS = /etc/xdg/xdg-ubuntu:/etc/xdg
 # environment
@@ -73,11 +75,11 @@ MAKELEVEL := 0
 # environment
 XDG_DATA_DIRS = /usr/share/ubuntu:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop
 # environment
-DBUS_SESSION_BUS_ADDRESS = unix:path=/run/user/1000/bus,guid=d174601b40fe82305cc7f13b62953489
+DBUS_SESSION_BUS_ADDRESS = unix:path=/run/user/1000/bus,guid=d68c3e42d38652c41b96635a629b5b12
 # environment
 VSCODE_VERBOSE_LOGGING = true
 # environment
-MANAGERPID = 850
+MANAGERPID = 821
 # environment
 LESSOPEN = | /usr/bin/lesspipe %s
 # environment
@@ -93,7 +95,7 @@ PATH = /home/djolopez/.local/bin:/opt/maven/bin:/usr/local/sbin:/usr/local/bin:/
 # environment
 GPG_AGENT_INFO = /run/user/1000/gnupg/S.gpg-agent:0:1
 # environment
-SESSION_MANAGER = local/djolopez-VirtualBox:@/tmp/.ICE-unix/1308,unix/djolopez-VirtualBox:/tmp/.ICE-unix/1308
+SESSION_MANAGER = local/djolopez-VirtualBox:@/tmp/.ICE-unix/1310,unix/djolopez-VirtualBox:/tmp/.ICE-unix/1310
 # environment
 XDG_RUNTIME_DIR = /run/user/1000
 # environment
@@ -111,7 +113,7 @@ DISABLE_WAYLAND = 1
 # environment
 ELECTRON_RUN_AS_NODE = 1
 # environment
-INVOCATION_ID = ebc371cec5a3424dbbf8e6c91d56d358
+INVOCATION_ID = 320f760976d74deeb9e1bb3de4bc10b1
 # environment
 GDK_PIXBUF_MODULEDIR = /snap/code/97/usr/lib/x86_64-linux-gnu/gdk-pixbuf-2.0/2.10.0/loaders
 # default
@@ -135,7 +137,7 @@ PWD = /home/djolopez/Documents/INGE_S5_Pise/cybersecurity/project/2022-Cybersecu
 # default
 .LOADED := 
 # environment
-SSH_AGENT_PID = 1251
+SSH_AGENT_PID = 1237
 # environment
 ORIGINAL_XDG_CURRENT_DESKTOP = ubuntu:GNOME
 # environment
@@ -153,7 +155,7 @@ VSCODE_CODE_CACHE_PATH = /home/djolopez/.config/Code/CachedData/c3511e6c69bb3901
 # environment
 LOGNAME = djolopez
 # environment
-APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL = true
+APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL = 1
 # environment
 SNAP_LIBRARY_PATH = /var/lib/snapd/lib/gl:/var/lib/snapd/lib/gl32:/var/lib/snapd/void
 # environment
@@ -167,6 +169,7 @@ M2_HOME = /opt/maven
 # environment
 SNAP_USER_COMMON = /home/djolopez/snap/code/common
 # environment
+ 
 VSCODE_HANDLES_UNCAUGHT_ERRORS = true
 # environment
 GNOME_DESKTOP_SESSION_ID = this-is-deprecated
@@ -191,7 +194,7 @@ SHLVL = 0
 # environment
 GNOME_SHELL_SESSION_MODE = ubuntu
 # environment
-VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-f71b5548-a743-4700-83cc-ac21a981c99e.sock
+VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-66b1eb34-1893-4219-831d-2a8d270b6a46.sock
 # default
 MAKE_VERSION := 4.2.1
 # environment
@@ -249,11 +252,11 @@ LC_ALL = C
 # environment
 DBUS_STARTER_BUS_TYPE = session
 # environment
-GNOME_TERMINAL_SCREEN = /org/gnome/Terminal/screen/feea9a91_5402_4753_947a_878df041ddb1
+GNOME_TERMINAL_SCREEN = /org/gnome/Terminal/screen/2c08929c_7ee3_4dd2_897d_4855a6657e32
 # automatic
 ^F = $(notdir $^)
 # environment
-GNOME_TERMINAL_SERVICE = :1.114
+GNOME_TERMINAL_SERVICE = :1.102
 # default
 SUFFIXES := 
 # environment
@@ -275,12 +278,9 @@ LANG = C
 # environment
 TERM = xterm-256color
 # environment
-VSCODE_PID = 3181
- 
-make: *** No rule to make target 'all'.  Stop.
-
+VSCODE_PID = 3525
 # environment
-DBUS_STARTER_ADDRESS = unix:path=/run/user/1000/bus,guid=d174601b40fe82305cc7f13b62953489
+DBUS_STARTER_ADDRESS = unix:path=/run/user/1000/bus,guid=d68c3e42d38652c41b96635a629b5b12
 # variable set hash-table stats:
 # Load=134/1024=13%, Rehash=0, Collisions=20/156=13%
 
@@ -290,7 +290,7 @@ DBUS_STARTER_ADDRESS = unix:path=/run/user/1000/bus,guid=d174601b40fe82305cc7f13
 
 # Directories
 
-# . (device 2053, inode 1709261): 7 files, no impossibilities.
+# . (device 2053, inode 1198647): 7 files, no impossibilities.
 
 # 7 files, no impossibilities in 1 directories.
 
@@ -347,7 +347,8 @@ GNUmakefile:
 
 # strcache performance: lookups = 18 / hit rate = 16%
 # hash-table stats:
+ 
 # Load=15/8192=0%, Rehash=0, Collisions=1/18=6%
-# Finished Make data base on Tue May 31 00:47:53 2022
+# Finished Make data base on Sat Jun  4 18:26:24 2022
 
  

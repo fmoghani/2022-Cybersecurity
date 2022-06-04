@@ -15,12 +15,13 @@
 #include <unistd.h>
 #include <map>
 #include <filesystem>
+#include <cerrno>
 #include "users_infos/khabib/DH.h"
 #include "../utils.h"
 
 using namespace std;
 
-#define PORT 1804
+#define PORT 1805
 
 class Server {
 
@@ -80,16 +81,16 @@ public:
 
         // Bind the socket to the adress
         ret = bind(socketfd, (sockaddr*)&serverAddr, sizeof(serverAddr));
-        if (!ret) {
-            cerr << "Error binding socket" << "\n";
+        if (ret < 0) {
+            cerr << "Error binding socket\n";
             close(socketfd);
             exit(1);
         }
 
         // Start listening for requests
         ret = listen(socketfd, 10);
-        if (!ret) {
-            cerr << "Error listening" << "\n";
+        if (ret < 0) {
+            cerr << "Error listening\n";
             exit(1);
         }
         cout << "Listening to port : " << PORT << "\n";
@@ -101,9 +102,15 @@ public:
         // Extract the first connexion in the queue
         int len = sizeof(clientAddr);
         clientfd = accept(socketfd, (sockaddr *)&clientAddr, (socklen_t *)&len);
-        if (!clientfd) {
+        if (clientfd < 0) {
             cerr << "Error cannot accept client";
         }
+
+        // Receive username et convert it back to string
+        unsigned char * buffer;
+        buffer = readChar(clientfd);
+        clientUsername = std::string(reinterpret_cast<char*>(buffer));
+        free(buffer);
     }
 
     // Create and send a challenge to authenticate client
@@ -114,6 +121,10 @@ public:
         // Generate a 16 bytes random number to ensure unpredictability
         unsigned char random[16];
         ret = RAND_bytes(random, sizeof(random));
+        if (!ret) {
+            cerr << "Error generating random bytes\n";
+            close(clientfd);
+        }
 
         // Generate a char timestamp to ensure uniqueness
         char now[80];
@@ -121,11 +132,21 @@ public:
         tm * currentTime;
         time(&currTime);
         currentTime = localtime(&currTime);
-        strftime(now, sizeof(now), "%Y%j%H%M%S", currentTime);
+        if (!currentTime) {
+            cerr << "Error creating pointer containing current time\n";
+            close(clientfd);
+        }
+        ret = strftime(now, sizeof(now), "%Y%j%H%M%S", currentTime);
+        if (!ret) {
+            cerr << "Error putting time in a char array\n";
+            close(clientfd);
+        }
 
         // Concatenate random number and timestamp
-        char * tempNonce;
-        bzero(tempNonce, sizeof(now) + sizeof(random));
+        char * tempNonce = (char * ) malloc(sizeof(now) + sizeof(random));
+        if (!tempNonce) {
+            cerr << "Error allocating temporary buffer for nonce\n";
+        }
         memcpy(tempNonce, random, sizeof(random));
         strcat(tempNonce, now);
         nonce = (unsigned char *) tempNonce;
@@ -162,7 +183,10 @@ public:
             close(clientfd);
         }
         ret = EVP_EncryptInit(ctx, EVP_aes_128_ecb(), buff, NULL);
-        free(buff);
+        if (!ret) {
+            cerr << "Error during encryption initialization\n";
+            close(clientfd);
+        }
         ret = EVP_EncryptUpdate(ctx, encryptedNonce, &encryptedLength, (unsigned char *) nonce, sizeof(nonce));
         if (!ret) {
             cerr << "Error during encryption update\n";
@@ -173,9 +197,8 @@ public:
             cerr << "Error during encryption finalization\n";
             close(clientfd);
         }
+        // PROBLEM HERE FREEING THE FUCKING BUFFER
         free(buff);
-        EVP_CIPHER_CTX_free(ctx);
-
 
         // Send the challenge to the client
         sendChar(socketfd, encryptedNonce); // Function from utils.h
@@ -189,7 +212,7 @@ public:
 
         // Receive client's response
         unsigned char * clientResponse = readChar(clientfd); // Function from utils.h
-        if (ret < 0) {
+        if (!clientResponse) {
             cerr << "Error cannot read client response\n";
             close(clientfd);
         }
@@ -227,17 +250,17 @@ public:
         }
 
         // Generate public key to send back to the client
-        EVP_PKEY_CTX * ctx = EVP_PKEY_CTX_new(dhparams, NULL);
-        ret = EVP_PKEY_keygen_init(ctx);
+        EVP_PKEY_CTX * ctxParam = EVP_PKEY_CTX_new(dhparams, NULL);
+        ret = EVP_PKEY_keygen_init(ctxParam);
         if (!ret) {
             cerr << "Error during DH keypair generation (initialization failed)\n";
             exit(1);
         }
-        ret = EVP_PKEY_keygen(ctx, &tempKey);
+        ret = EVP_PKEY_keygen(ctxParam, &tempKey);
         if (!ret) {
             cerr << "Error during DH keypair generation (generation failed)\n";
         }
-        EVP_PKEY_CTX_free(ctx);
+        EVP_PKEY_CTX_free(ctxParam);
 
         // Send the public key to the client
         unsigned char * keychar = pubKeyToChar(tempKey);
@@ -289,12 +312,17 @@ int main() {
     cout << "Starting server...\n";
     serv.startSocket();
     cout << "Socket connection established, waiting for client connection\n";
+
     while (1) {
+
+        // For each client in queue we do the following
         serv.acceptClient();
         cout << "Client " << serv.getClientUsername() << " connected, waiting for authentication...\n";
         serv.createChallenge();
         cout << "Challenge sent, waiting for " << serv.getClientUsername() << " to answer\n";
         ret = serv.authenticateClient();
+
+        // Different cases depending on client identication
         if (ret) {
             // If client is authenticated we go on
             cout << "Client " << serv.getClientUsername() << " successfuly authenticated\n";

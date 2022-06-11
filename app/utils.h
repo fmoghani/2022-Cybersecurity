@@ -105,7 +105,7 @@ int charToPubkey(unsigned char * buffer, EVP_PKEY * pkey) {
 }
 
 // Send a character through a socket without encryption (only works with the receive function below)
-void sendChar(int socketfd, unsigned char * buff) {
+int sendChar(int socketfd, unsigned char * buff) {
 
     int ret;
 
@@ -114,17 +114,21 @@ void sendChar(int socketfd, unsigned char * buff) {
     ret = send(socketfd, (char *)&length, sizeof(length), 0);
     if (ret < 0) {
         cerr << "Error sending message length\n";
+        return 0;
     }
 
     // Then send the message
     ret = send(socketfd, buff, length, 0);
     if (ret < 0) {
         cerr << "Error sending message\n";
+        return 0;
     }
+
+    return 1;
 }
 
 // Receive a character through a socket without encryption
-unsigned char * readChar(int socketfd) {
+int readChar(int socketfd, unsigned char * buffer) {
 
     int ret;
 
@@ -133,14 +137,17 @@ unsigned char * readChar(int socketfd) {
     ret = read(socketfd, (char *)&length, sizeof(length));
     if (ret < 0) {
         cerr << "Error reading message size";
+        return 0;
     }
 
     // Receive the actual message
-    unsigned char * buffer = (unsigned char *) malloc(length);
+    buffer = (unsigned char *) realloc(buffer, length);
     ret = read(socketfd, buffer, length);
     if (ret < 0) {
         cerr << "Error reading message\n";
+        cout << length << "\n";
+        return 0;
     }
 
-    return buffer;
+    return 1;
 }

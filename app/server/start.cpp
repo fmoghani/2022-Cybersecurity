@@ -99,6 +99,8 @@ public:
     // Handles client connexion request
     void acceptClient() {
 
+        int ret;
+
         // Extract the first connexion in the queue
         int len = sizeof(clientAddr);
         clientfd = accept(socketfd, (sockaddr *)&clientAddr, (socklen_t *)&len);
@@ -107,8 +109,16 @@ public:
         }
 
         // Receive username et convert it back to string
-        unsigned char * buffer;
-        buffer = readChar(clientfd);
+        unsigned char * buffer = (unsigned char *) malloc(sizeof(int));
+        if (!buffer) {
+            cerr << "Error allocating buffer to receive client username\n";
+            close(clientfd);
+        }
+        ret = readChar(clientfd, buffer);
+        if (!ret) {
+            cerr << "Error reading client username\n";
+            close(clientfd);
+        }
         clientUsername = std::string(reinterpret_cast<char*>(buffer));
         free(buffer);
     }
@@ -204,7 +214,6 @@ public:
         }
         free(ctx);
         free(buff);
-        cout << "buffer free\n";
 
         // Send the challenge to the client
         sendChar(socketfd, encryptedNonce); // Function from utils.h
@@ -218,8 +227,13 @@ public:
         int ret;
 
         // Receive client's response
-        unsigned char * clientResponse = readChar(clientfd); // Function from utils.h
+        unsigned char * clientResponse = (unsigned char *) malloc(sizeof(int));
         if (!clientResponse) {
+            cerr << "Error allocating buffer for client response\n";
+            close(clientfd);
+        }
+        ret = readChar(clientfd, clientResponse); // Function from utils.h
+        if (!ret) {
             cerr << "Error cannot read client response\n";
             close(clientfd);
         }
@@ -243,9 +257,22 @@ public:
         int ret;
 
         // Receive public key from client
-        unsigned char * buffer  = readChar(clientfd);
+        unsigned char * buffer = (unsigned char *) malloc(sizeof(int));
+        if (!buffer) {
+            cerr << "Error allocating buffer for client DH key\n";
+            close(clientfd);
+        }
+        ret = readChar(clientfd, buffer);
+        if (!ret) {
+            cerr << "Error reading client DH key\n";
+            close(clientfd);
+        }
         EVP_PKEY * clientDHKey = EVP_PKEY_new();
         ret = charToPubkey(buffer, clientDHKey);
+        if (!ret) {
+            cerr << "Error converting client's DH key from character into EVP_PKEY *\n";
+            close(clientfd);
+        }
         free(buffer);
 
         // Retreive dh params

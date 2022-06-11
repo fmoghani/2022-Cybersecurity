@@ -142,7 +142,16 @@ class Client {
 
         //  Receive server's challenge
         cout << "gonna start reading\n";
-        encryptedNonce = readChar(socketfd); // Function from utils.h
+        encryptedNonce = (unsigned char *) malloc(sizeof(int));
+        if (!encryptedNonce) {
+            cerr << "Error allocating memory for encryptedNonce\n";
+            exit(1);
+        }
+        ret = readChar(socketfd, encryptedNonce); // Function from utils.h
+        if(!ret) {
+            cerr << "Error reading encrypted nonce from server\n";
+            exit(1);
+        }
 
         // Retreive user's prvkey
         string path = "user_infos/pubkey.pem";

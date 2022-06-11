@@ -199,7 +199,8 @@ public:
         }
         free(ctx);
         // PROBLEM HERE FREEING THE FUCKING BUFFER
-        // free(buff);
+        free(buff);
+        cout << "buffer free\n";
 
         // Send the challenge to the client
         sendChar(socketfd, encryptedNonce); // Function from utils.h

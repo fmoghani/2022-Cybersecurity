@@ -37,7 +37,7 @@ class Client {
     
     // Diffie-Hellman session keys
     EVP_PKEY * dhparams;
-    EVP_PKEY * tempKey;
+    EVP_PKEY * tempKey; // Client public key
 
     public :
 
@@ -159,7 +159,16 @@ class Client {
         }
 
         // Decrypt the challenge
-        unsigned char * prvKey = prvKeyToChar(clientPrvKey);
+        unsigned char * prvKey = (unsigned char *) malloc(sizeof(int));
+        if (!prvKey) {
+            cerr << "Error allocating buffer for client private key\n";
+            exit(1);
+        }
+        ret = prvKeyToChar(clientPrvKey, prvKey);
+        if (!ret) {
+            cerr << "Error converting private key to character\n";
+            exit(1);
+        }
         int decryptedLength;
         EVP_CIPHER_CTX * ctx = EVP_CIPHER_CTX_new();
         if (!ctx) {
@@ -219,8 +228,18 @@ class Client {
         EVP_PKEY_CTX_free(ctx);
 
         // Send the public key to the server
-        unsigned char * keychar = pubKeyToChar(tempKey);
-        sendChar(socketfd, keychar); // Function from utils.h
+        unsigned char * keyChar = (unsigned char *) malloc(sizeof(int));
+        if (!keyChar) {
+            cerr << "Error allocating buffer for DH public key\n";
+            exit(1);
+        }
+        ret = pubKeyToChar(tempKey, keyChar);
+        if (!ret) {
+            cerr << "Error converting DH public key to character\n";
+            exit(1);
+        }
+        sendChar(socketfd, keyChar); // Function from utils.h
+        free(keyChar);
     }
 
 };

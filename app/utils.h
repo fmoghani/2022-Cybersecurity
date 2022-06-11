@@ -52,51 +52,56 @@ X509_CRL *readCrl(string path) {
 }
 
 // Need to free the unsigned char * after using this fction
-unsigned char * prvKeyToChar(EVP_PKEY * key) {
+int prvKeyToChar(EVP_PKEY * key, unsigned char * buffer) {
 
     int ret;
 
     int prvKeyLength = i2d_PrivateKey(key, NULL);
-    unsigned char * buffer = (unsigned char *) malloc(prvKeyLength);
+    buffer = (unsigned char *) realloc(buffer, prvKeyLength);
     if (!buffer) {
-        cerr << "Error allocating buffer for the private key\n";
+        cerr << "Error reallocating buffer for the private key\n";
+        return 0;
     }
     ret = i2d_PrivateKey(key, &buffer);
     if (!ret) {
         cerr << "Error writing key inside the buffer\n";
+        return 0;
     }
 
-    return buffer;
+    return 1;
 }
 
 // Need to free the unsigned char * after using this fction
-unsigned char * pubKeyToChar(EVP_PKEY * key) {
+int pubKeyToChar(EVP_PKEY * key, unsigned char * buffer) {
 
     int ret;
 
     int pubKeyLength = i2d_PublicKey(key, NULL);
-    unsigned char * buffer = (unsigned char *) malloc(pubKeyLength);
+    buffer = (unsigned char *) realloc(buffer, pubKeyLength);
     if (!buffer) {
-        cerr << "Error allocating buffer for the public key\n";
+        cerr << "Error reallocating buffer for the public key\n";
+        return 0;
     }
     ret = i2d_PublicKey(key, &buffer);
     if (!ret) {
         cerr << "Error writing key inside the buffer\n";
+        return 0;
     }
 
-    return buffer;
+    return 1;
 }
 
 // Convert an unsigned char back to a EVP_PKEY *
-EVP_PKEY * charToPubkey(unsigned char * buffer) {
+int charToPubkey(unsigned char * buffer, EVP_PKEY * pkey) {
 
     int bufferLength = sizeof(buffer);
-    EVP_PKEY * key = d2i_PublicKey(EVP_PKEY_RSA, NULL, (const unsigned char **) &buffer, bufferLength);
-    if (!key) {
+    pkey = d2i_PublicKey(EVP_PKEY_RSA, NULL, (const unsigned char **) &buffer, bufferLength);
+    if (!pkey) {
         cerr << "Error converting unsigned char into EVP_PKEY *";
+        return 0;
     }
 
-    return key;
+    return 1;
 }
 
 // Send a character through a socket without encryption (only works with the receive function below)

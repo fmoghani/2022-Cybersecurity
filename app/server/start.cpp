@@ -166,13 +166,18 @@ public:
         }
 
         // Encrypt nonce using client public key
-        unsigned char * buff = pubKeyToChar(clientPubKey); // Buffer for key
-        unsigned char * encryptedNonce = (unsigned char *) malloc(sizeof(nonce) + 16);
-        int encryptedLength; 
+        unsigned char * buff = (unsigned char *) malloc(sizeof(int)); // Buffer for key
         if (!buff) {
             cerr << "Error allocation for public key buffer failed\n";
             close(clientfd);
         }
+        ret = pubKeyToChar(clientPubKey, buff);
+        if (!ret) {
+            cerr << "Error converting key to character\n";
+            close(clientfd);
+        }
+        unsigned char * encryptedNonce = (unsigned char *) malloc(sizeof(nonce) + 16);
+        int encryptedLength; 
         if (!encryptedNonce) {
             cerr << "Error allocation for encrypted nonce buffer failed\n";
             close(clientfd);
@@ -198,8 +203,7 @@ public:
             close(clientfd);
         }
         free(ctx);
-        // PROBLEM HERE FREEING THE FUCKING BUFFER
-        // free(buff);
+        free(buff);
         cout << "buffer free\n";
 
         // Send the challenge to the client
@@ -240,7 +244,8 @@ public:
 
         // Receive public key from client
         unsigned char * buffer  = readChar(clientfd);
-        EVP_PKEY * clientDHKey = charToPubkey(buffer);
+        EVP_PKEY * clientDHKey = EVP_PKEY_new();
+        ret = charToPubkey(buffer, clientDHKey);
         free(buffer);
 
         // Retreive dh params
@@ -257,17 +262,28 @@ public:
         ret = EVP_PKEY_keygen_init(ctxParam);
         if (!ret) {
             cerr << "Error during DH keypair generation (initialization failed)\n";
-            exit(1);
+            close(clientfd);
         }
         ret = EVP_PKEY_keygen(ctxParam, &tempKey);
         if (!ret) {
             cerr << "Error during DH keypair generation (generation failed)\n";
+            close(clientfd);
         }
         EVP_PKEY_CTX_free(ctxParam);
 
         // Send the public key to the client
-        unsigned char * keychar = pubKeyToChar(tempKey);
+        unsigned char * keychar = (unsigned char *) malloc(sizeof(int));
+        if (!keychar) {
+            cerr << "Error allocating buffer for public key\n";
+            close(clientfd);
+        }
+        ret = pubKeyToChar(tempKey, keychar);
+        if (!ret) {
+            cerr << "Error converting public key to unsigned char *\n";
+            close(clientfd);
+        }
         sendChar(clientfd, keychar); // Function from utils.h
+        free(keychar);
 
         // Derivation
         size_t sessionDHLength;

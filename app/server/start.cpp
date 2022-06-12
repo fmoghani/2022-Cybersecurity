@@ -129,17 +129,31 @@ public:
         int ret;
 
         // Generate a 16 bytes random number to ensure unpredictability
-        unsigned char randomBuf[16];
-        ret = RAND_bytes(randomBuf, sizeof(randomBuf));
+        int randBytesSize = 16;
+        unsigned char * randomBuf = (unsigned char *) malloc(randBytesSize);
+        if (!randomBuf) {
+            cerr << "Error allocating unsigned buffer for random bytes\n";
+        }
+        ret = RAND_bytes(randomBuf, randBytesSize);
         if (!ret) {
             cerr << "Error generating random bytes\n";
             close(clientfd);
         }
-        char random[sizeof(randomBuf)];
-        memcpy(random, randomBuf, sizeof(randomBuf));
+        char * random = (char *) malloc(randBytesSize);
+        if (!random) {
+            cerr << "Error allocating buffer for random bytes *\n";
+            close(clientfd);
+        }
+        memcpy(random, randomBuf, randBytesSize);
+        free(randomBuf);
 
         // Generate a char timestamp to ensure uniqueness
-        char now[80];
+        int timeBufferSize = 120;
+        char * now = (char *) malloc(timeBufferSize);
+        if (!now) {
+            cerr << "Error allocating buffer for date and time\n";
+            close(clientfd);
+        }
         time_t currTime;
         tm * currentTime;
         time(&currTime);
@@ -148,20 +162,30 @@ public:
             cerr << "Error creating pointer containing current time\n";
             close(clientfd);
         }
-        ret = strftime(now, sizeof now, "%Y%j%H%M%S", currentTime);
+        ret = strftime(now, timeBufferSize, "%Y%j%H%M%S", currentTime);
         if (!ret) {
             cerr << "Error putting time in a char array\n";
             close(clientfd);
         }
 
         // Concatenate random number and timestamp
-        char tempNonce[sizeof(now) + sizeof(random)];
-        memcpy(tempNonce, random, sizeof random);
-        cout << tempNonce << "\n";
+        int nonceSize = randBytesSize + timeBufferSize;
+        char * tempNonce = (char *) malloc(nonceSize);
+        if (!tempNonce) {
+            cerr << "Error allocating char buffer for nonce\n";
+            close(clientfd);
+        }
+        memcpy(tempNonce, random, randBytesSize);
+        free(random);
         strcat(tempNonce, now);
-        unsigned char nonce[sizeof(tempNonce)];
-        memcpy(nonce, tempNonce, sizeof(tempNonce));
-        cout << nonce << "\n";
+        free(now);
+        nonce = (unsigned char *) malloc(nonceSize);
+        if (!nonce) {
+            cerr << "Error allocating buffer for nonce\n";
+            close(clientfd);
+        }
+        memcpy(nonce, tempNonce, nonceSize);
+        free(tempNonce);
 
         // Retreive user's pubkey
         string path = "users_infos/" + clientUsername + "/pubkey.pem";
@@ -188,7 +212,11 @@ public:
             cerr << "Error converting key to character\n";
             close(clientfd);
         }
-        unsigned char encryptedNonce[sizeof(nonce) + 16];
+        unsigned char * encryptedNonce = (unsigned char *) malloc(nonceSize + 16);
+        if (!encryptedNonce) {
+            cerr << "Error allocating buffer for encrypted nonce\n";
+            close(clientfd);
+        }
         int encryptedLength; 
         EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
         if (!ctx) {
@@ -200,7 +228,7 @@ public:
             cerr << "Error during encryption initialization\n";
             close(clientfd);
         }
-        ret = EVP_EncryptUpdate(ctx, encryptedNonce, &encryptedLength, (unsigned char *) nonce, sizeof(nonce));
+        ret = EVP_EncryptUpdate(ctx, encryptedNonce, &encryptedLength, (unsigned char *) nonce, nonceSize);
         if (!ret) {
             cerr << "Error during encryption update\n";
             close(clientfd);
@@ -210,19 +238,20 @@ public:
             cerr << "Error during encryption finalization\n";
             close(clientfd);
         }
+        // Freing the context frees the buffer at the same time
         EVP_CIPHER_CTX_free(ctx);
-        // Problem of double free here
-        free(buff);
 
         // Send the challenge to the client
         cout << "before send\n";
-        cout << nonce << "\n";
         cout << encryptedNonce << "\n";
+        cout << strlen((char *) encryptedNonce) << "\n";
         ret = sendChar(socketfd, encryptedNonce); // Function from utils.h
+        cout << "nonce sent\n";
         if (!ret) {
             cout << "Error sending encrypted nonce to " << clientUsername << "\n";
             close(clientfd);
         }
+        free(encryptedNonce);
     }
 
     // Receive and check client response to the challenge

@@ -141,7 +141,6 @@ class Client {
         int ret;
 
         //  Receive server's challenge
-        cout << "gonna start reading\n";
         encryptedNonce = (unsigned char *) malloc(sizeof(int));
         if (!encryptedNonce) {
             cerr << "Error allocating memory for encryptedNonce\n";
@@ -152,6 +151,7 @@ class Client {
             cerr << "Error reading encrypted nonce from server\n";
             exit(1);
         }
+        cout << strlen((char *) encryptedNonce) << "\n";
 
         // Retreive user's prvkey
         string path = "user_infos/pubkey.pem";
@@ -185,7 +185,6 @@ class Client {
             exit(1);
         }
         ret = EVP_DecryptInit(ctx, EVP_aes_128_ecb(), prvKey, NULL);
-        free(prvKey);
         if (!ret) {
             cerr << "Error during decryption initialization\n";
             exit(1);
@@ -200,6 +199,7 @@ class Client {
             cerr << "Error during encryption finalization\n";
             exit(1);
         }
+        EVP_CIPHER_CTX_free(ctx);
 
         // Send the response to the server
         ret = sendChar(socketfd, clientResponse);

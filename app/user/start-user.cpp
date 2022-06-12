@@ -16,6 +16,7 @@
 #include <map>
 #include "user_infos/DH.h"
 #include "../utils.h"
+#include "../const.h"
 
 using namespace std;
 
@@ -151,7 +152,6 @@ class Client {
             cerr << "Error reading encrypted nonce from server\n";
             exit(1);
         }
-        cout << strlen((char *) encryptedNonce) << "\n";
 
         // Retreive user's prvkey
         string path = "user_infos/pubkey.pem";
@@ -189,14 +189,19 @@ class Client {
             cerr << "Error during decryption initialization\n";
             exit(1);
         }
-        ret = EVP_DecryptUpdate(ctx, (unsigned char *) clientResponse, &decryptedLength, (unsigned char *) encryptedNonce, sizeof encryptedNonce);
+        clientResponse = (unsigned char *) malloc(nonceSize);
+        if (!clientResponse) {
+            cerr << "Error initializing buffer for decrypting challenge\n";
+            exit(1);
+        }
+        ret = EVP_DecryptUpdate(ctx, (unsigned char *) clientResponse, &decryptedLength, (unsigned char *) encryptedNonce, strlen((char *) encryptedNonce));
         if (!ret) {
             cerr << "Error during decryption update\n";
             exit(1);
         }
         ret = EVP_DecryptFinal(ctx, (unsigned char *) clientResponse + decryptedLength, &decryptedLength);
         if (!ret) {
-            cerr << "Error during encryption finalization\n";
+            cerr << "Error during decryption finalization\n";
             exit(1);
         }
         EVP_CIPHER_CTX_free(ctx);

@@ -111,13 +111,37 @@ int sendChar(int socketfd, unsigned char * buff) {
 
     // First send the size of the message
     int length = strlen((char *) buff);
-    ret = send(socketfd, (char *)&length, sizeof(length), 0);
+    // char * lenghtChar = (char *) &length;
+    // int left = sizeof(length);
+    // // This block ensure message is transmitted even if send does not transfer all the bytes on the first time
+    // do {
+    //     ret = send(socketfd, lenghtChar, left, 0);
+    //     if (ret < 0) {
+    //         cerr << "Error sending message length\n";
+    //         return 0;
+    //     } else {
+    //         lenghtChar += ret;
+    //         left -= ret;
+    //     }
+    // } while (left > 0);
+    ret = send(socketfd, (char *) &length, sizeof(length), 0);
     if (ret < 0) {
-        cerr << "Error sending message length\n";
+        cerr << "Error sending message size\n";
         return 0;
     }
 
     // Then send the message
+    // left = length;
+    // do {
+    //     ret = send(socketfd, buff, length, 0);
+    //     if (ret < 0) {
+    //         cerr << "Error sending message\n";
+    //         return 0;
+    //     } else {
+    //         buff += ret;
+    //         left -= ret;
+    //     }
+    // } while (left > 0);
     ret = send(socketfd, buff, length, 0);
     if (ret < 0) {
         cerr << "Error sending message\n";
@@ -133,15 +157,40 @@ int readChar(int socketfd, unsigned char * buffer) {
     int ret;
 
     // Receive the size of the message
+    // int length;
+    // char * lengthChar = (char *) &length;
+    // int left = sizeof(length);
+    // // Block to ensure length is receive even if it is in multiple times
+    // do {
+    //     ret = read(socketfd, lengthChar, left);
+    //     if (ret < 0) {
+    //         cerr << "Error reading message size";
+    //         return 0;
+    //     } else {
+    //         lengthChar += ret;
+    //         left -= ret;
+    //     }
+    // } while (left > 0);
     int length;
-    ret = read(socketfd, (char *)&length, sizeof(length));
+    ret = read(socketfd, (char *) &length, sizeof(length));
     if (ret < 0) {
-        cerr << "Error reading message size";
+        cerr << "Error reading message size\n";
         return 0;
     }
 
     // Receive the actual message
     buffer = (unsigned char *) realloc(buffer, length);
+    // left = length;
+    // do {
+    //     ret = read(socketfd, buffer, length);
+    //     if (ret < 0) {
+    //         cerr << "Error reading message\n";
+    //         return 0;
+    //     } else {
+    //         buffer += ret;
+    //         left -= ret;
+    //     }
+    // } while (left > 0);
     ret = read(socketfd, buffer, length);
     if (ret < 0) {
         cerr << "Error reading message\n";

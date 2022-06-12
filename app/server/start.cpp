@@ -18,10 +18,9 @@
 #include <cerrno>
 #include "users_infos/khabib/DH.h"
 #include "../utils.h"
+#include "../const.h"
 
 using namespace std;
-
-#define PORT 1805
 
 class Server {
 
@@ -129,7 +128,6 @@ public:
         int ret;
 
         // Generate a 16 bytes random number to ensure unpredictability
-        int randBytesSize = 16;
         unsigned char * randomBuf = (unsigned char *) malloc(randBytesSize);
         if (!randomBuf) {
             cerr << "Error allocating unsigned buffer for random bytes\n";
@@ -148,7 +146,6 @@ public:
         free(randomBuf);
 
         // Generate a char timestamp to ensure uniqueness
-        int timeBufferSize = 120;
         char * now = (char *) malloc(timeBufferSize);
         if (!now) {
             cerr << "Error allocating buffer for date and time\n";
@@ -169,7 +166,6 @@ public:
         }
 
         // Concatenate random number and timestamp
-        int nonceSize = randBytesSize + timeBufferSize;
         char * tempNonce = (char *) malloc(nonceSize);
         if (!tempNonce) {
             cerr << "Error allocating char buffer for nonce\n";
@@ -242,11 +238,7 @@ public:
         EVP_CIPHER_CTX_free(ctx);
 
         // Send the challenge to the client
-        cout << "before send\n";
-        cout << encryptedNonce << "\n";
-        cout << strlen((char *) encryptedNonce) << "\n";
-        ret = sendChar(socketfd, encryptedNonce); // Function from utils.h
-        cout << "nonce sent\n";
+        ret = sendChar(clientfd, encryptedNonce); // Function from utils.h
         if (!ret) {
             cout << "Error sending encrypted nonce to " << clientUsername << "\n";
             close(clientfd);

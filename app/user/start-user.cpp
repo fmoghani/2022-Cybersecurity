@@ -142,13 +142,8 @@ class Client {
         int ret;
 
         //  Receive server's challenge
-        encryptedNonce = (unsigned char *) malloc(sizeof(int));
-        if (!encryptedNonce) {
-            cerr << "Error allocating memory for encryptedNonce\n";
-            exit(1);
-        }
-        ret = readChar(socketfd, encryptedNonce); // Function from utils.h
-        if(!ret) {
+        encryptedNonce = readChar(socketfd); // Function from utils.h
+        if(!encryptedNonce) {
             cerr << "Error reading encrypted nonce from server\n";
             exit(1);
         }
@@ -207,6 +202,7 @@ class Client {
             exit(1);
         }
         EVP_CIPHER_CTX_free(ctx);
+        free(encryptedNonce);
 
         // Send the response to the server
         ret = sendChar(socketfd, clientResponse);

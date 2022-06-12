@@ -152,7 +152,7 @@ int sendChar(int socketfd, unsigned char * buff) {
 }
 
 // Receive a character through a socket without encryption
-int readChar(int socketfd, unsigned char * buffer) {
+unsigned char * readChar(int socketfd) {
 
     int ret;
 
@@ -175,11 +175,10 @@ int readChar(int socketfd, unsigned char * buffer) {
     ret = read(socketfd, (char *) &length, sizeof(length));
     if (ret < 0) {
         cerr << "Error reading message size\n";
-        return 0;
     }
 
     // Receive the actual message
-    buffer = (unsigned char *) realloc(buffer, length);
+    unsigned char * buffer = (unsigned char *) malloc(length);
     // left = length;
     // do {
     //     ret = read(socketfd, buffer, length);
@@ -194,8 +193,7 @@ int readChar(int socketfd, unsigned char * buffer) {
     ret = read(socketfd, buffer, length);
     if (ret < 0) {
         cerr << "Error reading message\n";
-        return 0;
     }
 
-    return 1;
+    return buffer;
 }

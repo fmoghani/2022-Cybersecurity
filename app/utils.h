@@ -110,8 +110,8 @@ int sendChar(int socketfd, unsigned char * buff) {
     int ret;
 
     // First send the size of the message
-    int length = sizeof(buff);
-    ret = send(socketfd, (char *)&length, sizeof(length), 0);
+    int length = sizeof buff;
+    ret = send(socketfd, (char *)&length, sizeof length, 0);
     if (ret < 0) {
         cerr << "Error sending message length\n";
         return 0;

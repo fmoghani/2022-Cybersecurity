@@ -1,7 +1,6 @@
-make --dry-run --keep-going --print-directory
+make --dry-run --always-make --keep-going --print-directory
 make: Entering directory '/home/djolopez/Documents/INGE_S5_Pise/cybersecurity/project/2022-Cybersecurity'
+make: Leaving directory '/home/djolopez/Documents/INGE_S5_Pise/cybersecurity/project/2022-Cybersecurity'
  
 make: *** No targets specified and no makefile found.  Stop.
 
-make: Leaving directory '/home/djolopez/Documents/INGE_S5_Pise/cybersecurity/project/2022-Cybersecurity'
- 

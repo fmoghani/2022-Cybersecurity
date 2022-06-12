@@ -129,12 +129,14 @@ public:
         int ret;
 
         // Generate a 16 bytes random number to ensure unpredictability
-        unsigned char random[16];
-        ret = RAND_bytes(random, sizeof(random));
+        unsigned char randomBuf[16];
+        ret = RAND_bytes(randomBuf, sizeof(randomBuf));
         if (!ret) {
             cerr << "Error generating random bytes\n";
             close(clientfd);
         }
+        char random[sizeof(randomBuf)];
+        memcpy(random, randomBuf, sizeof(randomBuf));
 
         // Generate a char timestamp to ensure uniqueness
         char now[80];
@@ -146,20 +148,20 @@ public:
             cerr << "Error creating pointer containing current time\n";
             close(clientfd);
         }
-        ret = strftime(now, sizeof(now), "%Y%j%H%M%S", currentTime);
+        ret = strftime(now, sizeof now, "%Y%j%H%M%S", currentTime);
         if (!ret) {
             cerr << "Error putting time in a char array\n";
             close(clientfd);
         }
 
         // Concatenate random number and timestamp
-        char * tempNonce = (char * ) malloc(sizeof(now) + sizeof(random));
-        if (!tempNonce) {
-            cerr << "Error allocating temporary buffer for nonce\n";
-        }
-        memcpy(tempNonce, random, sizeof(random));
+        char tempNonce[sizeof(now) + sizeof(random)];
+        memcpy(tempNonce, random, sizeof random);
+        cout << tempNonce << "\n";
         strcat(tempNonce, now);
-        nonce = (unsigned char *) tempNonce;
+        unsigned char nonce[sizeof(tempNonce)];
+        memcpy(nonce, tempNonce, sizeof(tempNonce));
+        cout << nonce << "\n";
 
         // Retreive user's pubkey
         string path = "users_infos/" + clientUsername + "/pubkey.pem";
@@ -186,12 +188,8 @@ public:
             cerr << "Error converting key to character\n";
             close(clientfd);
         }
-        unsigned char * encryptedNonce = (unsigned char *) malloc(sizeof(nonce) + 16);
+        unsigned char encryptedNonce[sizeof(nonce) + 16];
         int encryptedLength; 
-        if (!encryptedNonce) {
-            cerr << "Error allocation for encrypted nonce buffer failed\n";
-            close(clientfd);
-        }
         EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
         if (!ctx) {
             cerr << "Error context creation failed\n";
@@ -212,13 +210,19 @@ public:
             cerr << "Error during encryption finalization\n";
             close(clientfd);
         }
-        free(ctx);
+        EVP_CIPHER_CTX_free(ctx);
+        // Problem of double free here
         free(buff);
 
         // Send the challenge to the client
-        sendChar(socketfd, encryptedNonce); // Function from utils.h
-        cout << "nonce sent\n";
-        free(encryptedNonce);
+        cout << "before send\n";
+        cout << nonce << "\n";
+        cout << encryptedNonce << "\n";
+        ret = sendChar(socketfd, encryptedNonce); // Function from utils.h
+        if (!ret) {
+            cout << "Error sending encrypted nonce to " << clientUsername << "\n";
+            close(clientfd);
+        }
     }
 
     // Receive and check client response to the challenge

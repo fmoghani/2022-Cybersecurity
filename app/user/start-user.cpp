@@ -190,7 +190,7 @@ class Client {
             cerr << "Error during decryption initialization\n";
             exit(1);
         }
-        ret = EVP_DecryptUpdate(ctx, (unsigned char *) clientResponse, &decryptedLength, (unsigned char *) encryptedNonce, sizeof(encryptedNonce));
+        ret = EVP_DecryptUpdate(ctx, (unsigned char *) clientResponse, &decryptedLength, (unsigned char *) encryptedNonce, sizeof encryptedNonce);
         if (!ret) {
             cerr << "Error during decryption update\n";
             exit(1);
@@ -202,8 +202,9 @@ class Client {
         }
 
         // Send the response to the server
-        ret = send(socketfd, clientResponse, sizeof(clientResponse), 0);
+        ret = sendChar(socketfd, clientResponse);
         sendChar(socketfd, clientResponse); // Function from utils.h
+        free(clientResponse);
         if (ret < 0) {
             cerr << "Error sending response to the client\n";
             exit(1);

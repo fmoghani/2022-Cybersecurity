@@ -236,6 +236,7 @@ public:
         }
         // Freing the context frees the buffer at the same time
         EVP_CIPHER_CTX_free(ctx);
+        cout << encryptedNonce << "\n";
 
         // Send the challenge to the client
         ret = sendChar(clientfd, encryptedNonce); // Function from utils.h

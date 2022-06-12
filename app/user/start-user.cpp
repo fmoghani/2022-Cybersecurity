@@ -152,6 +152,7 @@ class Client {
             cerr << "Error reading encrypted nonce from server\n";
             exit(1);
         }
+        cout << encryptedNonce << "\n";
 
         // Retreive user's prvkey
         string path = "user_infos/pubkey.pem";
@@ -166,6 +167,7 @@ class Client {
             cerr << "Error cannot read client private key from pem file\n";
             exit(1);
         }
+        cout << "key retreived\n";
 
         // Decrypt the challenge
         unsigned char * prvKey = (unsigned char *) malloc(sizeof(int));

@@ -86,7 +86,7 @@ unsigned char * pubKeyToChar(EVP_PKEY * key) {
     //     cerr << "Error writing public key in bio\n";
     // }
 
-    // BIO_flush(bio);    
+    // BIO_flush(bio);
     // unsigned char * charKey = (unsigned char *) malloc(keyLength);
     // BIO_get_mem_data(bio, charKey);
 

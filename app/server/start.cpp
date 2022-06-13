@@ -14,7 +14,8 @@
 #include <ctime>
 #include <unistd.h>
 #include <map>
-#include <filesystem>
+// #include <filesystem>
+#include <experimental/filesystem>
 #include <cerrno>
 #include "users_infos/khabib/DH.h"
 #include "../utils.h"
@@ -125,6 +126,7 @@ public:
         if (!randomBuf) {
             cerr << "Error allocating unsigned buffer for random bytes\n";
         }
+        RAND_poll();
         ret = RAND_bytes(randomBuf, randBytesSize);
         if (!ret) {
             cerr << "Error generating random bytes\n";
@@ -191,47 +193,21 @@ public:
         }
 
         // Encrypt nonce using client public key
-        unsigned char * buff = (unsigned char *) malloc(sizeof(int)); // Buffer for key
-        if (!buff) {
-            cerr << "Error allocation for public key buffer failed\n";
-            close(clientfd);
-        }
-        ret = pubKeyToChar(clientPubKey, buff);
+        unsigned char * keyChar = pubKeyToChar(clientPubKey);
         if (!ret) {
             cerr << "Error converting key to character\n";
             close(clientfd);
         }
-        unsigned char * encryptedNonce = (unsigned char *) malloc(nonceSize + 16);
+        free(clientPubKey);
+        cout << strlen((char *) keyChar) << "\n";
+        int * encryptedSize = (int *) malloc(sizeof(int));
+        unsigned char * encryptedNonce = encryptSym(nonce, nonceSize, keyChar, encryptedSize);
         if (!encryptedNonce) {
-            cerr << "Error allocating buffer for encrypted nonce\n";
-            close(clientfd);
+            cerr << "Error during nonce encryption\n";
         }
-        int encryptedLength; 
-        EVP_CIPHER_CTX* ctx = EVP_CIPHER_CTX_new();
-        if (!ctx) {
-            cerr << "Error context creation failed\n";
-            close(clientfd);
-        }
-        ret = EVP_EncryptInit(ctx, EVP_aes_128_ecb(), buff, NULL);
-        if (!ret) {
-            cerr << "Error during encryption initialization\n";
-            close(clientfd);
-        }
-        ret = EVP_EncryptUpdate(ctx, encryptedNonce, &encryptedLength, (unsigned char *) nonce, nonceSize);
-        if (!ret) {
-            cerr << "Error during encryption update\n";
-            close(clientfd);
-        }
-        ret = EVP_EncryptFinal(ctx, encryptedNonce + encryptedLength, &encryptedLength);
-        if (!ret) {
-            cerr << "Error during encryption finalization\n";
-            close(clientfd);
-        }
-        // Freing the context frees the buffer at the same time
-        EVP_CIPHER_CTX_free(ctx);
-        cout << encryptedNonce << "\n";
 
-        // Send the challenge to the client
+        // Send the challenge to the client      
+        ret = sendInt(clientfd, *encryptedSize); // Needed for decryption
         ret = sendChar(clientfd, encryptedNonce); // Function from utils.h
         if (!ret) {
             cout << "Error sending encrypted nonce to " << clientUsername << "\n";
@@ -276,8 +252,7 @@ public:
             cerr << "Error reading client DH key\n";
             close(clientfd);
         }
-        EVP_PKEY * clientDHKey = EVP_PKEY_new();
-        ret = charToPubkey(buffer, clientDHKey);
+        EVP_PKEY * clientDHKey = charToPubkey(buffer);
         if (!ret) {
             cerr << "Error converting client's DH key from character into EVP_PKEY *\n";
             close(clientfd);
@@ -308,12 +283,7 @@ public:
         EVP_PKEY_CTX_free(ctxParam);
 
         // Send the public key to the client
-        unsigned char * keychar = (unsigned char *) malloc(sizeof(int));
-        if (!keychar) {
-            cerr << "Error allocating buffer for public key\n";
-            close(clientfd);
-        }
-        ret = pubKeyToChar(tempKey, keychar);
+        unsigned char * keychar= pubKeyToChar(tempKey);
         if (!ret) {
             cerr << "Error converting public key to unsigned char *\n";
             close(clientfd);

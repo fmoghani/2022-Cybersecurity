@@ -142,12 +142,12 @@ class Client {
         int ret;
 
         //  Receive server's challenge
+        int encryptedSize = readInt(socketfd);
         encryptedNonce = readChar(socketfd); // Function from utils.h
         if(!encryptedNonce) {
             cerr << "Error reading encrypted nonce from server\n";
             exit(1);
         }
-        cout << encryptedNonce << "\n";
 
         // Retreive user's prvkey
         string path = "user_infos/pubkey.pem";
@@ -162,46 +162,15 @@ class Client {
             cerr << "Error cannot read client private key from pem file\n";
             exit(1);
         }
-        cout << "key retreived\n";
+        BIO_dump_fp(stdout, (const char *) clientPrvKey, strlen((char *) clientPrvKey));
 
         // Decrypt the challenge
-        unsigned char * prvKey = (unsigned char *) malloc(sizeof(int));
+        unsigned char * prvKey = prvKeyToChar(clientPrvKey);
         if (!prvKey) {
-            cerr << "Error allocating buffer for client private key\n";
-            exit(1);
-        }
-        ret = prvKeyToChar(clientPrvKey, prvKey);
-        if (!ret) {
             cerr << "Error converting private key to character\n";
             exit(1);
         }
-        int decryptedLength;
-        EVP_CIPHER_CTX * ctx = EVP_CIPHER_CTX_new();
-        if (!ctx) {
-            cerr << "Error creating context challenge decryption\n";
-            exit(1);
-        }
-        ret = EVP_DecryptInit(ctx, EVP_aes_128_ecb(), prvKey, NULL);
-        if (!ret) {
-            cerr << "Error during decryption initialization\n";
-            exit(1);
-        }
-        clientResponse = (unsigned char *) malloc(nonceSize);
-        if (!clientResponse) {
-            cerr << "Error initializing buffer for decrypting challenge\n";
-            exit(1);
-        }
-        ret = EVP_DecryptUpdate(ctx, (unsigned char *) clientResponse, &decryptedLength, (unsigned char *) encryptedNonce, strlen((char *) encryptedNonce));
-        if (!ret) {
-            cerr << "Error during decryption update\n";
-            exit(1);
-        }
-        ret = EVP_DecryptFinal(ctx, (unsigned char *) clientResponse + decryptedLength, &decryptedLength);
-        if (!ret) {
-            cerr << "Error during decryption finalization\n";
-            exit(1);
-        }
-        EVP_CIPHER_CTX_free(ctx);
+        clientResponse = decryptSym(encryptedNonce, encryptedSize, prvKey);
         free(encryptedNonce);
 
         // Send the response to the server
@@ -240,13 +209,8 @@ class Client {
         }
         EVP_PKEY_CTX_free(ctx);
 
-        // Send the public key to the server
-        unsigned char * keyChar = (unsigned char *) malloc(sizeof(int));
-        if (!keyChar) {
-            cerr << "Error allocating buffer for DH public key\n";
-            exit(1);
-        }
-        ret = pubKeyToChar(tempKey, keyChar);
+        // Send the public key to the servers
+        unsigned char * keyChar = pubKeyToChar(tempKey);
         if (!ret) {
             cerr << "Error converting DH public key to character\n";
             exit(1);

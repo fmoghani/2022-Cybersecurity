@@ -52,56 +52,71 @@ X509_CRL *readCrl(string path) {
 }
 
 // Need to free the unsigned char * after using this fction
-int prvKeyToChar(EVP_PKEY * key, unsigned char * buffer) {
+unsigned char * prvKeyToChar(EVP_PKEY * key) {
 
     int ret;
 
     int prvKeyLength = i2d_PrivateKey(key, NULL);
-    buffer = (unsigned char *) realloc(buffer, prvKeyLength);
+    unsigned char * buffer = (unsigned char *) malloc(prvKeyLength);
     if (!buffer) {
-        cerr << "Error reallocating buffer for the private key\n";
-        return 0;
+        cerr << "Error allocating buffer for the private key\n";
     }
     ret = i2d_PrivateKey(key, &buffer);
     if (!ret) {
         cerr << "Error writing key inside the buffer\n";
-        return 0;
     }
 
-    return 1;
+    return buffer;
 }
 
 // Need to free the unsigned char * after using this fction
-int pubKeyToChar(EVP_PKEY * key, unsigned char * buffer) {
+unsigned char * pubKeyToChar(EVP_PKEY * key) {
 
     int ret;
 
-    int pubKeyLength = i2d_PublicKey(key, NULL);
-    buffer = (unsigned char *) realloc(buffer, pubKeyLength);
+    // int keyLength = EVP_PKEY_size(key);
+
+    // BIO * bio = BIO_new(BIO_s_mem());
+    // if (!bio) {
+    //     cerr << "Error allocating bio for public key conversion\n";
+    // }
+    
+    // ret = PEM_write_bio_PUBKEY(bio, key);
+    // if (!ret) {
+    //     cerr << "Error writing public key in bio\n";
+    // }
+
+    // BIO_flush(bio);    
+    // unsigned char * charKey = (unsigned char *) malloc(keyLength);
+    // BIO_get_mem_data(bio, charKey);
+
+    // return charKey;
+
+    int pubKeyLength = EVP_PKEY_size(key);
+    unsigned char * buffer = (unsigned char *) malloc(pubKeyLength);
     if (!buffer) {
-        cerr << "Error reallocating buffer for the public key\n";
-        return 0;
+        cerr << "Error allocating buffer for the public key\n";
     }
     ret = i2d_PublicKey(key, &buffer);
-    if (!ret) {
+    cout << ret << "\n";
+    if (ret < 0) {
         cerr << "Error writing key inside the buffer\n";
-        return 0;
     }
 
-    return 1;
+    return buffer;
 }
 
 // Convert an unsigned char back to a EVP_PKEY *
-int charToPubkey(unsigned char * buffer, EVP_PKEY * pkey) {
+EVP_PKEY * charToPubkey(unsigned char * buffer) {
 
     int bufferLength = sizeof(buffer);
-    pkey = d2i_PublicKey(EVP_PKEY_RSA, NULL, (const unsigned char **) &buffer, bufferLength);
+    EVP_PKEY * pkey = d2i_PublicKey(EVP_PKEY_RSA, NULL, (const unsigned char **) &buffer, bufferLength);
     if (!pkey) {
         cerr << "Error converting unsigned char into EVP_PKEY *";
         return 0;
     }
 
-    return 1;
+    return pkey;
 }
 
 // Send a character through a socket without encryption (only works with the receive function below)
@@ -196,4 +211,111 @@ unsigned char * readChar(int socketfd) {
     }
 
     return buffer;
+}
+
+int sendInt(int socketfd, int n) {
+
+    int ret;
+    ret = send(socketfd, (char *) &n, sizeof(n), 0);
+    if (ret < 0) {
+        cerr << "Error sending int\n";
+        return 0;
+    }
+
+    return 1;
+}
+
+int readInt(int socketfd) {
+
+    int ret;
+    int n = 0;
+    ret = read(socketfd, (char *) &n, sizeof(int));
+    if (ret < 0) {
+        cerr << "Error reading int\n";
+    }
+
+    return n;
+}
+
+unsigned char * encryptSym(unsigned char * plaintext, int plainSize, unsigned char * key, int * cipherSize) {
+
+    int ret;
+
+    const EVP_CIPHER * cipher = EVP_aes_256_cbc();
+    int blockSize = EVP_CIPHER_block_size(cipher);
+    int encryptedSize = plainSize + blockSize;
+    unsigned char * ciphertext = (unsigned char *) malloc(encryptedSize);
+    if (!ciphertext) {
+        cerr << "Error allocating buffer for cipher text symmetric encryption\n";
+    }
+
+    EVP_CIPHER_CTX * ctx = EVP_CIPHER_CTX_new();
+    if (!ctx) {
+        cerr << "Error creating context for symmetric encryption\n";
+    }
+
+    ret = EVP_EncryptInit(ctx, cipher, key, NULL);
+    if (ret != 1) {
+        cerr << "Error during symmetric encryption initialization\n";
+    }  
+
+    int updateLength = 0;
+    int totalLength = 0;
+    ret = EVP_EncryptUpdate(ctx, ciphertext, &updateLength, plaintext, plainSize);
+    if (ret != 1) {
+        cerr << "Error during symmetric encryption update\n";
+    }
+    totalLength += updateLength;
+
+    ret = EVP_EncryptFinal(ctx, ciphertext+totalLength, &updateLength);
+    if (ret != 1) {
+        cerr << "Error during symmetric encryption finalization\n";
+    }
+    totalLength += updateLength;
+    EVP_CIPHER_CTX_free(ctx);
+
+    *cipherSize = totalLength;
+    return ciphertext;
+
+}
+
+unsigned char * decryptSym(unsigned char * ciphertext, int cipherSize, unsigned char * key) {
+
+    int ret;
+
+    const EVP_CIPHER * cipher = EVP_aes_256_ecb();
+    unsigned char * plaintext = (unsigned char *) malloc(cipherSize);
+    if (!plaintext) {
+        cerr << "Error allocating buffer for ciphertext during simmetric decryption\n";
+    }
+
+    EVP_CIPHER_CTX * ctx = EVP_CIPHER_CTX_new();
+    if (!ctx) {
+        cerr << "Error creating context for symmetric decryption\n";
+    }
+
+    ret = EVP_DecryptInit(ctx, cipher, key, NULL);
+    if (ret != 1) {
+        cerr << "Error during symmetric decryption initialization\n";
+    }
+
+    int updateLength = 0;
+    int totalLength = 0;
+    ret = EVP_DecryptUpdate(ctx, plaintext, &updateLength, ciphertext, cipherSize);
+    if (ret != 1) {
+        cerr << "Error during symmetric decryption update\n";
+    }
+    totalLength += updateLength;
+    cout << totalLength << "\n";
+
+    ret = EVP_DecryptFinal(ctx, plaintext+totalLength, &updateLength);
+    if (ret != 1) {
+        cerr << "Error during symmetric decryption finalization\n";
+    }
+    totalLength += updateLength;
+    cout << cipherSize << "\n";
+    EVP_CIPHER_CTX_free(ctx);
+
+    return plaintext;
+
 }

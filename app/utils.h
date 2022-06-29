@@ -98,7 +98,6 @@ unsigned char * pubKeyToChar(EVP_PKEY * key) {
         cerr << "Error allocating buffer for the public key\n";
     }
     ret = i2d_PublicKey(key, &buffer);
-    cout << ret << "\n";
     if (ret < 0) {
         cerr << "Error writing key inside the buffer\n";
     }
@@ -126,19 +125,6 @@ int sendChar(int socketfd, unsigned char * buff) {
 
     // First send the size of the message
     int length = strlen((char *) buff);
-    // char * lenghtChar = (char *) &length;
-    // int left = sizeof(length);
-    // // This block ensure message is transmitted even if send does not transfer all the bytes on the first time
-    // do {
-    //     ret = send(socketfd, lenghtChar, left, 0);
-    //     if (ret < 0) {
-    //         cerr << "Error sending message length\n";
-    //         return 0;
-    //     } else {
-    //         lenghtChar += ret;
-    //         left -= ret;
-    //     }
-    // } while (left > 0);
     ret = send(socketfd, (char *) &length, sizeof(length), 0);
     if (ret < 0) {
         cerr << "Error sending message size\n";
@@ -146,17 +132,6 @@ int sendChar(int socketfd, unsigned char * buff) {
     }
 
     // Then send the message
-    // left = length;
-    // do {
-    //     ret = send(socketfd, buff, length, 0);
-    //     if (ret < 0) {
-    //         cerr << "Error sending message\n";
-    //         return 0;
-    //     } else {
-    //         buff += ret;
-    //         left -= ret;
-    //     }
-    // } while (left > 0);
     ret = send(socketfd, buff, length, 0);
     if (ret < 0) {
         cerr << "Error sending message\n";
@@ -171,21 +146,6 @@ unsigned char * readChar(int socketfd) {
 
     int ret;
 
-    // Receive the size of the message
-    // int length;
-    // char * lengthChar = (char *) &length;
-    // int left = sizeof(length);
-    // // Block to ensure length is receive even if it is in multiple times
-    // do {
-    //     ret = read(socketfd, lengthChar, left);
-    //     if (ret < 0) {
-    //         cerr << "Error reading message size";
-    //         return 0;
-    //     } else {
-    //         lengthChar += ret;
-    //         left -= ret;
-    //     }
-    // } while (left > 0);
     int length;
     ret = read(socketfd, (char *) &length, sizeof(length));
     if (ret < 0) {
@@ -194,17 +154,6 @@ unsigned char * readChar(int socketfd) {
 
     // Receive the actual message
     unsigned char * buffer = (unsigned char *) malloc(length);
-    // left = length;
-    // do {
-    //     ret = read(socketfd, buffer, length);
-    //     if (ret < 0) {
-    //         cerr << "Error reading message\n";
-    //         return 0;
-    //     } else {
-    //         buffer += ret;
-    //         left -= ret;
-    //     }
-    // } while (left > 0);
     ret = read(socketfd, buffer, length);
     if (ret < 0) {
         cerr << "Error reading message\n";
@@ -235,87 +184,4 @@ int readInt(int socketfd) {
     }
 
     return n;
-}
-
-unsigned char * encryptSym(unsigned char * plaintext, int plainSize, unsigned char * key, int * cipherSize) {
-
-    int ret;
-
-    const EVP_CIPHER * cipher = EVP_aes_256_cbc();
-    int blockSize = EVP_CIPHER_block_size(cipher);
-    int encryptedSize = plainSize + blockSize;
-    unsigned char * ciphertext = (unsigned char *) malloc(encryptedSize);
-    if (!ciphertext) {
-        cerr << "Error allocating buffer for cipher text symmetric encryption\n";
-    }
-
-    EVP_CIPHER_CTX * ctx = EVP_CIPHER_CTX_new();
-    if (!ctx) {
-        cerr << "Error creating context for symmetric encryption\n";
-    }
-
-    ret = EVP_EncryptInit(ctx, cipher, key, NULL);
-    if (ret != 1) {
-        cerr << "Error during symmetric encryption initialization\n";
-    }  
-
-    int updateLength = 0;
-    int totalLength = 0;
-    ret = EVP_EncryptUpdate(ctx, ciphertext, &updateLength, plaintext, plainSize);
-    if (ret != 1) {
-        cerr << "Error during symmetric encryption update\n";
-    }
-    totalLength += updateLength;
-
-    ret = EVP_EncryptFinal(ctx, ciphertext+totalLength, &updateLength);
-    if (ret != 1) {
-        cerr << "Error during symmetric encryption finalization\n";
-    }
-    totalLength += updateLength;
-    EVP_CIPHER_CTX_free(ctx);
-
-    *cipherSize = totalLength;
-    return ciphertext;
-
-}
-
-unsigned char * decryptSym(unsigned char * ciphertext, int cipherSize, unsigned char * key) {
-
-    int ret;
-
-    const EVP_CIPHER * cipher = EVP_aes_256_ecb();
-    unsigned char * plaintext = (unsigned char *) malloc(cipherSize);
-    if (!plaintext) {
-        cerr << "Error allocating buffer for ciphertext during simmetric decryption\n";
-    }
-
-    EVP_CIPHER_CTX * ctx = EVP_CIPHER_CTX_new();
-    if (!ctx) {
-        cerr << "Error creating context for symmetric decryption\n";
-    }
-
-    ret = EVP_DecryptInit(ctx, cipher, key, NULL);
-    if (ret != 1) {
-        cerr << "Error during symmetric decryption initialization\n";
-    }
-
-    int updateLength = 0;
-    int totalLength = 0;
-    ret = EVP_DecryptUpdate(ctx, plaintext, &updateLength, ciphertext, cipherSize);
-    if (ret != 1) {
-        cerr << "Error during symmetric decryption update\n";
-    }
-    totalLength += updateLength;
-    cout << totalLength << "\n";
-
-    ret = EVP_DecryptFinal(ctx, plaintext+totalLength, &updateLength);
-    if (ret != 1) {
-        cerr << "Error during symmetric decryption finalization\n";
-    }
-    totalLength += updateLength;
-    cout << cipherSize << "\n";
-    EVP_CIPHER_CTX_free(ctx);
-
-    return plaintext;
-
 }

@@ -193,24 +193,70 @@ public:
         }
 
         // Encrypt nonce using client public key
-        unsigned char * keyChar = pubKeyToChar(clientPubKey);
-        if (!ret) {
-            cerr << "Error converting key to character\n";
+
+        // Variables for encryption
+        const EVP_CIPHER * cipher = EVP_aes_256_cbc();
+        int encryptedKeySize = EVP_PKEY_size(clientPubKey);
+        int ivLength = EVP_CIPHER_iv_length(cipher);
+        int blockSize = EVP_CIPHER_block_size(cipher);
+        int cipherSize = nonceSize + blockSize;
+        int encryptedSize = 0;
+
+        // Create buffers for encrypted nonce, iv, encrypted key
+        unsigned char * iv = (unsigned char *) malloc(ivLength);
+        unsigned char * encryptedKey = (unsigned char *) malloc(encryptedKeySize);
+        unsigned char * encryptedNonce = (unsigned char *) malloc(cipherSize);
+        if (!iv || !encryptedKey || !encryptedNonce) {
+            cout << "Error allocating buffers during nonce encryption\n";
             close(clientfd);
         }
-        free(clientPubKey);
-        cout << strlen((char *) keyChar) << "\n";
-        int * encryptedSize = (int *) malloc(sizeof(int));
-        unsigned char * encryptedNonce = encryptSym(nonce, nonceSize, keyChar, encryptedSize);
-        if (!encryptedNonce) {
-            cerr << "Error during nonce encryption\n";
-        }
 
-        // Send the challenge to the client      
-        ret = sendInt(clientfd, *encryptedSize); // Needed for decryption
+        // Digital envelope
+        int bytesWritten = 0;
+        EVP_CIPHER_CTX * ctx = EVP_CIPHER_CTX_new();
+        if (!ctx) {
+            cerr << "Error creating context for nonce encryption\n";
+            close(clientfd);
+        }
+        ret = EVP_SealInit(ctx, cipher, &encryptedKey, &encryptedKeySize, iv, &clientPubKey, 1);
+        if (ret <= 0) {
+            cerr << "Error during initialization of encrypted nonce envelope\n";
+            close(clientfd);
+        }
+        ret = EVP_SealUpdate(ctx, encryptedNonce, &bytesWritten, nonce, nonceSize);
+        if (ret <= 0) {
+            cerr << "Error during update of encrypted nonce envelope\n";
+            close(clientfd);
+        }
+        encryptedSize += bytesWritten;
+        ret = EVP_SealFinal(ctx, encryptedNonce + encryptedSize, &bytesWritten);
+        if (ret <= 0) {
+            cerr << "Error during finalization of encrypted nonce envelope\n";
+            close(clientfd);
+        }
+        EVP_CIPHER_CTX_free(ctx);
+
+        // Send the challenge to the client
+        ret = sendInt(clientfd, encryptedSize);
+        if (!ret) {
+            cerr << "Error sending encrypted size to " << clientUsername << "\n";
+            close(clientfd);
+        }
+        ret = sendChar(clientfd, encryptedKey);
+        if (!ret) {
+            cerr << "Error sending encrypted key to " << clientUsername << "\n";
+            close(clientfd);
+        }
+        free(encryptedKey);
+        ret = sendChar(clientfd, iv);
+        if (!ret) {
+            cerr << "Error sending iv to " << clientUsername << "\n";
+            close(clientfd);
+        }   
+        free(iv); 
         ret = sendChar(clientfd, encryptedNonce); // Function from utils.h
         if (!ret) {
-            cout << "Error sending encrypted nonce to " << clientUsername << "\n";
+            cerr << "Error sending encrypted nonce to " << clientUsername << "\n";
             close(clientfd);
         }
         free(encryptedNonce);

@@ -143,6 +143,16 @@ class Client {
 
         //  Receive server's challenge
         int encryptedSize = readInt(socketfd);
+        unsigned char * encryptedKey = readChar(socketfd);
+        if(!encryptedNonce) {
+            cerr << "Error reading encrypted key from server\n";
+            exit(1);
+        }
+        unsigned char * iv = readChar(socketfd);
+        if(!encryptedNonce) {
+            cerr << "Error reading iv from server\n";
+            exit(1);
+        }
         encryptedNonce = readChar(socketfd); // Function from utils.h
         if(!encryptedNonce) {
             cerr << "Error reading encrypted nonce from server\n";
@@ -150,27 +160,61 @@ class Client {
         }
 
         // Retreive user's prvkey
-        string path = "user_infos/pubkey.pem";
+        string path = "user_infos/key.pem";
         FILE * keyFile = fopen(path.c_str(), "r");
         if (!keyFile) {
             cerr << "Error could not open client private key file\n";
             exit(1);
         }
-        clientPrvKey = PEM_read_PUBKEY(keyFile, NULL, NULL, NULL);
+        const char * password = "passwordA";
+        clientPrvKey = PEM_read_PrivateKey(keyFile, NULL, NULL, (void *) password);
         fclose(keyFile);
         if (!clientPrvKey) {
             cerr << "Error cannot read client private key from pem file\n";
             exit(1);
         }
-        BIO_dump_fp(stdout, (const char *) clientPrvKey, strlen((char *) clientPrvKey));
 
-        // Decrypt the challenge
-        unsigned char * prvKey = prvKeyToChar(clientPrvKey);
-        if (!prvKey) {
-            cerr << "Error converting private key to character\n";
+        // Decrypt the challenge envelope
+        
+        // Useful variables
+        const EVP_CIPHER * cipher = EVP_aes_256_cbc();
+        int encryptedKeySize = EVP_PKEY_size(clientPrvKey);
+        int decryptedSize = 0;
+
+        // Create buffer for response
+        clientResponse = (unsigned char *) malloc(encryptedSize);
+        if (!clientResponse) {
+            cerr << "Error allocating buffer for response\n";
             exit(1);
         }
-        clientResponse = decryptSym(encryptedNonce, encryptedSize, prvKey);
+
+        // Digital envelope
+        int  bytesWritten;
+        EVP_CIPHER_CTX * ctx = EVP_CIPHER_CTX_new();
+        if (!ctx) {
+            cerr << "Error creating context for challenge decryption\n";
+            exit(1);
+        }
+        ret = EVP_OpenInit(ctx, cipher, encryptedKey, encryptedKeySize, iv, clientPrvKey);
+        if (ret <= 0) {
+            cerr << "Error during initialization for challenge decryption\n";
+            exit(1);
+        }
+        ret = EVP_OpenUpdate(ctx, clientResponse, &bytesWritten, encryptedNonce, encryptedSize);
+        if (ret <= 0) {
+            cerr << "Error during update for challenge decryption\n";
+            exit(1);
+        }
+        decryptedSize = bytesWritten;
+        ret = EVP_OpenFinal(ctx, clientResponse + decryptedSize, &bytesWritten);
+        if (ret <= 0) {
+            cerr << "Error during finalieation for challenge decryption\n";
+            exit(1);
+        }
+        decryptedSize += bytesWritten;
+        EVP_CIPHER_CTX_free(ctx);
+        free(encryptedKey);
+        free(iv);
         free(encryptedNonce);
 
         // Send the response to the server

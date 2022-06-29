@@ -33,9 +33,6 @@ class Client {
     unsigned char * clientResponse;
     string username;
     
-    // Keys
-    EVP_PKEY * clientPrvKey;
-    
     // Diffie-Hellman session keys
     EVP_PKEY * dhparams;
     EVP_PKEY * tempKey; // Client public key
@@ -167,7 +164,7 @@ class Client {
             exit(1);
         }
         const char * password = "passwordA";
-        clientPrvKey = PEM_read_PrivateKey(keyFile, NULL, NULL, (void *) password);
+        EVP_PKEY * clientPrvKey = PEM_read_PrivateKey(keyFile, NULL, NULL, (void *) password);
         fclose(keyFile);
         if (!clientPrvKey) {
             cerr << "Error cannot read client private key from pem file\n";
@@ -188,6 +185,10 @@ class Client {
             exit(1);
         }
 
+        cout << "encrypted key size : " << encryptedKeySize << "\n";
+        cout << "encrypted key : " << encryptedKey << "\n";
+        cout << "iv : " << iv << "\n";
+
         // Digital envelope
         int  bytesWritten;
         EVP_CIPHER_CTX * ctx = EVP_CIPHER_CTX_new();
@@ -205,10 +206,10 @@ class Client {
             cerr << "Error during update for challenge decryption\n";
             exit(1);
         }
-        decryptedSize = bytesWritten;
+        decryptedSize += bytesWritten;
         ret = EVP_OpenFinal(ctx, clientResponse + decryptedSize, &bytesWritten);
         if (ret <= 0) {
-            cerr << "Error during finalieation for challenge decryption\n";
+            cerr << "Error during finalization for challenge decryption\n";
             exit(1);
         }
         decryptedSize += bytesWritten;

@@ -16,22 +16,24 @@
 using namespace std;
 
 // Function returning the X509 certificate specified by path
-X509 *readCertificate(string path)
+int readCertificate(string path, X509 * CAcert)
 {
 
     FILE *certFile = fopen(path.c_str(), "r");
     if (!certFile)
     {
         cerr << "Error : cannot open " << path << " certificate\n";
+        return 0;
     }
-    X509 *CAcert = PEM_read_X509(certFile, NULL, NULL, NULL);
+    CAcert = PEM_read_X509(certFile, NULL, NULL, NULL);
     fclose(certFile);
     if (!CAcert)
     {
         cerr << "Error : cannot read " << path << " certificate\n";
+        return 0;
     }
 
-    return CAcert;
+    return 1;
 }
 
 X509_CRL *readCrl(string path) {
@@ -184,4 +186,38 @@ int readInt(int socketfd) {
     }
 
     return n;
+}
+
+unsigned char * createHash(unsigned char * inBuffer, size_t bufferLen) {
+
+    int ret;
+
+    // Create params for the digest
+    unsigned int digestLen;
+    unsigned char * digest = (unsigned char *) malloc(EVP_MD_size(EVP_sha256()));
+
+    // Init context
+    EVP_MD_CTX * ctx = EVP_MD_CTX_new();
+    if (!ctx) {
+        cerr << "Error creating context for digest\n";
+    }
+
+    // Init, update and finalize digest
+    ret = EVP_DigestInit(ctx, EVP_sha256());
+    if (ret <= 0) {
+        cerr << "Error initializing digest\n";
+    }
+    ret = EVP_DigestUpdate(ctx, inBuffer, bufferLen);
+    if (ret <= 0) {
+        cerr << "Error updating digest\n";
+    }
+    ret = EVP_DigestFinal(ctx, digest, &digestLen);
+    if (ret <= 0) {
+        cerr << "Error finalizing digest\n";
+    }
+
+    // Free everything
+    EVP_MD_CTX_free(ctx);
+
+    return digest;
 }

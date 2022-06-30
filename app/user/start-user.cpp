@@ -37,6 +37,7 @@ class Client {
     EVP_PKEY * dhparams;
     EVP_PKEY * clientDHPubKey; // Client public key
     unsigned char * sessionDH;
+    unsigned char * sessionKey;
 
     public :
 
@@ -79,7 +80,12 @@ class Client {
 
         // Read CA certificate
         string CACertPath = "../certificates/CAcert.pem";
-        X509 * CACert = readCertificate(CACertPath); // Function from utils.h
+        X509 * CACert = X509_new();
+        ret = readCertificate(CACertPath, CACert); // Function from utils.h
+        if (!ret) {
+            cerr << "Error reading server CA certificate\n";
+            exit(1);
+        }
 
         // Read CA crl
         string CACrlPath = "../certificates/CAcrl.pem";
@@ -111,7 +117,12 @@ class Client {
 
         // Read server certificate
         string serverCertPath = "../certificates/servcert.pem";
-        X509 * serverCert = readCertificate(serverCertPath); // Function from utils.h
+        X509 * serverCert = X509_new();
+        ret = readCertificate(serverCertPath, serverCert); // Function from utils.h
+        if (!ret) {
+            cerr << "Error reading server certificate\n";
+            exit(1);
+        }
 
         // Verify server's certificate
         X509_STORE_CTX * ctx = X509_STORE_CTX_new();
@@ -296,18 +307,30 @@ class Client {
             cerr << "Error setting peer's key during derivation\n";
             close(clientfd);
         }
-        ret = EVP_PKEY_derive(ctx, NULL, &sessionDHLength);
+        ret = EVP_PKEY_derive(ctx, NULL, &sessionDHLength); // Just getting the shared secret length
         if (!ret) {
             cerr << "Error determining sessionDH key length during derivation\n";
             close(clientfd);
         }
-        sessionDH = (unsigned char *) malloc(sessionDHLength);
+        sessionDH = (unsigned char *) malloc(int(sessionDHLength));
         ret = EVP_PKEY_derive(ctx, sessionDH, &sessionDHLength);
         if (!ret) {
             cerr << "Error derivating secret during Diffie-Hellman\n";
             close(clientfd);
         }
 
+        // Free everything
+        EVP_PKEY_CTX_free(ctx);
+        EVP_PKEY_free(serverDHPubKey);
+        EVP_PKEY_free(clientDHPubKey);
+        EVP_PKEY_free(dhparams);
+
+        // Create hash of the shared secret as the session key
+        sessionKey = createHash(sessionDH, sessionDHLength);
+        if (!sessionKey) {
+            cerr << "Error hashing shared secret\n";
+            exit(1);
+        }
     }
 
 };

@@ -42,7 +42,7 @@ class Server {
 
     // Diffie-Hellman session keys
     EVP_PKEY * dhparams;
-    EVP_PKEY * tempKey;
+    EVP_PKEY * serverDHPubKey;
     unsigned char * sessionDH;
     
 
@@ -302,7 +302,7 @@ public:
             cerr << "Error reading client DH key\n";
             close(clientfd);
         }
-        EVP_PKEY * clientDHKey = charToPubkey(buffer);
+        EVP_PKEY * clientDHPubKey = charToPubkey(buffer);
         if (!ret) {
             cerr << "Error converting client's DH key from character into EVP_PKEY *\n";
             close(clientfd);
@@ -311,6 +311,7 @@ public:
 
         // Retreive dh params
         DH * DH = dhMap[clientUsername];
+        dhparams = EVP_PKEY_new();
         ret = EVP_PKEY_set1_DH(dhparams, DH);
         DH_free(DH);
         if (!ret) {
@@ -325,7 +326,7 @@ public:
             cerr << "Error during DH keypair generation (initialization failed)\n";
             close(clientfd);
         }
-        ret = EVP_PKEY_keygen(ctxParam, &tempKey);
+        ret = EVP_PKEY_keygen(ctxParam, &serverDHPubKey);
         if (!ret) {
             cerr << "Error during DH keypair generation (generation failed)\n";
             close(clientfd);
@@ -333,17 +334,21 @@ public:
         EVP_PKEY_CTX_free(ctxParam);
 
         // Send the public key to the client
-        unsigned char * keychar= pubKeyToChar(tempKey);
+        unsigned char * keychar= pubKeyToChar(serverDHPubKey);
         if (!ret) {
             cerr << "Error converting public key to unsigned char *\n";
             close(clientfd);
         }
-        sendChar(clientfd, keychar); // Function from utils.h
+        ret = sendChar(clientfd, keychar); // Function from utils.h
+        if (!ret) {
+            cerr << "Error sending public DH key to client\n";
+            close(clientfd);
+        }
         free(keychar);
 
         // Derivation
         size_t sessionDHLength;
-        EVP_PKEY_CTX * ctx = EVP_PKEY_CTX_new(dhparams, NULL);
+        EVP_PKEY_CTX * ctx = EVP_PKEY_CTX_new(serverDHPubKey, NULL);
         if (!ctx) {
             cerr << "Error creating context for DH derivation\n";
             close(clientfd);
@@ -353,7 +358,7 @@ public:
             cerr << "Error during derivation initialization\n";
             close(clientfd);
         }
-        ret = EVP_PKEY_derive_set_peer(ctx, clientDHKey);
+        ret = EVP_PKEY_derive_set_peer(ctx, clientDHPubKey);
         if (!ret) {
             cerr << "Error setting peer's key during derivation\n";
             close(clientfd);
@@ -372,7 +377,7 @@ public:
         
         // Free everything
         EVP_PKEY_CTX_free(ctx);
-        EVP_PKEY_free(clientDHKey);
+        EVP_PKEY_free(clientDHPubKey);
         EVP_PKEY_free(dhparams);
     }
 

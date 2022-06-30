@@ -35,7 +35,8 @@ class Client {
     
     // Diffie-Hellman session keys
     EVP_PKEY * dhparams;
-    EVP_PKEY * tempKey; // Client public key
+    EVP_PKEY * clientDHPubKey; // Client public key
+    unsigned char * sessionDH;
 
     public :
 
@@ -235,6 +236,11 @@ class Client {
 
         // Get the DH params from from the DH.h file
         DH * DH = get_DH2048();
+        dhparams = EVP_PKEY_new();
+        if (!dhparams) {
+            cerr << "Error allocating key for dhparams\n";
+            exit(1);
+        }
         ret = EVP_PKEY_set1_DH(dhparams, DH);
         DH_free(DH);
         if (!ret) {
@@ -248,20 +254,60 @@ class Client {
             cerr << "Error during DH keypair generation (initialization failed)\n";
             exit(1);
         }
-        ret = EVP_PKEY_keygen(ctx, &tempKey);
+        clientDHPubKey = EVP_PKEY_new();
+        if (!clientDHPubKey) {
+            cerr << "Error allocating client DH public key\n";
+            exit(1);
+        }
+        ret = EVP_PKEY_keygen(ctx, &clientDHPubKey);
         if (!ret) {
             cerr << "Error during DH keypair generation (generation failed)\n";
         }
         EVP_PKEY_CTX_free(ctx);
 
         // Send the public key to the servers
-        unsigned char * keyChar = pubKeyToChar(tempKey);
+        unsigned char * keyChar = pubKeyToChar(clientDHPubKey);
+        EVP_PKEY_free(clientDHPubKey);
         if (!ret) {
             cerr << "Error converting DH public key to character\n";
             exit(1);
         }
         sendChar(socketfd, keyChar); // Function from utils.h
         free(keyChar);
+
+        // Retreive client's public key
+        unsigned char * keyChar = readChar(socketfd);
+        EVP_PKEY * serverDHPubKey = charToPubkey(keyChar);
+
+        // Derive shared secret
+        size_t sessionDHLength;
+        EVP_PKEY_CTX * ctx = EVP_PKEY_CTX_new(clientDHPubKey, NULL);
+        if (!ctx) {
+            cerr << "Error creating context for DH derivation\n";
+            close(clientfd);
+        }
+        ret = EVP_PKEY_derive_init(ctx);
+        if (!ret) {
+            cerr << "Error during derivation initialization\n";
+            close(clientfd);
+        }
+        ret = EVP_PKEY_derive_set_peer(ctx, serverDHPubKey);
+        if (!ret) {
+            cerr << "Error setting peer's key during derivation\n";
+            close(clientfd);
+        }
+        ret = EVP_PKEY_derive(ctx, NULL, &sessionDHLength);
+        if (!ret) {
+            cerr << "Error determining sessionDH key length during derivation\n";
+            close(clientfd);
+        }
+        sessionDH = (unsigned char *) malloc(sessionDHLength);
+        ret = EVP_PKEY_derive(ctx, sessionDH, &sessionDHLength);
+        if (!ret) {
+            cerr << "Error derivating secret during Diffie-Hellman\n";
+            close(clientfd);
+        }
+
     }
 
 };

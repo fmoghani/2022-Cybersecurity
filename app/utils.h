@@ -16,43 +16,36 @@
 using namespace std;
 
 // Function returning the X509 certificate specified by path
-int readCertificate(string path, X509 * CAcert)
-{
+X509 * readCertificate(string path) {
 
     FILE *certFile = fopen(path.c_str(), "r");
-    if (!certFile)
-    {
+    if (!certFile) {
         cerr << "Error : cannot open " << path << " certificate\n";
-        return 0;
     }
-    CAcert = PEM_read_X509(certFile, NULL, NULL, NULL);
+    X509 * cert = PEM_read_X509(certFile, NULL, NULL, NULL);
     fclose(certFile);
-    if (!CAcert)
-    {
+    if (!cert) {
         cerr << "Error : cannot read " << path << " certificate\n";
-        return 0;
     }
 
-    return 1;
+    return cert;
 }
 
-int readCrl(string path, X509_CRL * CACrl) {
+X509_CRL * readCrl(string path) {
 
-    FILE *CACrlFile = fopen(path.c_str(), "r");
-    if (!CACrlFile)
+    FILE * crlFile = fopen(path.c_str(), "r");
+    if (!crlFile)
     {
         cerr << "Error cannot open " << path << " crl\n";
-        return 0;
     }
-    CACrl = PEM_read_X509_CRL(CACrlFile, NULL, NULL, NULL);
-    fclose(CACrlFile);
-    if (!CACrl)
+    X509_CRL * crl = PEM_read_X509_CRL(crlFile, NULL, NULL, NULL);
+    fclose(crlFile);
+    if (!crl)
     {
         cerr << "Error cannot read " << path << " crl\n";
-        return 0;
     }
 
-    return 1;
+    return crl;
 }
 
 // Need to free the unsigned char * after using this fction
@@ -162,6 +155,7 @@ int readChar(int socketfd, unsigned char * buffer) {
     }
 
     // Receive the actual message
+    free(buffer); // Free the dummy allocation realized before in the main scripts
     buffer = (unsigned char *) malloc(length);
     ret = read(socketfd, buffer, length);
     if (ret < 0) {

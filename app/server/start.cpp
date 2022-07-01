@@ -110,7 +110,7 @@ public:
         }
 
         // Receive username et convert it back to string
-        unsigned char * buffer;
+        unsigned char * buffer = (unsigned char *) malloc(sizeof(int)); // Dummy allocation to avoid double free error
         ret = readChar(clientfd, buffer);
         if (!ret) {
             cerr << "Error reading client username\n";
@@ -240,9 +240,9 @@ public:
         }
         EVP_CIPHER_CTX_free(ctx);
 
-        cout << "encrypted key size : " << encryptedKeySize << "\n";
-        cout << "encrypted key : " << encryptedKey << "\n";
-        cout << "iv : " << iv << "\n";
+        cout << "encrypted key size : " << (int) encryptedKeySize << "\n";
+        cout << "encrypted key : " << (int) encryptedKey << "\n";
+        cout << "iv : " << (int) iv << "\n";
 
         // Send the challenge to the client
         ret = sendInt(clientfd, encryptedSize);
@@ -276,7 +276,7 @@ public:
         int ret;
 
         // Receive client's response
-        unsigned char * clientResponse;
+        unsigned char * clientResponse = (unsigned char *) malloc(sizeof(int));
         ret = readChar(clientfd, clientResponse); // Function from utils.h
         if (!ret) {
             cerr << "Error cannot read client response\n";
@@ -302,7 +302,7 @@ public:
         int ret;
 
         // Receive public key from client
-        unsigned char * buffer;
+        unsigned char * buffer = (unsigned char *) malloc(sizeof(int));
         ret = readChar(clientfd, buffer);
         if (!ret) {
             cerr << "Error reading client DH key\n";
@@ -442,8 +442,7 @@ int main() {
         cout << "Challenge sent, waiting for " << serv.getClientUsername() << " to answer\n";
 
         // Different cases depending on client identication
-        // ret = serv.authenticateClient();
-        ret = 1;
+        ret = serv.authenticateClient();
         if (ret) {
             // If client is authenticated we go on
             cout << "Client " << serv.getClientUsername() << " successfuly authenticated\n";

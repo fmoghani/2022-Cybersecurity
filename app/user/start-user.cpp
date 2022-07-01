@@ -80,18 +80,16 @@ class Client {
 
         // Read CA certificate
         string CACertPath = "../certificates/CAcert.pem";
-        X509 * CACert = X509_new();
-        ret = readCertificate(CACertPath, CACert); // Function from utils.h
-        if (!ret) {
+        X509 * CACert = readCertificate(CACertPath); // Function from utils.h
+        if (!CACert) {
             cerr << "Error reading server CA certificate\n";
             exit(1);
         }
 
         // Read CA crl
         string CACrlPath = "../certificates/CAcrl.pem";
-        X509_CRL * CACrl = X509_CRL_new();
-        ret = readCrl(CACrlPath, CACrl); // Function from utils.h
-        if (!ret) {
+        X509_CRL * CACrl = readCrl(CACrlPath); // Function from utils.h
+        if (!CACrl) {
             cerr << "Error reading CA Crl\n";
             exit(1);
         }
@@ -122,8 +120,7 @@ class Client {
 
         // Read server certificate
         string serverCertPath = "../certificates/servcert.pem";
-        X509 * serverCert = X509_new();
-        ret = readCertificate(serverCertPath, serverCert); // Function from utils.h
+        X509 * serverCert = readCertificate(serverCertPath); // Function from utils.h
         if (!ret) {
             cerr << "Error reading server certificate\n";
             exit(1);
@@ -141,7 +138,7 @@ class Client {
             exit(1);
         }
         ret = X509_verify_cert(ctx);
-        if (!ret) {
+        if (ret <= 0) {
             cerr << "Error server not authenticated\n";
             exit(1);
         }
@@ -162,18 +159,19 @@ class Client {
             cerr << "Error reading encrypted size\n";
             exit(1);
         }
-        unsigned char * encryptedKey;
+        unsigned char * encryptedKey = (unsigned char *) malloc(sizeof(int));
         ret = readChar(socketfd, encryptedKey);
         if(!ret) {
             cerr << "Error reading encrypted key from server\n";
             exit(1);
         }
-        unsigned char * iv;
+        unsigned char * iv = (unsigned char *) malloc(sizeof(int));
         ret = readChar(socketfd, iv);
         if(!ret) {
             cerr << "Error reading iv from server\n";
             exit(1);
         }
+        encryptedNonce = (unsigned char *) malloc(sizeof(int));
         ret = readChar(socketfd, encryptedNonce); // Function from utils.h
         if (!ret) {
             cerr << "Error reading encrypted nonce from server\n";
@@ -364,6 +362,8 @@ int main() {
     cout << "Server authenticated, waiting for server's challenge...\n";
     user1.generateResponse();
     cout << "Response sent\n";
+    // user1.generateKeyPair();
+    cout << "Session key established\n";
 
     return 0;
 }

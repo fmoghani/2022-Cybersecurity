@@ -8,7 +8,7 @@ make: *** No rule to make target 'all'.  Stop.
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Thu Jun 30 11:22:16 2022
+# Make data base, printed on Fri Jul  1 18:35:40 2022
 
 # Variables
 
@@ -51,7 +51,7 @@ VTE_VERSION = 6003
 # environment
 VSCODE_NLS_CONFIG = {"locale":"en-us","availableLanguages":{},"_languagePackSupport":true}
 # environment
-JOURNAL_STREAM = 8:31937
+JOURNAL_STREAM = 8:30490
 # environment
 XDG_CONFIG_DIRS = /etc/xdg/xdg-ubuntu:/etc/xdg
 # environment
@@ -75,11 +75,11 @@ MAKELEVEL := 0
 # environment
 XDG_DATA_DIRS = /usr/share/ubuntu:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop
 # environment
-DBUS_SESSION_BUS_ADDRESS = unix:path=/run/user/1000/bus,guid=00ddf98fbcf8b3bb1cbe4d9062bd6adc
+DBUS_SESSION_BUS_ADDRESS = unix:path=/run/user/1000/bus,guid=6eff33d23f951d420846bf3962bf21fc
 # environment
 VSCODE_VERBOSE_LOGGING = true
 # environment
-MANAGERPID = 824
+MANAGERPID = 788
 # environment
 LESSOPEN = | /usr/bin/lesspipe %s
 # environment
@@ -95,7 +95,7 @@ PATH = /home/djolopez/.local/bin:/opt/maven/bin:/usr/local/sbin:/usr/local/bin:/
 # environment
 GPG_AGENT_INFO = /run/user/1000/gnupg/S.gpg-agent:0:1
 # environment
-SESSION_MANAGER = local/djolopez-VirtualBox:@/tmp/.ICE-unix/1295,unix/djolopez-VirtualBox:/tmp/.ICE-unix/1295
+SESSION_MANAGER = local/djolopez-VirtualBox:@/tmp/.ICE-unix/1303,unix/djolopez-VirtualBox:/tmp/.ICE-unix/1303
 # environment
 XDG_RUNTIME_DIR = /run/user/1000
 # environment
@@ -113,7 +113,7 @@ DISABLE_WAYLAND = 1
 # environment
 ELECTRON_RUN_AS_NODE = 1
 # environment
-INVOCATION_ID = d77fc76885fd440cab5452469fd41fc0
+INVOCATION_ID = 0877c97498a9418bac19f760a4259842
 # environment
 GDK_PIXBUF_MODULEDIR = /snap/code/99/usr/lib/x86_64-linux-gnu/gdk-pixbuf-2.0/2.10.0/loaders
 # default
@@ -137,7 +137,7 @@ PWD = /home/djolopez/Documents/INGE_S5_Pise/cybersecurity/project/2022-Cybersecu
 # default
 .LOADED := 
 # environment
-SSH_AGENT_PID = 1124
+SSH_AGENT_PID = 1122
 # environment
 ORIGINAL_XDG_CURRENT_DESKTOP = ubuntu:GNOME
 # environment
@@ -193,7 +193,7 @@ SHLVL = 0
 # environment
 GNOME_SHELL_SESSION_MODE = ubuntu
 # environment
-VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-8837576b-695d-4099-9dd8-a10d02a980e0.sock
+VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-0dc0d746-e132-4acd-b200-7db8d8fd335d.sock
 # default
 MAKE_VERSION := 4.2.1
 # environment
@@ -249,11 +249,11 @@ LC_ALL = C
 # environment
 DBUS_STARTER_BUS_TYPE = session
 # environment
-GNOME_TERMINAL_SCREEN = /org/gnome/Terminal/screen/e847aaa9_dc67_4324_a9f6_dcf27badc80b
+GNOME_TERMINAL_SCREEN = /org/gnome/Terminal/screen/385c4369_d290_434f_8619_64819752cd50
 # automatic
 ^F = $(notdir $^)
 # environment
-GNOME_TERMINAL_SERVICE = :1.119
+GNOME_TERMINAL_SERVICE = :1.121
 # default
 SUFFIXES := 
 # environment
@@ -275,9 +275,9 @@ LANG = C
 # environment
 TERM = xterm-256color
 # environment
-VSCODE_PID = 2773
+VSCODE_PID = 2962
 # environment
-DBUS_STARTER_ADDRESS = unix:path=/run/user/1000/bus,guid=00ddf98fbcf8b3bb1cbe4d9062bd6adc
+DBUS_STARTER_ADDRESS = unix:path=/run/user/1000/bus,guid=6eff33d23f951d420846bf3962bf21fc
  
 # variable set hash-table stats:
 # Load=133/1024=13%, Rehash=0, Collisions=20/155=13%
@@ -346,6 +346,6 @@ GNUmakefile:
 # strcache performance: lookups = 18 / hit rate = 16%
 # hash-table stats:
 # Load=15/8192=0%, Rehash=0, Collisions=1/18=6%
-# Finished Make data base on Thu Jun 30 11:22:16 2022
+# Finished Make data base on Fri Jul  1 18:35:40 2022
 
  

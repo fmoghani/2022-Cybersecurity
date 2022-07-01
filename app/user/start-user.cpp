@@ -89,7 +89,12 @@ class Client {
 
         // Read CA crl
         string CACrlPath = "../certificates/CAcrl.pem";
-        X509_CRL * CACrl = readCrl(CACrlPath); // Function from utils.h
+        X509_CRL * CACrl = X509_CRL_new();
+        ret = readCrl(CACrlPath, CACrl); // Function from utils.h
+        if (!ret) {
+            cerr << "Error reading CA Crl\n";
+            exit(1);
+        }
 
         // Create a store with CA certificate and crl
         X509_STORE* store = X509_STORE_new();
@@ -151,19 +156,26 @@ class Client {
         int ret;
 
         //  Receive server's challenge
-        int encryptedSize = readInt(socketfd);
-        unsigned char * encryptedKey = readChar(socketfd);
-        if(!encryptedNonce) {
+        int encryptedSize = 0;
+        ret = readInt(socketfd, &encryptedSize);
+        if (!ret) {
+            cerr << "Error reading encrypted size\n";
+            exit(1);
+        }
+        unsigned char * encryptedKey;
+        ret = readChar(socketfd, encryptedKey);
+        if(!ret) {
             cerr << "Error reading encrypted key from server\n";
             exit(1);
         }
-        unsigned char * iv = readChar(socketfd);
-        if(!encryptedNonce) {
+        unsigned char * iv;
+        ret = readChar(socketfd, iv);
+        if(!ret) {
             cerr << "Error reading iv from server\n";
             exit(1);
         }
-        encryptedNonce = readChar(socketfd); // Function from utils.h
-        if(!encryptedNonce) {
+        ret = readChar(socketfd, encryptedNonce); // Function from utils.h
+        if (!ret) {
             cerr << "Error reading encrypted nonce from server\n";
             exit(1);
         }
@@ -277,8 +289,8 @@ class Client {
         EVP_PKEY_CTX_free(ctx);
 
         // Send the public key to the servers
-        unsigned char * keyChar = pubKeyToChar(clientDHPubKey);
-        EVP_PKEY_free(clientDHPubKey);
+        unsigned char * keyChar;
+        ret = pubKeyToChar(clientDHPubKey, keyChar);
         if (!ret) {
             cerr << "Error converting DH public key to character\n";
             exit(1);
@@ -286,48 +298,55 @@ class Client {
         sendChar(socketfd, keyChar); // Function from utils.h
         free(keyChar);
 
-        // Retreive client's public key
-        unsigned char * keyChar = readChar(socketfd);
-        EVP_PKEY * serverDHPubKey = charToPubkey(keyChar);
+        // Retreive server's public key
+        unsigned char * servKeyChar;
+        ret = readChar(socketfd, servKeyChar);
+        if (!ret) {
+            cerr << "Error retreiving server's public DH key\n";
+            exit(1);
+        }
+        EVP_PKEY * serverDHPubKey;
+        ret = charToPubkey(servKeyChar, serverDHPubKey);
+        free(servKeyChar);
 
         // Derive shared secret
         size_t sessionDHLength;
-        EVP_PKEY_CTX * ctx = EVP_PKEY_CTX_new(clientDHPubKey, NULL);
-        if (!ctx) {
+        EVP_PKEY_CTX * derivCtx = EVP_PKEY_CTX_new(clientDHPubKey, NULL);
+        if (!derivCtx) {
             cerr << "Error creating context for DH derivation\n";
             close(clientfd);
         }
-        ret = EVP_PKEY_derive_init(ctx);
+        ret = EVP_PKEY_derive_init(derivCtx);
         if (!ret) {
             cerr << "Error during derivation initialization\n";
             close(clientfd);
         }
-        ret = EVP_PKEY_derive_set_peer(ctx, serverDHPubKey);
+        ret = EVP_PKEY_derive_set_peer(derivCtx, serverDHPubKey);
         if (!ret) {
             cerr << "Error setting peer's key during derivation\n";
             close(clientfd);
         }
-        ret = EVP_PKEY_derive(ctx, NULL, &sessionDHLength); // Just getting the shared secret length
+        ret = EVP_PKEY_derive(derivCtx, NULL, &sessionDHLength); // Just getting the shared secret length
         if (!ret) {
             cerr << "Error determining sessionDH key length during derivation\n";
             close(clientfd);
         }
         sessionDH = (unsigned char *) malloc(int(sessionDHLength));
-        ret = EVP_PKEY_derive(ctx, sessionDH, &sessionDHLength);
+        ret = EVP_PKEY_derive(derivCtx, sessionDH, &sessionDHLength);
         if (!ret) {
             cerr << "Error derivating secret during Diffie-Hellman\n";
             close(clientfd);
         }
 
         // Free everything
-        EVP_PKEY_CTX_free(ctx);
+        EVP_PKEY_CTX_free(derivCtx);
         EVP_PKEY_free(serverDHPubKey);
         EVP_PKEY_free(clientDHPubKey);
         EVP_PKEY_free(dhparams);
 
         // Create hash of the shared secret as the session key
-        sessionKey = createHash(sessionDH, sessionDHLength);
-        if (!sessionKey) {
+        ret = createHash(sessionDH, sessionDHLength, sessionKey);
+        if (ret <= 0) {
             cerr << "Error hashing shared secret\n";
             exit(1);
         }

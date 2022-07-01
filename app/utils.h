@@ -36,43 +36,47 @@ int readCertificate(string path, X509 * CAcert)
     return 1;
 }
 
-X509_CRL *readCrl(string path) {
+int readCrl(string path, X509_CRL * CACrl) {
 
     FILE *CACrlFile = fopen(path.c_str(), "r");
     if (!CACrlFile)
     {
         cerr << "Error cannot open " << path << " crl\n";
+        return 0;
     }
-    X509_CRL *CACrl = PEM_read_X509_CRL(CACrlFile, NULL, NULL, NULL);
+    CACrl = PEM_read_X509_CRL(CACrlFile, NULL, NULL, NULL);
     fclose(CACrlFile);
     if (!CACrl)
     {
         cerr << "Error cannot read " << path << " crl\n";
+        return 0;
     }
 
-    return CACrl;
+    return 1;
 }
 
 // Need to free the unsigned char * after using this fction
-unsigned char * prvKeyToChar(EVP_PKEY * key) {
+int prvKeyToChar(EVP_PKEY * key, unsigned char * buffer) {
 
     int ret;
 
     int prvKeyLength = i2d_PrivateKey(key, NULL);
-    unsigned char * buffer = (unsigned char *) malloc(prvKeyLength);
+    buffer = (unsigned char *) malloc(prvKeyLength);
     if (!buffer) {
         cerr << "Error allocating buffer for the private key\n";
+        return 0;
     }
     ret = i2d_PrivateKey(key, &buffer);
     if (!ret) {
         cerr << "Error writing key inside the buffer\n";
+        return 0;
     }
 
-    return buffer;
+    return 1;
 }
 
 // Need to free the unsigned char * after using this fction
-unsigned char * pubKeyToChar(EVP_PKEY * key) {
+int pubKeyToChar(EVP_PKEY * key, unsigned char * buffer) {
 
     int ret;
 
@@ -95,29 +99,31 @@ unsigned char * pubKeyToChar(EVP_PKEY * key) {
     // return charKey;
 
     int pubKeyLength = EVP_PKEY_size(key);
-    unsigned char * buffer = (unsigned char *) malloc(pubKeyLength);
+    buffer = (unsigned char *) malloc(pubKeyLength);
     if (!buffer) {
         cerr << "Error allocating buffer for the public key\n";
+        return 0;
     }
     ret = i2d_PublicKey(key, &buffer);
     if (ret < 0) {
         cerr << "Error writing key inside the buffer\n";
+        return 0;
     }
 
-    return buffer;
+    return 1;
 }
 
 // Convert an unsigned char back to a EVP_PKEY *
-EVP_PKEY * charToPubkey(unsigned char * buffer) {
+int charToPubkey(unsigned char * buffer, EVP_PKEY * pkey) {
 
     int bufferLength = sizeof(buffer);
-    EVP_PKEY * pkey = d2i_PublicKey(EVP_PKEY_RSA, NULL, (const unsigned char **) &buffer, bufferLength);
+    pkey = d2i_PublicKey(EVP_PKEY_RSA, NULL, (const unsigned char **) &buffer, bufferLength);
     if (!pkey) {
         cerr << "Error converting unsigned char into EVP_PKEY *";
         return 0;
     }
 
-    return pkey;
+    return 1;
 }
 
 // Send a character through a socket without encryption (only works with the receive function below)
@@ -144,7 +150,7 @@ int sendChar(int socketfd, unsigned char * buff) {
 }
 
 // Receive a character through a socket without encryption
-unsigned char * readChar(int socketfd) {
+int readChar(int socketfd, unsigned char * buffer) {
 
     int ret;
 
@@ -152,16 +158,18 @@ unsigned char * readChar(int socketfd) {
     ret = read(socketfd, (char *) &length, sizeof(length));
     if (ret < 0) {
         cerr << "Error reading message size\n";
+        return 0;
     }
 
     // Receive the actual message
-    unsigned char * buffer = (unsigned char *) malloc(length);
+    buffer = (unsigned char *) malloc(length);
     ret = read(socketfd, buffer, length);
     if (ret < 0) {
         cerr << "Error reading message\n";
+        return 0;
     }
 
-    return buffer;
+    return 1;
 }
 
 int sendInt(int socketfd, int n) {
@@ -176,48 +184,53 @@ int sendInt(int socketfd, int n) {
     return 1;
 }
 
-int readInt(int socketfd) {
+int readInt(int socketfd, int * n) {
 
     int ret;
-    int n = 0;
-    ret = read(socketfd, (char *) &n, sizeof(int));
+
+    ret = read(socketfd, (char *) n, sizeof(int));
     if (ret < 0) {
         cerr << "Error reading int\n";
+        return 0;
     }
 
-    return n;
+    return 1;
 }
 
-unsigned char * createHash(unsigned char * inBuffer, size_t bufferLen) {
+int createHash(unsigned char * inBuffer, size_t inBufferLen, unsigned char * digest) {
 
     int ret;
 
     // Create params for the digest
     unsigned int digestLen;
-    unsigned char * digest = (unsigned char *) malloc(EVP_MD_size(EVP_sha256()));
+    digest = (unsigned char *) malloc(EVP_MD_size(EVP_sha256()));
 
     // Init context
     EVP_MD_CTX * ctx = EVP_MD_CTX_new();
     if (!ctx) {
         cerr << "Error creating context for digest\n";
+        return 0;
     }
 
     // Init, update and finalize digest
     ret = EVP_DigestInit(ctx, EVP_sha256());
     if (ret <= 0) {
         cerr << "Error initializing digest\n";
+        return 0;
     }
-    ret = EVP_DigestUpdate(ctx, inBuffer, bufferLen);
+    ret = EVP_DigestUpdate(ctx, inBuffer, inBufferLen);
     if (ret <= 0) {
         cerr << "Error updating digest\n";
+        return 0;
     }
     ret = EVP_DigestFinal(ctx, digest, &digestLen);
     if (ret <= 0) {
         cerr << "Error finalizing digest\n";
+        return 0;
     }
 
     // Free everything
     EVP_MD_CTX_free(ctx);
 
-    return digest;
+    return digestLen;
 }

@@ -44,6 +44,7 @@ class Server {
     EVP_PKEY * dhparams;
     EVP_PKEY * serverDHPubKey;
     unsigned char * sessionDH;
+    unsigned char * sessionKey;
     
 
 public:
@@ -99,6 +100,8 @@ public:
     // Handles client connexion request
     void acceptClient() {
 
+        int ret;
+
         // Extract the first connexion in the queue
         int len = sizeof(clientAddr);
         clientfd = accept(socketfd, (sockaddr *)&clientAddr, (socklen_t *)&len);
@@ -107,8 +110,9 @@ public:
         }
 
         // Receive username et convert it back to string
-        unsigned char * buffer = readChar(clientfd);
-        if (!buffer) {
+        unsigned char * buffer;
+        ret = readChar(clientfd, buffer);
+        if (!ret) {
             cerr << "Error reading client username\n";
             close(clientfd);
         }
@@ -272,8 +276,9 @@ public:
         int ret;
 
         // Receive client's response
-        unsigned char * clientResponse = readChar(clientfd); // Function from utils.h
-        if (!clientResponse) {
+        unsigned char * clientResponse;
+        ret = readChar(clientfd, clientResponse); // Function from utils.h
+        if (!ret) {
             cerr << "Error cannot read client response\n";
             close(clientfd);
         }
@@ -292,20 +297,24 @@ public:
     }
 
     // Generate private session key and sends pub key to the client so he can derive the session key
-    void generateSessionKey() {
+    int generateSessionKey() {
 
         int ret;
 
         // Receive public key from client
-        unsigned char * buffer = readChar(clientfd);
-        if (!buffer) {
+        unsigned char * buffer;
+        ret = readChar(clientfd, buffer);
+        if (!ret) {
             cerr << "Error reading client DH key\n";
             close(clientfd);
+            return 0;
         }
-        EVP_PKEY * clientDHPubKey = charToPubkey(buffer);
+        EVP_PKEY * clientDHPubKey;
+        ret = charToPubkey(buffer, clientDHPubKey);
         if (!ret) {
             cerr << "Error converting client's DH key from character into EVP_PKEY *\n";
             close(clientfd);
+            return 0;
         }
         free(buffer);
 
@@ -317,6 +326,7 @@ public:
         if (!ret) {
             cerr << "Error loading DH parameters\n";
             close(clientfd);
+            return 0;
         }
 
         // Generate public key to send back to the client
@@ -325,26 +335,31 @@ public:
         if (!ret) {
             cerr << "Error during DH keypair generation (initialization failed)\n";
             close(clientfd);
+            return 0;
         }
         ret = EVP_PKEY_keygen(ctxParam, &serverDHPubKey);
         if (!ret) {
             cerr << "Error during DH keypair generation (generation failed)\n";
             close(clientfd);
+            return 0;
         }
         EVP_PKEY_CTX_free(ctxParam);
 
         // Send the public key to the client
-        unsigned char * keychar= pubKeyToChar(serverDHPubKey);
+        unsigned char * keyChar;
+        ret = pubKeyToChar(serverDHPubKey, keyChar);
         if (!ret) {
             cerr << "Error converting public key to unsigned char *\n";
             close(clientfd);
+            return 0;
         }
-        ret = sendChar(clientfd, keychar); // Function from utils.h
+        ret = sendChar(clientfd, keyChar); // Function from utils.h
         if (!ret) {
             cerr << "Error sending public DH key to client\n";
             close(clientfd);
+            return 0;
         }
-        free(keychar);
+        free(keyChar);
 
         // Derivation
         size_t sessionDHLength;
@@ -352,33 +367,58 @@ public:
         if (!ctx) {
             cerr << "Error creating context for DH derivation\n";
             close(clientfd);
+            return 0;
         }
         ret = EVP_PKEY_derive_init(ctx);
         if (!ret) {
             cerr << "Error during derivation initialization\n";
             close(clientfd);
+            return 0;
         }
         ret = EVP_PKEY_derive_set_peer(ctx, clientDHPubKey);
         if (!ret) {
             cerr << "Error setting peer's key during derivation\n";
             close(clientfd);
+            return 0;
         }
         ret = EVP_PKEY_derive(ctx, NULL, &sessionDHLength);
         if (!ret) {
             cerr << "Error determining sessionDH key length during derivation\n";
             close(clientfd);
+            return 0;
         }
         sessionDH = (unsigned char *) malloc(sessionDHLength);
         ret = EVP_PKEY_derive(ctx, sessionDH, &sessionDHLength);
         if (!ret) {
             cerr << "Error derivating secret during Diffie-Hellman\n";
             close(clientfd);
+            return 0;
         }
         
         // Free everything
+        cout << "before free\n";
         EVP_PKEY_CTX_free(ctx);
+        cout << "ctx free\n";
         EVP_PKEY_free(clientDHPubKey);
+        cout << "client key free\n";
+        EVP_PKEY_free(serverDHPubKey);
+        cout << "server key free\n";
         EVP_PKEY_free(dhparams);
+        cout << "params free\n";
+
+        // Create hash of the shared secret as the session key
+        ret = createHash(sessionDH, sessionDHLength, sessionKey);
+        if (ret <= 0) {
+            cerr << "Error hashing shared secret\n";
+            close(clientfd);
+            return 0;
+        }
+
+        // Free the session DH key from the memorr
+        memset(sessionDH, 0, sessionDHLength);
+        free(sessionDH);
+
+        return 1;
     }
 
 };
@@ -400,16 +440,28 @@ int main() {
         cout << "Client " << serv.getClientUsername() << " connected, waiting for authentication...\n";
         serv.createChallenge();
         cout << "Challenge sent, waiting for " << serv.getClientUsername() << " to answer\n";
-        ret = serv.authenticateClient();
 
         // Different cases depending on client identication
+        // ret = serv.authenticateClient();
+        ret = 1;
         if (ret) {
             // If client is authenticated we go on
             cout << "Client " << serv.getClientUsername() << " successfuly authenticated\n";
         } else {
             // Else we stop the operations here and wait for next client
             cout << "Client " << serv.getClientUsername() << " had not been authenticated\n";
-            cout << "Client disconnected\n";
+            cout << "Client " << serv.getClientUsername() << " disconnected\n";
+            continue;
+        }
+
+        // Creation of the secret session key
+        ret = serv.generateSessionKey();
+        if (ret) {
+            cout << "Secret session key successfully created\n";
+        } else {
+            cout << "Secret session key could not be created\n";
+            cout << "Client " << serv.getClientUsername() << " disconnected\n";
+            continue;
         }
     }
 

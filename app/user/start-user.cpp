@@ -372,19 +372,19 @@ class Client {
         }
 
         // Convert into a char and back into a key
-        unsigned char * keyChar = (unsigned char *) malloc(sizeof(int));
-        ret = prvKeyToChar(clientPrvKey, keyChar);
-        if (!ret) {
-            cerr << "Error converting private key to char\n";
-        }
-        EVP_PKEY * newKey = EVP_PKEY_new();
-        ret = charToPrvkey(keyChar, newKey);
-        if (!ret) {
-            cerr << "Error converting character to key\n";
-        }
+        unsigned char * keyChar = (unsigned char *) clientPrvKey;
+        EVP_PKEY * newKey = (EVP_PKEY *) keyChar;
 
+        // Display the two keys
         BIO_dump_fp(stdout, (const char *) clientPrvKey, EVP_PKEY_size(clientPrvKey));
         BIO_dump_fp(stdout, (const char *) newKey, EVP_PKEY_size(newKey));
+
+        // Test equality
+        if (clientPrvKey = newKey) {
+            cout << "Test passed\n";
+        } else {
+            cout << "Test failed\n";
+        }
     }
 
 };

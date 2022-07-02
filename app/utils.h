@@ -54,6 +54,7 @@ int prvKeyToChar(EVP_PKEY * key, unsigned char * buffer) {
     int ret;
 
     int prvKeyLength = i2d_PrivateKey(key, NULL);
+    free(buffer);
     buffer = (unsigned char *) malloc(prvKeyLength);
     if (!buffer) {
         cerr << "Error allocating buffer for the private key\n";
@@ -112,7 +113,20 @@ int charToPubkey(unsigned char * buffer, EVP_PKEY * pkey) {
     int bufferLength = sizeof(buffer);
     pkey = d2i_PublicKey(EVP_PKEY_RSA, NULL, (const unsigned char **) &buffer, bufferLength);
     if (!pkey) {
-        cerr << "Error converting unsigned char into EVP_PKEY *";
+        cerr << "Error converting unsigned char into EVP_PKEY *\n";
+        return 0;
+    }
+
+    return 1;
+}
+
+// Convert an unsigned char back to a EVP_PKEY *
+int charToPrvkey(unsigned char * buffer, EVP_PKEY * pkey) {
+
+    int bufferLength = sizeof(buffer);
+    pkey = d2i_PrivateKey(EVP_PKEY_RSA, NULL, (const unsigned char **) &buffer, bufferLength);
+    if (!pkey) {
+        cerr << "Error converting unsigned char into EVP_PKEY *\n";
         return 0;
     }
 

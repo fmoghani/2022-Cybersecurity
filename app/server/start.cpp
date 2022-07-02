@@ -240,9 +240,9 @@ public:
         }
         EVP_CIPHER_CTX_free(ctx);
 
-        cout << "encrypted key size : " << (int) encryptedKeySize << "\n";
-        cout << "encrypted key : " << (int) encryptedKey << "\n";
-        cout << "iv : " << (int) iv << "\n";
+        // cout << "encrypted key size : " << (int) encryptedKeySize << "\n";
+        // cout << "encrypted key : " << (int) encryptedKey << "\n";
+        // cout << "iv : " << (int) iv << "\n";
 
         // Send the challenge to the client
         ret = sendInt(clientfd, encryptedSize);

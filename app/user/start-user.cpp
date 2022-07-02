@@ -350,11 +350,52 @@ class Client {
         }
     }
 
+    void test() {
+
+        int ret;
+
+        // Test the conversion from private key to character
+
+        // Retreive user's prvkey
+        string path = "user_infos/key.pem";
+        FILE * keyFile = fopen(path.c_str(), "r");
+        if (!keyFile) {
+            cerr << "Error could not open client private key file\n";
+            exit(1);
+        }
+        const char * password = "passwordA";
+        EVP_PKEY * clientPrvKey = PEM_read_PrivateKey(keyFile, NULL, NULL, (void *) password);
+        fclose(keyFile);
+        if (!clientPrvKey) {
+            cerr << "Error cannot read client private key from pem file\n";
+            exit(1);
+        }
+
+        // Convert into a char and back into a key
+        unsigned char * keyChar = (unsigned char *) malloc(sizeof(int));
+        ret = prvKeyToChar(clientPrvKey, keyChar);
+        if (!ret) {
+            cerr << "Error converting private key to char\n";
+        }
+        EVP_PKEY * newKey = EVP_PKEY_new();
+        ret = charToPrvkey(keyChar, newKey);
+        if (!ret) {
+            cerr << "Error converting character to key\n";
+        }
+
+        BIO_dump_fp(stdout, (const char *) clientPrvKey, EVP_PKEY_size(clientPrvKey));
+        BIO_dump_fp(stdout, (const char *) newKey, EVP_PKEY_size(newKey));
+    }
+
 };
 
 int main() {
 
     Client user1;
+
+    // Test
+    user1.test();
+
     cout << "Starting client...\n";
     user1.connectClient();
     cout << "Client successfuly connected to the server\n";

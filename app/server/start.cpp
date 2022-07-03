@@ -240,10 +240,6 @@ public:
         }
         EVP_CIPHER_CTX_free(ctx);
 
-        // cout << "encrypted key size : " << (int) encryptedKeySize << "\n";
-        // cout << "encrypted key : " << (int) encryptedKey << "\n";
-        // cout << "iv : " << (int) iv << "\n";
-
         // Send the challenge to the client
         ret = sendInt(clientfd, encryptedSize);
         if (!ret) {
@@ -309,13 +305,7 @@ public:
             close(clientfd);
             return 0;
         }
-        EVP_PKEY * clientDHPubKey;
-        ret = charToPubkey(buffer, clientDHPubKey);
-        if (!ret) {
-            cerr << "Error converting client's DH key from character into EVP_PKEY *\n";
-            close(clientfd);
-            return 0;
-        }
+        EVP_PKEY * clientDHPubKey = (EVP_PKEY *) buffer;
         free(buffer);
 
         // Retreive dh params
@@ -442,7 +432,8 @@ int main() {
         cout << "Challenge sent, waiting for " << serv.getClientUsername() << " to answer\n";
 
         // Different cases depending on client identication
-        ret = serv.authenticateClient();
+        // ret = serv.authenticateClient();
+        ret = 1;
         if (ret) {
             // If client is authenticated we go on
             cout << "Client " << serv.getClientUsername() << " successfuly authenticated\n";

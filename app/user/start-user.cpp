@@ -207,9 +207,9 @@ class Client {
             exit(1);
         }
 
-        cout << "encrypted key size : " << encryptedKeySize << "\n";
-        cout << "encrypted key : " << encryptedKey << "\n";
-        cout << "iv : " << iv << "\n";
+        // cout << "encrypted key size : " << encryptedKeySize << "\n";
+        // cout << "encrypted key : " << encryptedKey << "\n";
+        // cout << "iv : " << iv << "\n";
 
         // Digital envelope
         int  bytesWritten;
@@ -287,24 +287,22 @@ class Client {
         EVP_PKEY_CTX_free(ctx);
 
         // Send the public key to the servers
-        unsigned char * keyChar;
-        ret = pubKeyToChar(clientDHPubKey, keyChar);
+        unsigned char * keyChar = (unsigned char *) clientDHPubKey;
+        ret = sendChar(socketfd, keyChar); // Function from utils.h
         if (!ret) {
-            cerr << "Error converting DH public key to character\n";
+            cerr << "Error sending oublic dh key to the server\n";
             exit(1);
         }
-        sendChar(socketfd, keyChar); // Function from utils.h
         free(keyChar);
 
         // Retreive server's public key
-        unsigned char * servKeyChar;
+        unsigned char * servKeyChar = (unsigned char *) malloc(sizeof(int));
         ret = readChar(socketfd, servKeyChar);
         if (!ret) {
             cerr << "Error retreiving server's public DH key\n";
             exit(1);
         }
-        EVP_PKEY * serverDHPubKey;
-        ret = charToPubkey(servKeyChar, serverDHPubKey);
+        EVP_PKEY * serverDHPubKey = (EVP_PKEY *) servKeyChar;
         free(servKeyChar);
 
         // Derive shared secret
@@ -393,17 +391,14 @@ int main() {
 
     Client user1;
 
-    // Test
-    user1.test();
-
     cout << "Starting client...\n";
     user1.connectClient();
     cout << "Client successfuly connected to the server\n";
     user1.authenticateServer();
     cout << "Server authenticated, waiting for server's challenge...\n";
-    user1.generateResponse();
+    // user1.generateResponse();
     cout << "Response sent\n";
-    // user1.generateKeyPair();
+    user1.generateKeyPair();
     cout << "Session key established\n";
 
     return 0;

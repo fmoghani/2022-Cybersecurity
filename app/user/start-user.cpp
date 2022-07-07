@@ -29,7 +29,7 @@ class Client {
     struct sockaddr_in serverAddr;
 
     // Client variables
-    unsigned char * encryptedNonce;
+    unsigned char * nonce;
     unsigned char * clientResponse;
     string username;
     
@@ -148,11 +148,11 @@ class Client {
 
 
     // Receive server's challenge and sends client's response
-    void generateResponse() {
+    void retreiveSessionKey() {
 
         int ret;
 
-        //  Receive server's challenge
+        //  Receive server's envelope
         int encryptedSize = 0;
         ret = readInt(socketfd, &encryptedSize);
         if (!ret) {
@@ -171,8 +171,8 @@ class Client {
             cerr << "Error reading iv from server\n";
             exit(1);
         }
-        encryptedNonce = (unsigned char *) malloc(sizeof(int));
-        ret = readChar(socketfd, encryptedNonce); // Function from utils.h
+        unsigned char * encryptedSharedSecret = (unsigned char *) malloc(sizeof(int));
+        ret = readChar(socketfd, encryptedSharedSecret); // Function from utils.h
         if (!ret) {
             cerr << "Error reading encrypted nonce from server\n";
             exit(1);
@@ -200,157 +200,92 @@ class Client {
         int encryptedKeySize = EVP_PKEY_size(clientPrvKey);
         int decryptedSize = 0;
 
-        // Create buffer for response
-        clientResponse = (unsigned char *) malloc(encryptedSize);
-        if (!clientResponse) {
-            cerr << "Error allocating buffer for response\n";
+        // Create buffer for shared secret
+        unsigned char * sharedSecret = (unsigned char *) malloc(sessionKeySize);
+        if (!sharedSecret) {
+            cerr << "Error allocating buffer for session key\n";
             exit(1);
         }
-
-        // cout << "encrypted key size : " << encryptedKeySize << "\n";
-        // cout << "encrypted key : " << encryptedKey << "\n";
-        // cout << "iv : " << iv << "\n";
 
         // Digital envelope
         int  bytesWritten;
         EVP_CIPHER_CTX * ctx = EVP_CIPHER_CTX_new();
         if (!ctx) {
-            cerr << "Error creating context for challenge decryption\n";
+            cerr << "Error creating context for envelope decryption\n";
             exit(1);
         }
         ret = EVP_OpenInit(ctx, cipher, encryptedKey, encryptedKeySize, iv, clientPrvKey);
         if (ret <= 0) {
-            cerr << "Error during initialization for challenge decryption\n";
+            cerr << "Error during initialization for envelope decryption\n";
             exit(1);
         }
-        ret = EVP_OpenUpdate(ctx, clientResponse, &bytesWritten, encryptedNonce, encryptedSize);
+        ret = EVP_OpenUpdate(ctx, sharedSecret, &bytesWritten, encryptedSharedSecret, encryptedSize);
         if (ret <= 0) {
-            cerr << "Error during update for challenge decryption\n";
+            cerr << "Error during update for envelope decryption\n";
             exit(1);
         }
         decryptedSize += bytesWritten;
-        ret = EVP_OpenFinal(ctx, clientResponse + decryptedSize, &bytesWritten);
+        ret = EVP_OpenFinal(ctx, sharedSecret + decryptedSize, &bytesWritten);
         if (ret <= 0) {
-            cerr << "Error during finalization for challenge decryption\n";
+            cerr << "Error during finalization for envelope decryption\n";
             exit(1);
         }
         decryptedSize += bytesWritten;
         EVP_CIPHER_CTX_free(ctx);
         free(encryptedKey);
         free(iv);
-        free(encryptedNonce);
+        free(encryptedSharedSecret);
 
-        // Send the response to the server
-        ret = sendChar(socketfd, clientResponse);
-        sendChar(socketfd, clientResponse); // Function from utils.h
-        free(clientResponse);
-        if (ret < 0) {
-            cerr << "Error sending response to the client\n";
+        // Hash the shared secret to get the session key
+        ret = createHash(sharedSecret, sessionKeySize, sessionKey);
+        if (!ret) {
+            cerr << "Error creating hash of the shared secret\n";
             exit(1);
         }
     }
 
-    // Generate client Diffie Hellman key pair
-    void generateKeyPair() {
+    // Send to the server a proof of identity using the nonce
+    void proveIdentity() {
 
         int ret;
 
-        // Get the DH params from from the DH.h file
-        DH * DH = get_DH2048();
-        dhparams = EVP_PKEY_new();
-        if (!dhparams) {
-            cerr << "Error allocating key for dhparams\n";
+        // Receive encrypted nonce
+        int encryptedSize;
+        ret = readInt(socketfd, &encryptedSize);
+        if (!ret) {
+            cerr << "Error reading encrypted size for nonce decryption\n";
             exit(1);
         }
-        ret = EVP_PKEY_set1_DH(dhparams, DH);
-        DH_free(DH);
+        unsigned char * encryptedNonce = (unsigned char *) malloc(sizeof(int));
+        ret = readChar(socketfd, encryptedNonce);
         if (!ret) {
-            cerr << "Error loading DH parameters\n";
-        }
-
-        // Generation of a DH key pair
-        EVP_PKEY_CTX * ctx = EVP_PKEY_CTX_new(dhparams, NULL);
-        ret = EVP_PKEY_keygen_init(ctx);
-        if (!ret) {
-            cerr << "Error during DH keypair generation (initialization failed)\n";
+            cerr << "Error reading encrypted nonce\n";
             exit(1);
         }
-        clientDHPubKey = EVP_PKEY_new();
-        if (!clientDHPubKey) {
-            cerr << "Error allocating client DH public key\n";
+        unsigned char * iv = (unsigned char *) malloc(sizeof(int));
+        ret = readChar(socketfd, iv);
+        if (!ret) {
+            cerr << "Error reading iv for nonce decryption\n";
             exit(1);
         }
-        ret = EVP_PKEY_keygen(ctx, &clientDHPubKey);
-        if (!ret) {
-            cerr << "Error during DH keypair generation (generation failed)\n";
-        }
-        EVP_PKEY_CTX_free(ctx);
 
-        // Send the public key to the servers
-        unsigned char * keyChar = (unsigned char *) clientDHPubKey;
-        ret = sendChar(socketfd, keyChar); // Function from utils.h
+        // Decrypt nonce using the shared session key
+        unsigned char * nonce = (unsigned char *) malloc(nonceSize);
+        ret = decryptSym(encryptedNonce, encryptedSize, nonce, iv, sessionKey);
         if (!ret) {
-            cerr << "Error sending oublic dh key to the server\n";
+            cerr << "Error encrypting the nonce\n";
             exit(1);
         }
-        free(keyChar);
 
-        // Retreive server's public key
-        unsigned char * servKeyChar = (unsigned char *) malloc(sizeof(int));
-        ret = readChar(socketfd, servKeyChar);
+        // Send nonce to the server
+        ret = sendChar(socketfd, nonce);
         if (!ret) {
-            cerr << "Error retreiving server's public DH key\n";
-            exit(1);
-        }
-        EVP_PKEY * serverDHPubKey = (EVP_PKEY *) servKeyChar;
-        free(servKeyChar);
-
-        // Derive shared secret
-        size_t sessionDHLength;
-        EVP_PKEY_CTX * derivCtx = EVP_PKEY_CTX_new(clientDHPubKey, NULL);
-        if (!derivCtx) {
-            cerr << "Error creating context for DH derivation\n";
-            close(clientfd);
-        }
-        ret = EVP_PKEY_derive_init(derivCtx);
-        if (!ret) {
-            cerr << "Error during derivation initialization\n";
-            close(clientfd);
-        }
-        ret = EVP_PKEY_derive_set_peer(derivCtx, serverDHPubKey);
-        if (!ret) {
-            cerr << "Error setting peer's key during derivation\n";
-            close(clientfd);
-        }
-        ret = EVP_PKEY_derive(derivCtx, NULL, &sessionDHLength); // Just getting the shared secret length
-        if (!ret) {
-            cerr << "Error determining sessionDH key length during derivation\n";
-            close(clientfd);
-        }
-        sessionDH = (unsigned char *) malloc(int(sessionDHLength));
-        ret = EVP_PKEY_derive(derivCtx, sessionDH, &sessionDHLength);
-        if (!ret) {
-            cerr << "Error derivating secret during Diffie-Hellman\n";
-            close(clientfd);
-        }
-
-        // Free everything
-        EVP_PKEY_CTX_free(derivCtx);
-        EVP_PKEY_free(serverDHPubKey);
-        EVP_PKEY_free(clientDHPubKey);
-        EVP_PKEY_free(dhparams);
-
-        // Create hash of the shared secret as the session key
-        ret = createHash(sessionDH, sessionDHLength, sessionKey);
-        if (ret <= 0) {
-            cerr << "Error hashing shared secret\n";
+            cerr << "Error sending nonce to the server\n";
             exit(1);
         }
     }
 
     void test() {
-
-        int ret;
 
         // Test the conversion from private key to character
 
@@ -378,7 +313,7 @@ class Client {
         BIO_dump_fp(stdout, (const char *) newKey, EVP_PKEY_size(newKey));
 
         // Test equality
-        if (clientPrvKey = newKey) {
+        if (clientPrvKey == newKey) {
             cout << "Test passed\n";
         } else {
             cout << "Test failed\n";
@@ -395,11 +330,11 @@ int main() {
     user1.connectClient();
     cout << "Client successfuly connected to the server\n";
     user1.authenticateServer();
-    cout << "Server authenticated, waiting for server's challenge...\n";
-    // user1.generateResponse();
-    cout << "Response sent\n";
-    user1.generateKeyPair();
-    cout << "Session key established\n";
+    cout << "Server authenticated, waiting for server's envelope...\n";
+    user1.retreiveSessionKey();
+    cout << "Session key received\n";
+    user1.proveIdentity();
+    cout << "Proof of identity sent\n";
 
     return 0;
 }

@@ -5,6 +5,7 @@
 #include <string.h>
 #include <openssl/evp.h>
 #include <openssl/pem.h>
+#include <openssl/rand.h>
 #include <openssl/x509_vfy.h>
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -241,4 +242,101 @@ int createHash(unsigned char * inBuffer, size_t inBufferLen, unsigned char * dig
     EVP_MD_CTX_free(ctx);
 
     return digestLen;
+}
+
+// Function to encrypt a message unsing symmetric encyption (aes cbc 256)
+int encryptSym(unsigned char * plaintext, int plainSize, unsigned char * ciphertext, unsigned char * iv, unsigned char * privKey) {
+
+    int ret;
+
+    // Encryption params
+    const EVP_CIPHER * cipher = EVP_aes_256_cbc();
+    int ivLen = EVP_CIPHER_iv_length(cipher);
+
+    // Create iv
+    RAND_poll();
+    ret = RAND_bytes(iv, ivLen);
+    if (!ret) {
+        cerr << "Error randomizing iv for symmetric encrytpion\n";
+        return 0;
+    }
+
+    // TEST
+    cout << "before pt\n";
+    plaintext[1] = 0;
+    cout << "before ct\n";
+    ciphertext[1] = 0;
+    cout << "ok\n";
+
+    // Create context
+    EVP_CIPHER_CTX * ctx = EVP_CIPHER_CTX_new();
+    if (!ctx) {
+        cerr << "Error creating context for symmetric encryption\n";
+        return 0;
+    }
+    int bytesWritten = 0;
+    int encryptedSize = 0;
+
+    // Encrypt plaintext
+    ret = EVP_EncryptInit(ctx, cipher, privKey, iv);
+    if (ret <= 0) {
+        cerr << "Error during initialization for symmetric encryption\n";
+        return 0;
+    }
+    cout << "before update\n";
+    ret = EVP_EncryptUpdate(ctx, ciphertext, &bytesWritten, plaintext, plainSize);
+    encryptedSize += bytesWritten;
+    if (ret <= 0) {
+        cerr << "Error during update for symmetric encryption\n";
+        return 0;
+    }
+    cout << "before final\n";
+    ret = EVP_EncryptFinal(ctx, ciphertext + encryptedSize, &bytesWritten);
+    encryptedSize += bytesWritten;
+    if (ret <= 0) {
+        cerr << "Error during finalization for symmetric encryption\n";
+        return 0;
+    }
+    EVP_CIPHER_CTX_free(ctx);
+
+    return encryptedSize;
+}
+
+int decryptSym(unsigned char * ciphertext, int cipherSize, unsigned char * plaintext, unsigned char * iv, unsigned char * privKey) {
+    
+    int ret;
+
+    // Decryption params
+    const EVP_CIPHER * cipher = EVP_aes_256_cbc();
+
+    // Create context
+    EVP_CIPHER_CTX * ctx = EVP_CIPHER_CTX_new();
+    if (!ctx) {
+        cerr << "Error creating context for symmetric decryption\n";
+        return 0;
+    }
+    int bytesWritten = 0;
+    int decryptedSize = 0;
+
+    // Decrypt
+    ret = EVP_DecryptInit(ctx, cipher, privKey, iv);
+    if (ret <= 0) {
+        cerr << "Error during initialization for symmetric decryption\n";
+        return 0;
+    }
+    ret = EVP_DecryptUpdate(ctx, plaintext, &bytesWritten, ciphertext, cipherSize);
+    if (ret <= 0) {
+        cerr << "Error during update for symmetric decryption\n";
+        return 0;
+    }
+    decryptedSize += bytesWritten;
+    ret = EVP_DecryptFinal(ctx, plaintext + decryptedSize, &bytesWritten);
+    if (ret <= 0) {
+        cerr << "Error during finalization for symmetric decryption\n";
+        return 0;
+    }
+    decryptedSize += bytesWritten;
+    EVP_CIPHER_CTX_free(ctx);
+
+    return decryptedSize;
 }

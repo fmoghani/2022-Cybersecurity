@@ -6,7 +6,7 @@ DEPS = ./utils.h
 
 all : start-server start-user
 
-start-server: server/start.cpp
+start-server: server/start-server.cpp
 	$(CC) $(CFLAGS) $< -o server/$@ -I$(DEPS) $(LDFLAGS)
 
 start-user: user/start-user.cpp

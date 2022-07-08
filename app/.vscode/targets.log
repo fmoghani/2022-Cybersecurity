@@ -6,7 +6,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Thu Jul  7 21:47:14 2022
+# Make data base, printed on Fri Jul  8 22:11:51 2022
 
 # Variables
 
@@ -26,8 +26,6 @@ XDG_SESSION_CLASS = user
 SNAP_COMMON = /var/snap/code/common
 # environment
 XDG_SESSION_TYPE = x11
-# environment
-VSCODE_LOG_NATIVE = false
 # makefile (from 'makefile', line 4)
 TARGET = user server
 # automatic
@@ -45,13 +43,13 @@ CURDIR := /home/djolopez/Documents/INGE_S5_Pise/cybersecurity/project/2022-Cyber
 # makefile
 SHELL = /bin/sh
 # environment
-SNAP_DATA = /var/snap/code/99
+SNAP_DATA = /var/snap/code/100
 # environment
 VTE_VERSION = 6003
 # environment
 VSCODE_NLS_CONFIG = {"locale":"en-us","availableLanguages":{},"_languagePackSupport":true}
 # environment
-JOURNAL_STREAM = 8:32134
+JOURNAL_STREAM = 8:30666
 # makefile (from 'makefile', line 2)
 CFLAGS = -Wall -g
 # environment
@@ -77,11 +75,9 @@ MAKELEVEL := 0
 # environment
 XDG_DATA_DIRS = /usr/share/ubuntu:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop
 # environment
-DBUS_SESSION_BUS_ADDRESS = unix:path=/run/user/1000/bus,guid=8198977179e425b88bc15acd62c737e4
+DBUS_SESSION_BUS_ADDRESS = unix:path=/run/user/1000/bus,guid=5f62e485d0cff0cd52b4c3e662c84523
 # environment
-VSCODE_VERBOSE_LOGGING = true
-# environment
-MANAGERPID = 807
+MANAGERPID = 829
 # environment
 LESSOPEN = | /usr/bin/lesspipe %s
 # environment
@@ -89,7 +85,7 @@ LC_NAME = fr_FR.UTF-8
 # environment
 VSCODE_CWD = /home/djolopez/Documents/INGE_S5_Pise/cybersecurity/project/2022-Cybersecurity/app
 # environment
-GSETTINGS_SCHEMA_DIR = /snap/code/99/usr/share/glib-2.0/schemas
+GSETTINGS_SCHEMA_DIR = /snap/code/100/usr/share/glib-2.0/schemas
 # default
 MAKE_HOST := x86_64-pc-linux-gnu
 # environment
@@ -97,29 +93,27 @@ PATH = /home/djolopez/.local/bin:/opt/maven/bin:/usr/local/sbin:/usr/local/bin:/
 # environment
 GPG_AGENT_INFO = /run/user/1000/gnupg/S.gpg-agent:0:1
 # environment
-SESSION_MANAGER = local/djolopez-VirtualBox:@/tmp/.ICE-unix/1285,unix/djolopez-VirtualBox:/tmp/.ICE-unix/1285
+SESSION_MANAGER = local/djolopez-VirtualBox:@/tmp/.ICE-unix/1302,unix/djolopez-VirtualBox:/tmp/.ICE-unix/1302
 # environment
 XDG_RUNTIME_DIR = /run/user/1000
 # environment
 GDK_PIXBUF_MODULE_FILE = /home/djolopez/snap/code/common/.cache/gdk-pixbuf-loaders.cache
 # environment
-SNAP = /snap/code/99
+SNAP = /snap/code/100
 # environment
-SNAP_VERSION = 30d9c6cd
+SNAP_VERSION = 92d25e35
 # environment
 XDG_MENU_PREFIX = gnome-
-# environment
-VSCODE_LOG_STACK = false
 # environment
 DISABLE_WAYLAND = 1
 # environment
 ELECTRON_RUN_AS_NODE = 1
 # environment
-INVOCATION_ID = ebf448080da849eca0c0f9f021352fb2
+INVOCATION_ID = 684886dc10624b7db8de73547fa5e773
 # makefile (from 'makefile', line 3)
 LDFLAGS = -lcrypto -lstdc++fs
 # environment
-GDK_PIXBUF_MODULEDIR = /snap/code/99/usr/lib/x86_64-linux-gnu/gdk-pixbuf-2.0/2.10.0/loaders
+GDK_PIXBUF_MODULEDIR = /snap/code/100/usr/lib/x86_64-linux-gnu/gdk-pixbuf-2.0/2.10.0/loaders
 # default
 .FEATURES := target-specific order-only second-expansion else-if shortest-stem undefine oneshell archives jobserver output-sync check-symlink load
 # environment
@@ -133,15 +127,13 @@ SSH_AUTH_SOCK = /run/user/1000/keyring/ssh
 # environment
 DISPLAY = :0
 # environment
-VSCODE_PIPE_LOGGING = true
-# environment
 SNAP_INSTANCE_KEY = 
 # environment
 PWD = /home/djolopez/Documents/INGE_S5_Pise/cybersecurity/project/2022-Cybersecurity/app
 # default
 .LOADED := 
 # environment
-SSH_AGENT_PID = 1098
+SSH_AGENT_PID = 1115
 # environment
 ORIGINAL_XDG_CURRENT_DESKTOP = ubuntu:GNOME
 # environment
@@ -155,11 +147,11 @@ LESSCLOSE = /usr/bin/lesspipe %s %s
 # environment
 VSCODE_CLI = 1
 # environment
-VSCODE_CODE_CACHE_PATH = /home/djolopez/.config/Code/CachedData/30d9c6cd9483b2cc586687151bcbcd635f373630
+VSCODE_CODE_CACHE_PATH = /home/djolopez/.config/Code/CachedData/92d25e35d9bf1a6b16f7d0758f25d48ace11e5b9
 # environment
 LOGNAME = djolopez
 # environment
-APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL = true
+APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL = 1
 # environment
 SNAP_LIBRARY_PATH = /var/lib/snapd/lib/gl:/var/lib/snapd/lib/gl32:/var/lib/snapd/void
 # environment
@@ -191,21 +183,19 @@ MAKECMDGOALS := all
 # environment
 QT_IM_MODULE = ibus
 # environment
-SNAP_USER_DATA = /home/djolopez/snap/code/99
+SNAP_USER_DATA = /home/djolopez/snap/code/100
 # environment
 SHLVL = 0
 # makefile (from 'makefile', line 1)
 CC = g++
 # environment
 GNOME_SHELL_SESSION_MODE = ubuntu
-# environment
-VSCODE_IPC_HOOK_EXTHOST = /run/user/1000/vscode-ipc-2dfd1e30-4d62-4a47-b3bc-3bec6350ff57.sock
 # default
 MAKE_VERSION := 4.2.1
 # environment
 USER = djolopez
 # environment
-SNAP_REVISION = 99
+SNAP_REVISION = 100
 # environment
 LC_MONETARY = fr_FR.UTF-8
 # makefile
@@ -225,7 +215,7 @@ OLDPWD = /home/djolopez/Documents/INGE_S5_Pise/cybersecurity/project/2022-Cybers
 # automatic
 *F = $(notdir $*)
 # environment
-VSCODE_IPC_HOOK = /run/user/1000/vscode-0941bf64-1.68.1-main.sock
+VSCODE_IPC_HOOK = /run/user/1000/vscode-0941bf64-1.69.0-main.sock
 # makefile
 MAKEFLAGS = pqrR
 # environment
@@ -257,13 +247,13 @@ LC_ALL = C
 # environment
 DBUS_STARTER_BUS_TYPE = session
 # environment
-GNOME_TERMINAL_SCREEN = /org/gnome/Terminal/screen/cfe67b43_7c12_48c8_a272_63e41e48a0c3
+GNOME_TERMINAL_SCREEN = /org/gnome/Terminal/screen/1a5c49e2_8bb1_47a1_8269_6512bca2673e
 # automatic
 ^F = $(notdir $^)
 # makefile (from 'makefile', line 5)
 DEPS = ./utils.h
 # environment
-GNOME_TERMINAL_SERVICE = :1.70
+GNOME_TERMINAL_SERVICE = :1.92
 # default
 SUFFIXES := 
 # environment
@@ -276,7 +266,6 @@ WINDOWPATH = 2
 .INCLUDE_DIRS = /usr/include /usr/local/include /usr/include
 # environment
 LC_IDENTIFICATION = fr_FR.UTF-8
- 
 # default
 .RECIPEPREFIX := 
 # environment
@@ -286,11 +275,11 @@ LANG = C
 # environment
 TERM = xterm-256color
 # environment
-VSCODE_PID = 2436
+VSCODE_PID = 12459
 # environment
-DBUS_STARTER_ADDRESS = unix:path=/run/user/1000/bus,guid=8198977179e425b88bc15acd62c737e4
+DBUS_STARTER_ADDRESS = unix:path=/run/user/1000/bus,guid=5f62e485d0cff0cd52b4c3e662c84523
 # variable set hash-table stats:
-# Load=139/1024=14%, Rehash=0, Collisions=20/171=12%
+# Load=134/1024=13%, Rehash=0, Collisions=19/166=11%
 
 # Pattern-specific Variable Values
 
@@ -298,7 +287,7 @@ DBUS_STARTER_ADDRESS = unix:path=/run/user/1000/bus,guid=8198977179e425b88bc15ac
 
 # Directories
 
-# . (device 2053, inode 1184801): 9 files, no impossibilities.
+# . (device 2053, inode 1444485): 9 files, no impossibilities.
 
 # 9 files, no impossibilities in 1 directories.
 
@@ -326,7 +315,7 @@ all: start-server start-user
 # Not a target:
 makefile:
 #  Implicit rule search has been done.
-#  Last modified 2022-07-07 19:21:54.722254681
+#  Last modified 2022-07-07 19:21:54.722254
 #  File has been updated.
 #  Successfully updated.
 
@@ -387,7 +376,7 @@ start-server: server/start-server.cpp
 # Not a target:
 server/start-server.cpp:
 #  Implicit rule search has been done.
-#  Last modified 2022-07-07 21:39:47.068593333
+#  Last modified 2022-07-08 21:58:57.708615696
 #  File has been updated.
 #  Successfully updated.
 
@@ -405,6 +394,6 @@ server/start-server.cpp:
 # strcache performance: lookups = 31 / hit rate = 38%
 # hash-table stats:
 # Load=19/8192=0%, Rehash=0, Collisions=1/31=3%
-# Finished Make data base on Thu Jul  7 21:47:15 2022
+# Finished Make data base on Fri Jul  8 22:11:51 2022
 
  

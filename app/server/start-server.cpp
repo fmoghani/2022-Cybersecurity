@@ -188,8 +188,8 @@ public:
         }
 
         // Receive username et convert it back to string
-        unsigned char * buffer = (unsigned char *) malloc(sizeof(int)); // Dummy allocation to avoid double free error
-        ret = readChar(clientfd, buffer);
+        unsigned char * buffer = (unsigned char *) malloc(16);
+        ret = read(clientfd, buffer, 16);
         if (!ret) {
             cerr << "Error reading client username\n";
             close(clientfd);
@@ -202,8 +202,9 @@ public:
 
         int ret;
 
-        // Create a random key of 256 bytes
-        sharedSecret = (unsigned char *) malloc(sessionKeySize);
+        // Create a random key for aes 256
+        const EVP_CIPHER * cipher = EVP_aes_256_cbc();
+        sharedSecret = (unsigned char *) malloc(EVP_CIPHER_key_length(cipher));
         if (!sharedSecret) {
             cerr << "Symmetric session key could not be allocated\n";
             close(clientfd);
@@ -286,26 +287,28 @@ public:
         }
         EVP_CIPHER_CTX_free(ctx);
 
+        // TEST
+        cout << "encrypted key : " << encryptedKey << "\n";
+        cout << "iv : " << iv << "\n";
+        cout << "encrypted shared secret : " << encryptedSharedSecred << "\n";
+
         // Send the envelope to the client
-        ret = sendInt(clientfd, encryptedSize);
-        if (!ret) {
-            cerr << "Error sending encrypted size to " << clientUsername << "\n";
-            close(clientfd);
-        }
-        ret = sendChar(clientfd, encryptedKey);
-        if (!ret) {
+        ret = send(clientfd, encryptedKey, encryptedSize, 0);
+        if (ret <= 0) {
             cerr << "Error sending encrypted key to " << clientUsername << "\n";
             close(clientfd);
         }
         free(encryptedKey);
+        // ret = send(clientfd, iv, ivLength, 0);
         ret = sendChar(clientfd, iv);
-        if (!ret) {
+        cout << "ret = " << ret << "\n";
+        if (ret <= 0) {
             cerr << "Error sending iv to " << clientUsername << "\n";
             close(clientfd);
         }
         free(iv);
-        ret = sendChar(clientfd, encryptedSharedSecred); // Function from utils.h
-        if (!ret) {
+        ret = send(clientfd, encryptedSharedSecred, encryptedSize, 0);
+        if (ret <= 0) {
             cerr << "Error sending encrypted session key to " << clientUsername << "\n";
             close(clientfd);
         }
@@ -334,6 +337,7 @@ public:
             close(clientfd);
             return 0;
         }
+        cout << "before encrypt\n";
         ret = encryptSym(nonce, nonceSize, encryptedNonce, iv, sessionKey);
         if (!ret) {
             cerr << "Error encrypting the nonce\n";
@@ -394,6 +398,31 @@ public:
             return 1;
         }
     }
+
+    void test() {
+
+        // Test the send and receive functions
+
+        int ret;
+
+        // For small messages
+        unsigned char * shortmsg = (unsigned char *) malloc(2);
+        ret = readChar(clientfd, shortmsg);
+        if (!ret) {
+            cerr << "readChar failed\n";
+            exit(1);
+        }
+        unsigned char * realmsg = (unsigned char *) malloc(16);
+        bzero(realmsg, 16);
+
+        if (!memcmp(shortmsg, realmsg, 16)) {
+            cout << "Test passed\n";
+        } else {
+            cout << "Test failed\n";
+        }
+        
+    }
+
 };
 
 int main() {
@@ -411,6 +440,10 @@ int main() {
         cout << "Waiting for connection...\n";
         serv.acceptClient();
         cout << "Client " << serv.getClientUsername() << " connected\n";
+
+        // TEST
+        serv.test();
+
         serv.generateSessionKey();
         cout << "Session symmetric key generated\n";
         serv.shareKey();

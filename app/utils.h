@@ -261,13 +261,6 @@ int encryptSym(unsigned char * plaintext, int plainSize, unsigned char * ciphert
         return 0;
     }
 
-    // TEST
-    cout << "before pt\n";
-    plaintext[1] = 0;
-    cout << "before ct\n";
-    ciphertext[1] = 0;
-    cout << "ok\n";
-
     // Create context
     EVP_CIPHER_CTX * ctx = EVP_CIPHER_CTX_new();
     if (!ctx) {
@@ -278,6 +271,7 @@ int encryptSym(unsigned char * plaintext, int plainSize, unsigned char * ciphert
     int encryptedSize = 0;
 
     // Encrypt plaintext
+    cout << "before init\n";
     ret = EVP_EncryptInit(ctx, cipher, privKey, iv);
     if (ret <= 0) {
         cerr << "Error during initialization for symmetric encryption\n";

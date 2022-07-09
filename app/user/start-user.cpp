@@ -44,6 +44,8 @@ class Client {
     // Create a socket connexion
     void connectClient() {
 
+        int ret;
+
         // Socket creation
         socketfd = socket(AF_INET, SOCK_STREAM, 0);
         if (!socketfd) {
@@ -69,7 +71,17 @@ class Client {
         std::ifstream file;
         file.open(path);
         getline(file, username);
-        send(socketfd, username.c_str(), username.size(), 0);
+        int usernameLen = username.size();
+        ret = sendInt(socketfd, usernameLen);
+        if (!ret) {
+            cerr << "Error sending username length\n";
+            exit(1);
+        }
+        ret = send(socketfd, username.c_str(), username.size(), 0);
+        if (ret <= 0) {
+            cerr << "Error sending username to the server\n";
+            exit(1);
+        }
         file.close();
     }
 
@@ -300,14 +312,33 @@ class Client {
         int ret;
 
         // For small messages
-        unsigned char * shortmsg = (unsigned char *) malloc(16);
-        bzero(shortmsg, 16);
-        ret = sendChar(socketfd, shortmsg);
-        if (!ret) {
-            cerr << "sendChar failed\n";
-            exit(1);
-        }
-        
+        int size = 16;
+        unsigned char * shortmsg = (unsigned char *) malloc(size);
+        RAND_bytes(shortmsg, 16);
+        BIO_dump_fp(stdout, (const char *) shortmsg, size);
+        sendInt(socketfd, size);
+        ret = send(socketfd, shortmsg, size, 0);
+        cout << "bytes sent : " << ret << "\n";
+        free(shortmsg);
+
+        // For int
+        // int n = 1805;
+        // ret = sendInt(socketfd, n);
+        // if (!ret) {
+        //     cerr << "sendInt failed\n";
+        //     exit(1);
+        // }
+
+        // For big messages
+        int sizeLong = 64;
+        unsigned char * longmsg = (unsigned char *) malloc(sizeLong);
+        RAND_bytes(longmsg, sizeLong);
+        cout << "long msg :\n";
+        BIO_dump_fp(stdout, (const char *) longmsg, sizeLong);
+        sendInt(socketfd, sizeLong);
+        ret = send(socketfd, longmsg, sizeLong, 0);
+        cout << "bytes sent for long : " << ret << "\n";
+        free(longmsg);
     }
 
 };
@@ -320,15 +351,13 @@ int main() {
     user1.connectClient();
     cout << "Client successfuly connected to the server\n";
 
-    // TEST
-    user1.test();
-
     user1.authenticateServer();
     cout << "Server authenticated, waiting for server's envelope...\n";
-    user1.retreiveSessionKey();
-    cout << "Session key received\n";
-    user1.proveIdentity();
-    cout << "Proof of identity sent\n";
+    
+    // user1.retreiveSessionKey();
+    // cout << "Session key received\n";
+    // user1.proveIdentity();
+    // cout << "Proof of identity sent\n";
 
     return 0;
 }

@@ -146,6 +146,7 @@ int sendChar(int socketfd, unsigned char * buff) {
         cerr << "Error sending message size\n";
         return 0;
     }
+    cout << "size sent : " << length << "\n";
 
     // Then send the message
     ret = send(socketfd, buff, length, 0);
@@ -153,6 +154,7 @@ int sendChar(int socketfd, unsigned char * buff) {
         cerr << "Error sending message\n";
         return 0;
     }
+    cout << "size actually sent = " << ret << "\n";
 
     return 1;
 }
@@ -168,6 +170,7 @@ int readChar(int socketfd, unsigned char * buffer) {
         cerr << "Error reading message size\n";
         return 0;
     }
+    cout << "size received : " << length << "\n";
 
     // Receive the actual message
     free(buffer); // Free the dummy allocation realized before in the main scripts
@@ -177,6 +180,7 @@ int readChar(int socketfd, unsigned char * buffer) {
         cerr << "Error reading message\n";
         return 0;
     }
+    cout << "bytes read = " << ret << "\n";
 
     return 1;
 }
@@ -184,6 +188,7 @@ int readChar(int socketfd, unsigned char * buffer) {
 int sendInt(int socketfd, int n) {
 
     int ret;
+    
     ret = send(socketfd, (char *) &n, sizeof(n), 0);
     if (ret < 0) {
         cerr << "Error sending int\n";
@@ -212,7 +217,6 @@ int createHash(unsigned char * inBuffer, size_t inBufferLen, unsigned char * dig
 
     // Create params for the digest
     unsigned int digestLen;
-    digest = (unsigned char *) malloc(EVP_MD_size(EVP_sha256()));
 
     // Init context
     EVP_MD_CTX * ctx = EVP_MD_CTX_new();

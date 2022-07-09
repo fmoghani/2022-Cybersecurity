@@ -47,7 +47,6 @@ class Server
     EVP_PKEY * dhparams;
     EVP_PKEY * serverDHPubKey;
     unsigned char * sessionDH;
-    unsigned char * sharedSecret;
     unsigned char * sessionKey;
 
 public:
@@ -176,7 +175,7 @@ public:
     }
 
     // Handles client connexion request
-    void acceptClient() {
+    int acceptClient() {
 
         int ret;
 
@@ -185,47 +184,77 @@ public:
         clientfd = accept(socketfd, (sockaddr *)&clientAddr, (socklen_t *)&len);
         if (clientfd < 0) {
             cerr << "Error cannot accept client";
+            return 0;
         }
 
         // Receive username et convert it back to string
-        unsigned char * buffer = (unsigned char *) malloc(16);
-        ret = read(clientfd, buffer, 16);
+        int * usernameLen = (int *) malloc(sizeof(int));
+        if (!usernameLen) {
+            cerr << "Error allocating buffer for username length\n";
+            close(clientfd);
+            return 0;
+        }
+        ret = readInt(clientfd, usernameLen);
+        if (!ret) {
+            cerr << "Error reading username length\n";
+            close(clientfd);
+            return 0;
+        }
+        unsigned char * buffer = (unsigned char *) malloc(*usernameLen);
+        if (!buffer) {
+            cerr << "Error allocating buffer for username\n";
+            close(clientfd);
+            return 0;
+        }
+        ret = read(clientfd, buffer, *usernameLen);
         if (!ret) {
             cerr << "Error reading client username\n";
             close(clientfd);
+            return 0;
         }
         clientUsername = std::string(reinterpret_cast<char *>(buffer));
+        free(usernameLen);
         free(buffer);
+
+        return 1;
     }
 
-    void generateSessionKey() {
+    int generateSessionKey() {
 
         int ret;
 
         // Create a random key for aes 256
         const EVP_CIPHER * cipher = EVP_aes_256_cbc();
-        sharedSecret = (unsigned char *) malloc(EVP_CIPHER_key_length(cipher));
-        if (!sharedSecret) {
+        unsigned char * secret = (unsigned char *) malloc(EVP_CIPHER_key_length(cipher));
+        if (!secret) {
             cerr << "Symmetric session key could not be allocated\n";
             close(clientfd);
+            return 0;
         }
         RAND_poll();
-        ret = RAND_bytes(sharedSecret, sessionKeySize);
+        ret = RAND_bytes(secret, sessionKeySize);
         if (!ret) {
             cerr << "Bytes for symmetric key could not be generated\n";
             close(clientfd);
+            return 0;
         }
 
         // Hash the secret to get session key
-        ret = createHash(sharedSecret, sessionKeySize, sessionKey);
+        sessionKey = (unsigned char *) malloc(EVP_MD_size(EVP_sha256()));
+        ret = createHash(secret, sessionKeySize, sessionKey);
         if (!ret) {
             cerr << "Error creating hash of the shared secret\n";
             close(clientfd);
+            return 0;
         }
+        bzero(secret, EVP_CIPHER_key_length(cipher));
+        free(secret);
+
+        return 1;
     }
 
     // Create and send a challenge to authenticate client
-    void shareKey() {
+    int shareKey() {
 
         int ret;
 
@@ -235,12 +264,14 @@ public:
         if (!keyFile) {
             cerr << "Error could not open client " << clientUsername << " public key file\n";
             close(clientfd);
+            return 0;
         }
         clientPubKey = PEM_read_PUBKEY(keyFile, NULL, NULL, NULL);
         fclose(keyFile);
         if (!clientPubKey) {
             cerr << "Error could not read client " << clientUsername << " public key from pem file\n";
             close(clientfd);
+            return 0;
         }
 
         // Encrypt session key using client public key
@@ -256,10 +287,11 @@ public:
         // Create buffers for encrypted session key, iv, encrypted key
         unsigned char * iv = (unsigned char *) malloc(ivLength);
         unsigned char * encryptedKey = (unsigned char *) malloc(encryptedKeySize);
-        unsigned char * encryptedSharedSecred = (unsigned char *) malloc(cipherSize);
-        if (!iv || !encryptedKey || !encryptedSharedSecred) {
+        unsigned char * encryptedSecret = (unsigned char *) malloc(cipherSize);
+        if (!iv || !encryptedKey || !encryptedSecret) {
             cout << "Error allocating buffers during nonce encryption\n";
             close(clientfd);
+            return 0;
         }
 
         // Digital envelope
@@ -268,51 +300,82 @@ public:
         if (!ctx) {
             cerr << "Error creating context for nonce encryption\n";
             close(clientfd);
+            return 0;
         }
         ret = EVP_SealInit(ctx, cipher, &encryptedKey, &encryptedKeySize, iv, &clientPubKey, 1);
         if (ret <= 0) {
             cerr << "Error during initialization of encrypted nonce envelope\n";
             close(clientfd);
+            return 0;
         }
-        ret = EVP_SealUpdate(ctx, encryptedSharedSecred, &bytesWritten, sharedSecret, sessionKeySize);
+        ret = EVP_SealUpdate(ctx, encryptedSecret, &bytesWritten, sessionKey, sessionKeySize);
         if (ret <= 0) {
             cerr << "Error during update of encrypted nonce envelope\n";
             close(clientfd);
+            return 0;
         }
         encryptedSize += bytesWritten;
-        ret = EVP_SealFinal(ctx, encryptedSharedSecred + encryptedSize, &bytesWritten);
+        ret = EVP_SealFinal(ctx, encryptedSecret + encryptedSize, &bytesWritten);
         if (ret <= 0) {
             cerr << "Error during finalization of encrypted nonce envelope\n";
             close(clientfd);
+            return 0;
         }
         EVP_CIPHER_CTX_free(ctx);
 
         // TEST
-        cout << "encrypted key : " << encryptedKey << "\n";
-        cout << "iv : " << iv << "\n";
-        cout << "encrypted shared secret : " << encryptedSharedSecred << "\n";
+        cout << "iv :\n";
+        BIO_dump_fp(stdout, (const char *) iv, ivLength);
+        cout << "encrypted key :\n";
+        BIO_dump_fp(stdout, (const char *) encryptedKey, encryptedKeySize);
+        cout << "encrypted session key :\n";
+        BIO_dump_fp(stdout, (const char *) encryptedSecret, encryptedSize);
 
-        // Send the envelope to the client
+        // Send the encrypted key
+        ret = sendInt(clientfd, encryptedKeySize);
+        if (!ret) {
+            cerr << "Error sending encrypted key size\n";
+            close(clientfd);
+            return 0;
+        }
         ret = send(clientfd, encryptedKey, encryptedSize, 0);
         if (ret <= 0) {
             cerr << "Error sending encrypted key to " << clientUsername << "\n";
             close(clientfd);
+            return 0;
         }
         free(encryptedKey);
-        // ret = send(clientfd, iv, ivLength, 0);
-        ret = sendChar(clientfd, iv);
-        cout << "ret = " << ret << "\n";
-        if (ret <= 0) {
-            cerr << "Error sending iv to " << clientUsername << "\n";
+
+        // Send the encrypted session key
+        ret = sendInt(clientfd, encryptedSize);
+        if (!ret) {
+            cerr << "Error sending encrcypted size\n";
             close(clientfd);
+            return 0;
         }
-        free(iv);
-        ret = send(clientfd, encryptedSharedSecred, encryptedSize, 0);
+        ret = send(clientfd, encryptedSecret, encryptedSize, 0);
         if (ret <= 0) {
             cerr << "Error sending encrypted session key to " << clientUsername << "\n";
             close(clientfd);
         }
-        free(encryptedSharedSecred);
+        free(encryptedSecret);
+
+        // Send the iv
+        ret = sendInt(clientfd, ivLength);
+        if (!ret) {
+            cerr << "Error sending iv size\n";
+            close(clientfd);
+            return 0;
+        }
+        ret = send(clientfd, iv, ivLength, 0);
+        if (!ret) {
+            cerr << "Error sending iv\n";
+            close(clientfd);
+            return 0;
+        }
+        free(iv);
+
+        return 1;    
     }
 
     int sendEncryptedNonce() {
@@ -406,21 +469,40 @@ public:
         int ret;
 
         // For small messages
-        unsigned char * shortmsg = (unsigned char *) malloc(2);
-        ret = readChar(clientfd, shortmsg);
-        if (!ret) {
-            cerr << "readChar failed\n";
-            exit(1);
-        }
-        unsigned char * realmsg = (unsigned char *) malloc(16);
-        bzero(realmsg, 16);
+        int * sizeSmall = (int *) malloc(sizeof(int));
+        readInt(clientfd, sizeSmall);
+        cout << "size received : " << *sizeSmall << "\n";
+        unsigned char * shortmsg = (unsigned char *) malloc(*sizeSmall);
+        ret = read(clientfd, shortmsg, *sizeSmall);
+        cout << "bytes read : " << ret << "\n";
+        BIO_dump_fp(stdout, (const char *) shortmsg, *sizeSmall);
+        free(sizeSmall);
+        free(shortmsg);
 
-        if (!memcmp(shortmsg, realmsg, 16)) {
-            cout << "Test passed\n";
-        } else {
-            cout << "Test failed\n";
-        }
-        
+        // For int
+        // int * n;
+        // ret = readInt(clientfd, n);
+        // if (!ret) {
+        //     cerr << "readInt failed\n";
+        //     exit(1);
+        // }
+        // if (*n != 1805) {
+        //     cerr << "Test failed\n";
+        // } else {
+        //     cerr << "Test passed, n = " << *n << "\n";
+        // }
+
+        // For big messages
+        int * sizeLong = (int *) malloc(sizeof(int));
+        readInt(clientfd, sizeLong);
+        cout << "size of long message = " << *sizeLong << "\n";
+        unsigned char * longmsg = (unsigned char *) malloc(*sizeLong);
+        ret = read(clientfd, longmsg, *sizeLong);
+        cout << "bytes read : " << ret << "\n";
+        cout << "long msg :\n";
+        BIO_dump_fp(stdout, (const char *) longmsg, *sizeLong);
+        free(sizeLong);
+        free(longmsg);
     }
 
 };
@@ -438,27 +520,38 @@ int main() {
     while (1) {
 
         cout << "Waiting for connection...\n";
-        serv.acceptClient();
-        cout << "Client " << serv.getClientUsername() << " connected\n";
-
-        // TEST
-        serv.test();
-
-        serv.generateSessionKey();
-        cout << "Session symmetric key generated\n";
-        serv.shareKey();
-        cout << "Session symmetric key sent to client\n";
-        serv.sendEncryptedNonce();
-        cout << "Encrypted nonce sent, waiting for client's proof of identity\n";
-
-        // Authenticate client
-        ret = serv.authenticateClient();
-        if (!ret)
-        {
-            cout << "Client not authenticated\n";
+        ret = serv.acceptClient();
+        if (!ret) {
+            cerr << "Error accepting client connection, communication stopped\n\n";
             continue;
         }
-        cout << "Client " << serv.getClientUsername() << " authenticated\n";
+        cout << "Client " << serv.getClientUsername() << " connected\n";
+
+        ret = serv.generateSessionKey();
+        if (!ret) {
+            cerr << "Error generating session key, communication stopped\n\n";
+            continue;
+        }
+        cout << "Session symmetric key generated\n";
+
+        ret = serv.shareKey();
+        if (!ret) {
+            cerr << "Error sharing key to the client, communication stopped\n\n";
+            continue;
+        }
+        cout << "Session symmetric key sent to client\n";
+
+        // serv.sendEncryptedNonce();
+        // cout << "Encrypted nonce sent, waiting for client's proof of identity\n";
+
+        // // Authenticate client
+        // ret = serv.authenticateClient();
+        // if (!ret)
+        // {
+        //     cout << "Client not authenticated\n";
+        //     continue;
+        // }
+        // cout << "Client " << serv.getClientUsername() << " authenticated\n";
     }
 
     return 0;

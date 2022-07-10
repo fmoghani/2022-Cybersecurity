@@ -1,4 +1,4 @@
-#include <iostream> 
+#include <iostream>
 #include <string>
 #include <stdio.h>
 #include <limits.h>
@@ -14,6 +14,8 @@
 #include <fstream>
 #include <cerrno>
 #include <map>
+#include <cerrno>
+#include <filesystem>
 #include "user_infos/DH.h"
 #include "../utils.h"
 #include "../const.h"
@@ -22,33 +24,35 @@ using namespace std;
 
 #define PORT 1805
 
-class Client {
+class Client
+{
 
     // Sockets
     int socketfd, clientfd;
     struct sockaddr_in serverAddr;
 
     // Client variables
-    unsigned char * nonce;
-    unsigned char * clientResponse;
+    unsigned char *nonce;
+    unsigned char *clientResponse;
     string username;
-    
+
     // Diffie-Hellman session keys
-    EVP_PKEY * dhparams;
-    EVP_PKEY * clientDHPubKey; // Client public key
-    unsigned char * sessionDH;
-    unsigned char * sessionKey;
+    EVP_PKEY *dhparams;
+    EVP_PKEY *clientDHPubKey; // Client public key
+    unsigned char *sessionDH;
+    unsigned char *sessionKey;
 
-    public :
-
+public:
     // Create a socket connexion
-    void connectClient() {
+    void connectClient()
+    {
 
         int ret;
 
         // Socket creation
         socketfd = socket(AF_INET, SOCK_STREAM, 0);
-        if (!socketfd) {
+        if (!socketfd)
+        {
             cerr << "Error creating socket\n";
             exit(1);
         }
@@ -61,7 +65,8 @@ class Client {
 
         // Connect client to the socket
         clientfd = connect(socketfd, (sockaddr *)&serverAddr, sizeof(serverAddr));
-        if (clientfd < 0) {
+        if (clientfd < 0)
+        {
             cerr << "Error connecting client to the server\n";
             exit(1);
         }
@@ -73,12 +78,14 @@ class Client {
         getline(file, username);
         int usernameLen = username.size();
         ret = sendInt(socketfd, usernameLen);
-        if (!ret) {
+        if (!ret)
+        {
             cerr << "Error sending username length\n";
             exit(1);
         }
         ret = send(socketfd, username.c_str(), username.size(), 0);
-        if (ret <= 0) {
+        if (ret <= 0)
+        {
             cerr << "Error sending username to the server\n";
             exit(1);
         }
@@ -86,71 +93,82 @@ class Client {
     }
 
     // Authenticate server
-    void authenticateServer() {
+    void authenticateServer()
+    {
 
         int ret;
 
         // Read CA certificate
         string CACertPath = "../certificates/CAcert.pem";
-        X509 * CACert = readCertificate(CACertPath); // Function from utils.h
-        if (!CACert) {
+        X509 *CACert = readCertificate(CACertPath); // Function from utils.h
+        if (!CACert)
+        {
             cerr << "Error reading server CA certificate\n";
             exit(1);
         }
 
         // Read CA crl
         string CACrlPath = "../certificates/CAcrl.pem";
-        X509_CRL * CACrl = readCrl(CACrlPath); // Function from utils.h
-        if (!CACrl) {
+        X509_CRL *CACrl = readCrl(CACrlPath); // Function from utils.h
+        if (!CACrl)
+        {
             cerr << "Error reading CA Crl\n";
             exit(1);
         }
 
         // Create a store with CA certificate and crl
-        X509_STORE* store = X509_STORE_new();
-        if (!store) {
+        X509_STORE *store = X509_STORE_new();
+        if (!store)
+        {
             cerr << "Error : cannot create store\n";
             exit(1);
         }
         ret = X509_STORE_add_cert(store, CACert);
-        if (!ret) {
+        if (!ret)
+        {
             cerr << "Error : cannot add CA certificate to the store\n";
             exit(1);
         }
         ret = X509_STORE_add_crl(store, CACrl);
-        if (!ret) {
+        if (!ret)
+        {
             cerr << "Error cannot add CA CRL to the store\n";
             exit(1);
         }
 
         // Make sure crl will be checked when authenticating server
         ret = X509_STORE_set_flags(store, X509_V_FLAG_CRL_CHECK);
-        if (!ret) {
+        if (!ret)
+        {
             cerr << "Error setting certificate store flag\n";
             exit(1);
         }
 
         // Read server certificate
         string serverCertPath = "../certificates/servcert.pem";
-        X509 * serverCert = readCertificate(serverCertPath); // Function from utils.h
-        if (!ret) {
+        X509 *serverCert = readCertificate(serverCertPath); // Function from utils.h
+        if (!ret)
+        {
             cerr << "Error reading server certificate\n";
             exit(1);
         }
 
         // Verify server's certificate
-        X509_STORE_CTX * ctx = X509_STORE_CTX_new();
-        if (!ret) {
+        X509_STORE_CTX *ctx = X509_STORE_CTX_new();
+        if (!ret)
+        {
             cerr << "Error during certificate verification context creation\n";
             exit(1);
         }
         ret = X509_STORE_CTX_init(ctx, store, serverCert, NULL);
-        if (!ret) {
+        if (!ret)
+        {
             cerr << "Error initializing certificate verification\n";
             exit(1);
         }
         ret = X509_verify_cert(ctx);
-        if (ret <= 0) {
+        if (ret <= 0)
+        {
             cerr << "Error server not authenticated\n";
             exit(1);
         }
@@ -158,134 +176,152 @@ class Client {
         X509_STORE_free(store);
     }
 
-
     // Receive server's envelope and decrypt it to retreive session key
-    void retreiveSessionKey() {
+    void retreiveSessionKey()
+    {
 
         int ret;
 
         // Receive encrypted key
-        int * sizeKey = (int * ) malloc(sizeof(int));
-        if (!sizeKey) {
+        int *sizeKey = (int *)malloc(sizeof(int));
+        if (!sizeKey)
+        {
             cerr << "Error allocating buffer for encrypted key size\n";
             exit(1);
         }
         ret = readInt(socketfd, sizeKey);
-        if (!ret) {
+        if (!ret)
+        {
             cerr << "Error reading enrypted key size\n";
             exit(1);
         }
         int encryptedKeySize = (*sizeKey); // Divided by 8 because encrypted key size is sent in bits
         free(sizeKey);
-        unsigned char * encryptedKey = (unsigned char *) malloc(encryptedKeySize);
-        if (!encryptedKey) {
+        unsigned char *encryptedKey = (unsigned char *)malloc(encryptedKeySize);
+        if (!encryptedKey)
+        {
             cerr << "Error allocating buffer for encrypted key\n";
         }
         ret = read(socketfd, encryptedKey, encryptedKeySize);
-        if(ret <= 0) {
+        if (ret <= 0)
+        {
             cerr << "Error reading encrypted key\n";
             exit(1);
         }
 
         // Receive encrypted session key
-        int * size = (int *) malloc(sizeof(int));
-        if (!size) {
+        int *size = (int *)malloc(sizeof(int));
+        if (!size)
+        {
             cerr << "Error allocating buffer for encrypted session key size\n";
             exit(1);
         }
         ret = readInt(socketfd, size);
-        if (!ret) {
+        if (!ret)
+        {
             cerr << "Error reading encrypted session key size\n";
             exit(1);
         }
         int encryptedSize = *size;
         free(size);
         cout << encryptedSize << "\n";
-        unsigned char * encryptedSecret = (unsigned char *) malloc(encryptedSize);
-        if (!encryptedSecret) {
+        unsigned char *encryptedSecret = (unsigned char *)malloc(encryptedSize);
+        if (!encryptedSecret)
+        {
             cerr << "Error allocating buffer for encrypted session key\n";
             exit(1);
         }
         ret = read(socketfd, encryptedSecret, encryptedSize);
-        if (ret <= 0) {
+        if (ret <= 0)
+        {
             cerr << "Error reading encrypted session key\n";
             exit(1);
         }
 
         // Receive iv
-        int * sizeIv = (int *) malloc(sizeof(int));
-        if (!sizeIv) {
+        int *sizeIv = (int *)malloc(sizeof(int));
+        if (!sizeIv)
+        {
             cerr << "Error allocating buffer for iv size\n";
             exit(1);
         }
         ret = readInt(socketfd, sizeIv);
-        if (!ret) {
+        if (!ret)
+        {
             cerr << "Error reading iv\n";
             exit(1);
         }
         int ivLength = *sizeIv;
         free(sizeIv);
-        unsigned char * iv = (unsigned char *) malloc(ivLength);
-        if (!iv) {
+        unsigned char *iv = (unsigned char *)malloc(ivLength);
+        if (!iv)
+        {
             cerr << "Error allocating buffer for iv\n";
             exit(1);
         }
         ret = read(socketfd, iv, ivLength);
-        if(ret <= 0) {
+        if (ret <= 0)
+        {
             cerr << "Error reading iv\n";
             exit(1);
         }
 
         // TEST
         cout << "iv :\n";
-        BIO_dump_fp(stdout, (const char *) iv, ivLength);
+        BIO_dump_fp(stdout, (const char *)iv, ivLength);
         cout << "encrypted key :\n";
-        BIO_dump_fp(stdout, (const char *) encryptedKey, encryptedKeySize);
+        BIO_dump_fp(stdout, (const char *)encryptedKey, encryptedKeySize);
         cout << "encrypted session key :\n";
-        BIO_dump_fp(stdout, (const char *) encryptedSecret, encryptedSize);
+        BIO_dump_fp(stdout, (const char *)encryptedSecret, encryptedSize);
 
         // Retreive user's prvkey
         string path = "user_infos/key.pem";
-        FILE * keyFile = fopen(path.c_str(), "r");
-        if (!keyFile) {
+        FILE *keyFile = fopen(path.c_str(), "r");
+        if (!keyFile)
+        {
             cerr << "Error could not open client private key file\n";
             exit(1);
         }
-        const char * password = "password";
-        EVP_PKEY * clientPrvKey = PEM_read_PrivateKey(keyFile, NULL, NULL, (void *) password);
+        const char *password = "password";
+        EVP_PKEY *clientPrvKey = PEM_read_PrivateKey(keyFile, NULL, NULL, (void *)password);
         fclose(keyFile);
-        if (!clientPrvKey) {
+        if (!clientPrvKey)
+        {
             cerr << "Error cannot read client private key from pem file\n";
             exit(1);
         }
 
         // Decrypt the challenge envelope
-        
+
         // Useful variables
-        const EVP_CIPHER * cipher = EVP_aes_256_cbc();
+        const EVP_CIPHER *cipher = EVP_aes_256_cbc();
         int decryptedSize;
 
         // Create buffer for session key
-        unsigned char * sessionKey = (unsigned char *) malloc(sessionKeySize);
-        if (!sessionKey) {
+        unsigned char *sessionKey = (unsigned char *)malloc(sessionKeySize);
+        if (!sessionKey)
+        {
             cerr << "Error allocating buffer for session key\n";
             exit(1);
         }
 
         // Digital envelope
-        int  bytesWritten;
-        EVP_CIPHER_CTX * ctx = EVP_CIPHER_CTX_new();
-        if (!ctx) {
+        int bytesWritten;
+        EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
+        if (!ctx)
+        {
             cerr << "Error creating context for envelope decryption\n";
             exit(1);
         }
         ret = EVP_OpenInit(ctx, cipher, encryptedKey, encryptedKeySize, iv, clientPrvKey);
-        if (ret <= 0) {
+        if (ret <= 0)
+        {
             cerr << "Error during initialization for envelope decryption\n";
             exit(1);
         }
         ret = EVP_OpenUpdate(ctx, sessionKey, &bytesWritten, encryptedSecret, encryptedSize);
-        if (ret <= 0) {
+        if (ret <= 0)
+        {
             cerr << "Error during update for envelope decryption\n";
             exit(1);
         }
@@ -299,51 +335,93 @@ class Client {
 
         // TEST
         cout << "session key :\n";
-        BIO_dump_fp(stdout, (const char *) sessionKey, sessionKeySize);
+        BIO_dump_fp(stdout, (const char *)sessionKey, sessionKeySize);
     }
 
     // Send to the server a proof of identity using the nonce
-    void proveIdentity() {
+    void proveIdentity()
+    {
 
         int ret;
 
         // Receive encrypted nonce
         int encryptedSize;
         ret = readInt(socketfd, &encryptedSize);
-        if (!ret) {
+        if (!ret)
+        {
             cerr << "Error reading encrypted size for nonce decryption\n";
             exit(1);
         }
-        unsigned char * encryptedNonce = (unsigned char *) malloc(sizeof(int));
+        unsigned char *encryptedNonce = (unsigned char *)malloc(sizeof(int));
         ret = readChar(socketfd, encryptedNonce);
-        if (!ret) {
+        if (!ret)
+        {
             cerr << "Error reading encrypted nonce\n";
             exit(1);
         }
-        unsigned char * iv = (unsigned char *) malloc(sizeof(int));
+        unsigned char *iv = (unsigned char *)malloc(sizeof(int));
         ret = readChar(socketfd, iv);
-        if (!ret) {
+        if (!ret)
+        {
             cerr << "Error reading iv for nonce decryption\n";
             exit(1);
         }
 
         // Decrypt nonce using the shared session key
-        unsigned char * nonce = (unsigned char *) malloc(nonceSize);
+        unsigned char *nonce = (unsigned char *)malloc(nonceSize);
         ret = decryptSym(encryptedNonce, encryptedSize, nonce, iv, sessionKey);
-        if (!ret) {
+        if (!ret)
+        {
             cerr << "Error encrypting the nonce\n";
             exit(1);
         }
 
         // Send nonce to the server
         ret = sendChar(socketfd, nonce);
-        if (!ret) {
+        if (!ret)
+        {
             cerr << "Error sending nonce to the server\n";
             exit(1);
         }
     }
 
-    void test() {
+    // Function to Delete file from server
+    int deleteFile()
+    {
+        // Declare a string char and search for file on Server
+        std::string searchFilename;
+        std::cout << "Search filename before deleting...\n";
+        std::cin >> searchFilename;
+
+        // Append the .txt extension and check availability
+        searchFilename.append(".txt");
+        try
+        {
+            // Check for the user input before proceeding to delete
+            system("CLS");
+
+            std::cout << "Are you sure you want to delete this file? (y/n)  \n";
+
+            // Get user response and delete the file
+            if (getchar() == 'y')
+            {
+                const int result = remove(searchFilename.c_str());
+                if (result == 0)
+                    std::cout << "File " << searchFilename << " deleted successfully!\n";
+
+                // If there are any filestream errors, handle and print error
+                else if (result != 0)
+                    std::cout << "Error deleting file: " strerror(errno) "\n";
+            }
+        }
+        catch (const std::exception &e)
+        {
+            std::cerr << "Filesystem Error: " << e.what() << '\n';
+        }
+    }
+
+    void test()
+    {
 
         // Test the send and receive functions
 
@@ -351,9 +429,9 @@ class Client {
 
         // For small messages
         int size = 16;
-        unsigned char * shortmsg = (unsigned char *) malloc(size);
+        unsigned char *shortmsg = (unsigned char *)malloc(size);
         RAND_bytes(shortmsg, 16);
-        BIO_dump_fp(stdout, (const char *) shortmsg, size);
+        BIO_dump_fp(stdout, (const char *)shortmsg, size);
         sendInt(socketfd, size);
         ret = send(socketfd, shortmsg, size, 0);
         cout << "bytes sent : " << ret << "\n";
@@ -369,19 +447,19 @@ class Client {
 
         // For big messages
         int sizeLong = 64;
-        unsigned char * longmsg = (unsigned char *) malloc(sizeLong);
+        unsigned char *longmsg = (unsigned char *)malloc(sizeLong);
         RAND_bytes(longmsg, sizeLong);
         cout << "long msg :\n";
-        BIO_dump_fp(stdout, (const char *) longmsg, sizeLong);
+        BIO_dump_fp(stdout, (const char *)longmsg, sizeLong);
         sendInt(socketfd, sizeLong);
         ret = send(socketfd, longmsg, sizeLong, 0);
         cout << "bytes sent for long : " << ret << "\n";
         free(longmsg);
     }
-
 };
 
-int main() {
+int main()
+{
 
     Client user1;
 
@@ -391,7 +469,7 @@ int main() {
 
     user1.authenticateServer();
     cout << "Server authenticated, waiting for server's envelope...\n";
-    
+
     user1.retreiveSessionKey();
     cout << "Session key received\n";
 

@@ -330,6 +330,8 @@ public:
         BIO_dump_fp(stdout, (const char *) encryptedKey, encryptedKeySize);
         cout << "encrypted session key :\n";
         BIO_dump_fp(stdout, (const char *) encryptedSecret, encryptedSize);
+        cout << "sessionKey :\n";
+        BIO_dump_fp(stdout, (const char *) sessionKey, sessionKeySize);
 
         // Send the encrypted key
         ret = sendInt(clientfd, encryptedKeySize);
@@ -338,7 +340,7 @@ public:
             close(clientfd);
             return 0;
         }
-        ret = send(clientfd, encryptedKey, encryptedSize, 0);
+        ret = send(clientfd, encryptedKey, encryptedKeySize, 0);
         if (ret <= 0) {
             cerr << "Error sending encrypted key to " << clientUsername << "\n";
             close(clientfd);

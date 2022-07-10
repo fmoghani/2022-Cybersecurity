@@ -43,10 +43,7 @@ class Server
     EVP_PKEY * clientPubKey;
     EVP_PKEY * prvKey;
 
-    // Diffie-Hellman session keys
-    EVP_PKEY * dhparams;
-    EVP_PKEY * serverDHPubKey;
-    unsigned char * sessionDH;
+    // Keys
     unsigned char * sessionKey;
 
 public:
@@ -407,7 +404,6 @@ public:
         // TEST
         cout << "nonce :\n";
         BIO_dump_fp(stdout, (const char *) nonce, nonceSize);
-        cout << "encrypted size = " << encryptedSize << "\n";
 
         // Send encrypted nonce
         ret = sendInt(clientfd, encryptedSize);
@@ -462,6 +458,11 @@ public:
             // Client succesfully authenticated
             return 1;
         }
+    }
+
+    int displayCommands() {
+
+
     }
 
     void test() {
@@ -550,14 +551,12 @@ int main() {
         }
         cout << "Encrypted nonce sent, waiting for client's proof of identity\n";
 
-        // // Authenticate client
-        // ret = serv.authenticateClient();
-        // if (!ret)
-        // {
-        //     cout << "Client not authenticated\n";
-        //     continue;
-        // }
-        // cout << "Client " << serv.getClientUsername() << " authenticated\n";
+        while (1) {
+
+            cout << "Welcome, please choose an action below : \n";
+
+
+        }
     }
 
     return 0;

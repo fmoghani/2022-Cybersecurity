@@ -333,9 +333,6 @@ class Client {
             exit(1);
         }
 
-        // TEST
-        cout << "encrypted size = " << encryptedSize << "\n";
-
         // Decrypt nonce using the shared session key
         unsigned char * nonce = (unsigned char *) malloc(encryptedSize);
         if (!nonce) {
@@ -412,8 +409,8 @@ int main() {
     user1.retreiveSessionKey();
     cout << "Session key received\n";
 
-    user1.proveIdentity();
-    cout << "Proof of identity sent\n";
+    // user1.proveIdentity();
+    // cout << "Proof of identity sent\n";
 
     return 0;
 }

@@ -275,20 +275,17 @@ int encryptSym(unsigned char * plaintext, int plainSize, unsigned char * ciphert
     int encryptedSize = 0;
 
     // Encrypt plaintext
-    cout << "before init\n";
     ret = EVP_EncryptInit(ctx, cipher, privKey, iv);
     if (ret <= 0) {
         cerr << "Error during initialization for symmetric encryption\n";
         return 0;
     }
-    cout << "before update\n";
     ret = EVP_EncryptUpdate(ctx, ciphertext, &bytesWritten, plaintext, plainSize);
     encryptedSize += bytesWritten;
     if (ret <= 0) {
         cerr << "Error during update for symmetric encryption\n";
         return 0;
     }
-    cout << "before final\n";
     ret = EVP_EncryptFinal(ctx, ciphertext + encryptedSize, &bytesWritten);
     encryptedSize += bytesWritten;
     if (ret <= 0) {
@@ -313,8 +310,8 @@ int decryptSym(unsigned char * ciphertext, int cipherSize, unsigned char * plain
         cerr << "Error creating context for symmetric decryption\n";
         return 0;
     }
-    int bytesWritten = 0;
-    int decryptedSize = 0;
+    int bytesWritten;
+    int decryptedSize;
 
     // Decrypt
     ret = EVP_DecryptInit(ctx, cipher, privKey, iv);
@@ -327,7 +324,7 @@ int decryptSym(unsigned char * ciphertext, int cipherSize, unsigned char * plain
         cerr << "Error during update for symmetric decryption\n";
         return 0;
     }
-    decryptedSize += bytesWritten;
+    decryptedSize = bytesWritten;
     ret = EVP_DecryptFinal(ctx, plaintext + decryptedSize, &bytesWritten);
     if (ret <= 0) {
         cerr << "Error during finalization for symmetric decryption\n";

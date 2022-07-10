@@ -200,7 +200,6 @@ class Client {
         }
         int encryptedSize = *size;
         free(size);
-        cout << encryptedSize << "\n";
         unsigned char * encryptedSecret = (unsigned char *) malloc(encryptedSize);
         if (!encryptedSecret) {
             cerr << "Error allocating buffer for encrypted session key\n";
@@ -235,14 +234,6 @@ class Client {
             cerr << "Error reading iv\n";
             exit(1);
         }
-
-        // TEST
-        cout << "iv :\n";
-        BIO_dump_fp(stdout, (const char *) iv, ivLength);
-        cout << "encrypted key :\n";
-        BIO_dump_fp(stdout, (const char *) encryptedKey, encryptedKeySize);
-        cout << "encrypted session key :\n";
-        BIO_dump_fp(stdout, (const char *) encryptedSecret, encryptedSize);
 
         // Retreive user's prvkey
         string path = "user_infos/key.pem";
@@ -308,36 +299,62 @@ class Client {
         int ret;
 
         // Receive encrypted nonce
-        int encryptedSize;
-        ret = readInt(socketfd, &encryptedSize);
+        int * size = (int *) malloc(sizeof(int));
+        if (!size) {
+            cerr << "Error allocating buffer for size of encrypted nonce\n";
+        }
+        ret = readInt(socketfd, size);
         if (!ret) {
-            cerr << "Error reading encrypted size for nonce decryption\n";
+            cerr << "Error reading encrypted nonce size\n";
             exit(1);
         }
-        unsigned char * encryptedNonce = (unsigned char *) malloc(sizeof(int));
-        ret = readChar(socketfd, encryptedNonce);
-        if (!ret) {
+        int encryptedSize = *size;
+        free(size);
+        unsigned char * encryptedNonce = (unsigned char *) malloc(encryptedSize);
+        if (!encryptedNonce) {
+            cerr << "Error allocating buffer for encrypted nonce\n";
+            exit(1);
+        }
+        ret = read(socketfd, encryptedNonce, encryptedSize);
+        if (ret <= 0) {
             cerr << "Error reading encrypted nonce\n";
             exit(1);
         }
-        unsigned char * iv = (unsigned char *) malloc(sizeof(int));
-        ret = readChar(socketfd, iv);
-        if (!ret) {
+
+        // Receive iv
+        unsigned char * iv = (unsigned char *) malloc(ivSize);
+        if (!iv) {
+            cerr << "Error allocating buffer for iv\n";
+            exit(1);
+        }
+        ret = read(socketfd, iv, ivSize);
+        if (ret <= 0) {
             cerr << "Error reading iv for nonce decryption\n";
             exit(1);
         }
 
+        // TEST
+        cout << "encrypted size = " << encryptedSize << "\n";
+
         // Decrypt nonce using the shared session key
-        unsigned char * nonce = (unsigned char *) malloc(nonceSize);
+        unsigned char * nonce = (unsigned char *) malloc(encryptedSize);
+        if (!nonce) {
+            cerr << "Error allocating buffer for decrypted nonce\n";
+            exit(1);
+        }
         ret = decryptSym(encryptedNonce, encryptedSize, nonce, iv, sessionKey);
         if (!ret) {
             cerr << "Error encrypting the nonce\n";
             exit(1);
         }
 
+        // TEST
+        cout << "nonce :\n";
+        BIO_dump_fp(stdout,(const char *) nonce, nonceSize);
+
         // Send nonce to the server
-        ret = sendChar(socketfd, nonce);
-        if (!ret) {
+        ret = send(socketfd, nonce, nonceSize, 0);
+        if (ret <= 0) {
             cerr << "Error sending nonce to the server\n";
             exit(1);
         }
@@ -395,8 +412,8 @@ int main() {
     user1.retreiveSessionKey();
     cout << "Session key received\n";
 
-    // user1.proveIdentity();
-    // cout << "Proof of identity sent\n";
+    user1.proveIdentity();
+    cout << "Proof of identity sent\n";
 
     return 0;
 }

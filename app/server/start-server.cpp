@@ -108,7 +108,7 @@ public:
         }
 
         // Concatenate random number and timestamp
-        char * tempNonce = (char *) malloc(nonceSize);
+        char * tempNonce = (char *) malloc(randBytesSize + timeBufferSize);
         if (!tempNonce) {
             cerr << "Error allocating char buffer for nonce\n";
             close(clientfd);
@@ -280,8 +280,8 @@ public:
         const EVP_CIPHER * cipher = EVP_aes_256_cbc();
         int encryptedKeySize = EVP_PKEY_size(clientPubKey);
         int ivLength = EVP_CIPHER_iv_length(cipher);
-        int blockSize = EVP_CIPHER_block_size(cipher);
-        int cipherSize = sessionKeySize + blockSize;
+        int blockSizeEnvelope = EVP_CIPHER_block_size(cipher);
+        int cipherSize = sessionKeySize + blockSizeEnvelope;
         int encryptedSize = 0;
 
         // Create buffers for encrypted session key, iv, encrypted key
@@ -324,12 +324,6 @@ public:
         EVP_CIPHER_CTX_free(ctx);
 
         // TEST
-        cout << "iv :\n";
-        BIO_dump_fp(stdout, (const char *) iv, ivLength);
-        cout << "encrypted key :\n";
-        BIO_dump_fp(stdout, (const char *) encryptedKey, encryptedKeySize);
-        cout << "encrypted session key :\n";
-        BIO_dump_fp(stdout, (const char *) encryptedSecret, encryptedSize);
         cout << "sessionKey :\n";
         BIO_dump_fp(stdout, (const char *) sessionKey, sessionKeySize);
 
@@ -394,15 +388,14 @@ public:
 
         // Encrypt nonce using symmetric key
         int encryptedSize;
-        const EVP_CIPHER * cipher = EVP_aes_256_cbc();
-        unsigned char * encryptedNonce = (unsigned char *) malloc(nonceSize + EVP_CIPHER_block_size(cipher));
-        unsigned char * iv = (unsigned char *) malloc(EVP_CIPHER_iv_length(cipher));
+        unsigned char * encryptedNonce = (unsigned char *) malloc(nonceSize + blockSize);
+        unsigned char * iv = (unsigned char *) malloc(ivSize);
         if (!encryptedNonce || !iv) {
             cerr << "Error allocating buffers for encryptedNonce and iv\n";
             close(clientfd);
             return 0;
         }
-        cout << "before encrypt\n";
+
         ret = encryptSym(nonce, nonceSize, encryptedNonce, iv, sessionKey);
         if (!ret) {
             cerr << "Error encrypting the nonce\n";
@@ -411,21 +404,28 @@ public:
         }
         encryptedSize = ret;
 
-        // Send encrypted nonce, encryptedSize and iv
+        // TEST
+        cout << "nonce :\n";
+        BIO_dump_fp(stdout, (const char *) nonce, nonceSize);
+        cout << "encrypted size = " << encryptedSize << "\n";
+
+        // Send encrypted nonce
         ret = sendInt(clientfd, encryptedSize);
         if (!ret) {
             cerr << "Error sending encrypted size for nonce to client\n";
             close(clientfd);
             return 0;
         }
-        ret = sendChar(clientfd, encryptedNonce);
-        if (!ret) {
+        ret = send(clientfd, encryptedNonce, encryptedSize, 0);
+        if (ret <= 0) {
             cerr << "Error sending encrypted nonce to client\n";
             close(clientfd);
             return 0;
         }
-        ret = sendChar(clientfd, iv);
-        if (!ret) {
+
+        // Send iv
+        ret = send(clientfd, iv, ivSize, 0);
+        if (ret <= 0) {
             cerr << "Error sending iv for nonce decryption to client\n";
             close(clientfd);
             return 0;
@@ -543,8 +543,12 @@ int main() {
         }
         cout << "Session symmetric key sent to client\n";
 
-        // serv.sendEncryptedNonce();
-        // cout << "Encrypted nonce sent, waiting for client's proof of identity\n";
+        ret = serv.sendEncryptedNonce();
+        if (!ret) {
+            cerr << "Error sending encrypted nonce to the client, communication stopped\n\n";
+            continue;
+        }
+        cout << "Encrypted nonce sent, waiting for client's proof of identity\n";
 
         // // Authenticate client
         // ret = serv.authenticateClient();

@@ -1,24 +1,43 @@
 make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # GNU Make 4.2.1
+ 
 # Built for x86_64-pc-linux-gnu
+ 
 # Copyright (C) 1988-2016 Free Software Foundation, Inc.
+ 
 # License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+ 
 # This is free software: you are free to change and redistribute it.
+ 
 # There is NO WARRANTY, to the extent permitted by law.
+ 
 
-# Make data base, printed on Sun Jul 10 11:27:03 2022
+ 
+# Make data base, printed on Sun Jul 10 17:49:20 2022
+ 
 
 # Variables
+ 
 
+ 
 # 'override' directive
+ 
 GNUMAKEFLAGS := 
+ 
 # automatic
+ 
 <D = $(patsubst %/,%,$(dir $<))
+ 
 # automatic
+ 
 ?F = $(notdir $?)
+ 
 # environment
+ 
 DESKTOP_SESSION = ubuntu
+ 
 # default
+ 
 .SHELLFLAGS := -c
 # environment
 XDG_SESSION_CLASS = user
@@ -29,6 +48,7 @@ XDG_SESSION_TYPE = x11
 # makefile (from 'makefile', line 4)
 TARGET = user server
 # automatic
+ 
 ?D = $(patsubst %/,%,$(dir $?))
 # automatic
 @D = $(patsubst %/,%,$(dir $@))
@@ -49,7 +69,7 @@ VTE_VERSION = 6003
 # environment
 VSCODE_NLS_CONFIG = {"locale":"en-us","availableLanguages":{},"_languagePackSupport":true}
 # environment
-JOURNAL_STREAM = 8:29671
+JOURNAL_STREAM = 8:31183
 # makefile (from 'makefile', line 2)
 CFLAGS = -Wall -g
 # environment
@@ -59,6 +79,7 @@ SNAP_INSTANCE_NAME = code
 # environment
 SNAP_ARCH = amd64
 # environment
+ 
 MAVEN_HOME = /opt/maven
 # makefile (from 'makefile', line 1)
 MAKEFILE_LIST :=  makefile
@@ -75,9 +96,9 @@ MAKELEVEL := 0
 # environment
 XDG_DATA_DIRS = /usr/share/ubuntu:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop
 # environment
-DBUS_SESSION_BUS_ADDRESS = unix:path=/run/user/1000/bus,guid=d5d39f30b2af2c20fda5e62662ca9acc
+DBUS_SESSION_BUS_ADDRESS = unix:path=/run/user/1000/bus,guid=c24099b2225f895696b15a9662caf4a4
 # environment
-MANAGERPID = 811
+MANAGERPID = 769
 # environment
 LESSOPEN = | /usr/bin/lesspipe %s
 # environment
@@ -93,7 +114,7 @@ PATH = /home/djolopez/.local/bin:/opt/maven/bin:/usr/local/sbin:/usr/local/bin:/
 # environment
 GPG_AGENT_INFO = /run/user/1000/gnupg/S.gpg-agent:0:1
 # environment
-SESSION_MANAGER = local/djolopez-VirtualBox:@/tmp/.ICE-unix/1320,unix/djolopez-VirtualBox:/tmp/.ICE-unix/1320
+SESSION_MANAGER = local/djolopez-VirtualBox:@/tmp/.ICE-unix/1299,unix/djolopez-VirtualBox:/tmp/.ICE-unix/1299
 # environment
 XDG_RUNTIME_DIR = /run/user/1000
 # environment
@@ -107,9 +128,10 @@ XDG_MENU_PREFIX = gnome-
 # environment
 DISABLE_WAYLAND = 1
 # environment
+ 
 ELECTRON_RUN_AS_NODE = 1
 # environment
-INVOCATION_ID = d628e13a095f47d9a4346207c0309946
+INVOCATION_ID = 5cce91d32f744574b1860a23b916c58c
 # makefile (from 'makefile', line 3)
 LDFLAGS = -lcrypto -lstdc++fs
 # environment
@@ -133,7 +155,7 @@ PWD = /home/djolopez/Documents/INGE_S5_Pise/cybersecurity/project/2022-Cybersecu
 # default
 .LOADED := 
 # environment
-SSH_AGENT_PID = 1126
+SSH_AGENT_PID = 1091
 # environment
 ORIGINAL_XDG_CURRENT_DESKTOP = ubuntu:GNOME
 # environment
@@ -149,6 +171,7 @@ VSCODE_CLI = 1
 # environment
 VSCODE_CODE_CACHE_PATH = /home/djolopez/.config/Code/CachedData/92d25e35d9bf1a6b16f7d0758f25d48ace11e5b9
 # environment
+ 
 LOGNAME = djolopez
 # environment
 APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL = true
@@ -203,6 +226,7 @@ LC_MONETARY = fr_FR.UTF-8
 # environment
 XDG_CURRENT_DESKTOP = Unity
 # automatic
+ 
 %D = $(patsubst %/,%,$(dir $%))
 # environment
 LC_TELEPHONE = fr_FR.UTF-8
@@ -245,13 +269,13 @@ LC_ALL = C
 # environment
 DBUS_STARTER_BUS_TYPE = session
 # environment
-GNOME_TERMINAL_SCREEN = /org/gnome/Terminal/screen/99c2c22d_1ada_4f1d_a238_718c2647a428
+GNOME_TERMINAL_SCREEN = /org/gnome/Terminal/screen/0e282c52_786b_4268_9788_ca959477c367
 # automatic
 ^F = $(notdir $^)
 # makefile (from 'makefile', line 5)
 DEPS = ./utils.h
 # environment
-GNOME_TERMINAL_SERVICE = :1.90
+GNOME_TERMINAL_SERVICE = :1.87
 # default
 SUFFIXES := 
 # environment
@@ -259,6 +283,7 @@ SNAP_REEXEC =
 # environment
 CHROME_DESKTOP = code-url-handler.desktop
 # environment
+ 
 WINDOWPATH = 2
 # default
 .INCLUDE_DIRS = /usr/include /usr/local/include /usr/include
@@ -273,10 +298,9 @@ LANG = C
 # environment
 TERM = xterm-256color
 # environment
-VSCODE_PID = 3410
+VSCODE_PID = 2614
 # environment
-DBUS_STARTER_ADDRESS = unix:path=/run/user/1000/bus,guid=d5d39f30b2af2c20fda5e62662ca9acc
- 
+DBUS_STARTER_ADDRESS = unix:path=/run/user/1000/bus,guid=c24099b2225f895696b15a9662caf4a4
 # variable set hash-table stats:
 # Load=133/1024=13%, Rehash=0, Collisions=19/165=12%
 
@@ -301,6 +325,7 @@ all: start-server start-user
 #  Implicit rule search has been done.
 #  File does not exist.
 #  File has been updated.
+ 
 #  Needs to be updated (-q is set).
 # variable set hash-table stats:
 # Load=0/32=0%, Rehash=0, Collisions=0/7=0%
@@ -330,6 +355,7 @@ user/start-user.cpp:
 #  Modification time never checked.
 #  File has not been updated.
 
+ 
 start-user: user/start-user.cpp
 #  Implicit rule search has not been done.
 #  Modification time never checked.
@@ -375,7 +401,7 @@ start-server: server/start-server.cpp
 # Not a target:
 server/start-server.cpp:
 #  Implicit rule search has been done.
-#  Last modified 2022-07-09 19:54:20.210643382
+#  Last modified 2022-07-10 12:30:23.237944657
 #  File has been updated.
 #  Successfully updated.
 
@@ -393,6 +419,6 @@ server/start-server.cpp:
 # strcache performance: lookups = 31 / hit rate = 38%
 # hash-table stats:
 # Load=19/8192=0%, Rehash=0, Collisions=1/31=3%
-# Finished Make data base on Sun Jul 10 11:27:03 2022
+# Finished Make data base on Sun Jul 10 17:49:20 2022
 
  

@@ -390,17 +390,16 @@ public:
     {
         // Declare a string char and search for file on Server
         std::string searchFilename;
-        std::cout << "Search filename before deleting...\n";
+        std::cout << "Input name of the file to delete :\n";
         std::cin >> searchFilename;
 
-        // Append the .txt extension and check availability
-        searchFilename.append(".txt");
+        // Check availability
         try
         {
             // Check for the user input before proceeding to delete
             system("CLS");
 
-            std::cout << "Are you sure you want to delete this file? (y/n)  \n";
+            std::cout << "Are you sure you want to delete this file? (y/n)\n";
 
             // Get user response and delete the file
             if (getchar() == 'y')
@@ -411,7 +410,7 @@ public:
 
                 // If there are any filestream errors, handle and print error
                 else if (result != 0)
-                    std::cout << "Error deleting file: " strerror(errno) "\n";
+                    std::cout << "Error deleting file: " << strerror(errno) << "\n";
             }
         }
         catch (const std::exception &e)

@@ -14,6 +14,7 @@
 #include <fstream>
 #include <cerrno>
 #include <map>
+#include <vector>
 #include "user_infos/DH.h"
 #include "../utils.h"
 #include "../const.h"
@@ -33,11 +34,13 @@ class Client {
     unsigned char * clientResponse;
     string username;
     
-    // Diffie-Hellman session keys
-    EVP_PKEY * dhparams;
-    EVP_PKEY * clientDHPubKey; // Client public key
-    unsigned char * sessionDH;
+    // Keys
     unsigned char * sessionKey;
+
+    // Available commands
+    vector<string> commands = {"upload", "download", "delete", "list", "rename", "logout"};
+    map<string, int> commandsMap;
+    string currentCommand;
 
     public :
 
@@ -341,7 +344,7 @@ class Client {
         }
         ret = decryptSym(encryptedNonce, encryptedSize, nonce, iv, sessionKey);
         if (!ret) {
-            cerr << "Error encrypting the nonce\n";
+            cerr << "Error decrypting the nonce\n";
             exit(1);
         }
 
@@ -357,46 +360,92 @@ class Client {
         }
     }
 
+    int uploadFile() {
+        return 1;
+    }
+
+    int downloadFile() {
+        return 1;
+    }
+
+    int deleteFile() {
+        return 1;
+    }
+
+    int listFiles() {
+        return 1;
+    }
+
+    int renameFile() {
+        return 1;
+    }
+
+    int logout() {
+        return 1;
+    }
+
+    // Update the map containing references to the functions for every command
+    void updateCommands() {
+
+        commandsMap["upload"] = uploadFile(); 
+        commandsMap["download"] = downloadFile();
+        commandsMap["delete"] = deleteFile();
+        commandsMap["list"] = listFiles();
+        commandsMap["rename"] = renameFile();
+        commandsMap["logout"] = logout();
+    }
+
+    // Nothing to explain here
+    void displayCommands() {
+
+        for (size_t index = 0; index < commands.size() - 1; index ++) {
+            cout << commands[index] << ", ";
+        }
+        cout << commands.back() << "\n";
+    }
+
+    // Get a command from the user, verify it matches a possible action and start the action
+    int getCommand() {
+
+        int ret = 0;
+
+        string command;
+        getline(cin, command);
+
+        for (string s : commands) {
+            if (!command.compare(s)) {
+                currentCommand = s;
+                return 1; // Command matches a possible command
+            }
+        }
+
+        return 0;
+    }
+
+    // Start the action corresponding to the current command
+    int startAction() {
+
+        int ret;
+
+        ret = commandsMap[currentCommand];
+
+        return ret;
+    }
+
     void test() {
 
         // Test the send and receive functions
 
         int ret;
 
-        // For small messages
-        int size = 16;
-        unsigned char * shortmsg = (unsigned char *) malloc(size);
-        RAND_bytes(shortmsg, 16);
-        BIO_dump_fp(stdout, (const char *) shortmsg, size);
-        sendInt(socketfd, size);
-        ret = send(socketfd, shortmsg, size, 0);
-        cout << "bytes sent : " << ret << "\n";
-        free(shortmsg);
-
-        // For int
-        // int n = 1805;
-        // ret = sendInt(socketfd, n);
-        // if (!ret) {
-        //     cerr << "sendInt failed\n";
-        //     exit(1);
-        // }
-
-        // For big messages
-        int sizeLong = 64;
-        unsigned char * longmsg = (unsigned char *) malloc(sizeLong);
-        RAND_bytes(longmsg, sizeLong);
-        cout << "long msg :\n";
-        BIO_dump_fp(stdout, (const char *) longmsg, sizeLong);
-        sendInt(socketfd, sizeLong);
-        ret = send(socketfd, longmsg, sizeLong, 0);
-        cout << "bytes sent for long : " << ret << "\n";
-        free(longmsg);
+        
     }
 
 };
 
 int main() {
 
+    int ret;
     Client user1;
 
     cout << "Starting client...\n";
@@ -409,8 +458,29 @@ int main() {
     user1.retreiveSessionKey();
     cout << "Session key received\n";
 
-    // user1.proveIdentity();
-    // cout << "Proof of identity sent\n";
+    user1.proveIdentity();
+    cout << "Proof of identity sent\n";
+
+    user1.updateCommands();
+
+    while (1) {
+
+        cout << "Choose a command from the one below :\n";
+        user1.displayCommands();
+
+        ret = user1.getCommand();
+        if (!ret) {
+            cerr << "Command not valid, please try again\n\n";
+            continue;
+        }
+
+        ret = user1.startAction();
+        if (!ret) {
+            cerr << "Command failed, please try again\n\n";
+            continue;
+        }
+        cout << "Command was executed\n\n";
+    }
 
     return 0;
 }

@@ -402,6 +402,7 @@ public:
         encryptedSize = ret;
 
         // TEST
+        cout << "encrypted size : " << encryptedSize << "\n";
         cout << "nonce :\n";
         BIO_dump_fp(stdout, (const char *) nonce, nonceSize);
 
@@ -460,52 +461,59 @@ public:
         }
     }
 
-    int displayCommands() {
-
-
-    }
-
-    void test() {
+    int test() {
 
         // Test the send and receive functions
 
         int ret;
 
-        // For small messages
-        int * sizeSmall = (int *) malloc(sizeof(int));
-        readInt(clientfd, sizeSmall);
-        cout << "size received : " << *sizeSmall << "\n";
-        unsigned char * shortmsg = (unsigned char *) malloc(*sizeSmall);
-        ret = read(clientfd, shortmsg, *sizeSmall);
-        cout << "bytes read : " << ret << "\n";
-        BIO_dump_fp(stdout, (const char *) shortmsg, *sizeSmall);
-        free(sizeSmall);
-        free(shortmsg);
+        // First create nonce
+        ret = createNonce();
+        if (!ret) {
+            cerr << "Error creating nonce\n";
+            close(clientfd);
+            return 0;
+        }
 
-        // For int
-        // int * n;
-        // ret = readInt(clientfd, n);
-        // if (!ret) {
-        //     cerr << "readInt failed\n";
-        //     exit(1);
-        // }
-        // if (*n != 1805) {
-        //     cerr << "Test failed\n";
-        // } else {
-        //     cerr << "Test passed, n = " << *n << "\n";
-        // }
+        // Encrypt nonce using symmetric key
+        int encryptedSize;
+        unsigned char * encryptedNonce = (unsigned char *) malloc(nonceSize + blockSize);
+        unsigned char * iv = (unsigned char *) malloc(ivSize);
+        if (!encryptedNonce || !iv) {
+            cerr << "Error allocating buffers for encryptedNonce and iv\n";
+            close(clientfd);
+            return 0;
+        }
 
-        // For big messages
-        int * sizeLong = (int *) malloc(sizeof(int));
-        readInt(clientfd, sizeLong);
-        cout << "size of long message = " << *sizeLong << "\n";
-        unsigned char * longmsg = (unsigned char *) malloc(*sizeLong);
-        ret = read(clientfd, longmsg, *sizeLong);
-        cout << "bytes read : " << ret << "\n";
-        cout << "long msg :\n";
-        BIO_dump_fp(stdout, (const char *) longmsg, *sizeLong);
-        free(sizeLong);
-        free(longmsg);
+        ret = encryptSym(nonce, nonceSize, encryptedNonce, iv, sessionKey);
+        if (!ret) {
+            cerr << "Error encrypting the nonce\n";
+            close(clientfd);
+            return 0;
+        }
+        encryptedSize = ret;
+
+        // TEST
+        cout << "nonce :\n";
+        BIO_dump_fp(stdout, (const char *) nonce, nonceSize);
+
+        // Decrypt
+        unsigned char * decryptedNonce = (unsigned char *) malloc(encryptedSize);
+        if (!decryptedNonce) {
+            cerr << "Error allocating buffer for decrypted nonce\n";
+            return 0;
+        }
+        ret = decryptSym(encryptedNonce, encryptedSize, decryptedNonce, iv, sessionKey);
+        if (!ret) {
+            cerr << "Error decrypting the nonce\n";
+            return 0;
+        }
+
+        // TEST
+        cout << "decryptedNonce :\n";
+        BIO_dump_fp(stdout,(const char *) decryptedNonce, nonceSize);
+
+        return 1;
     }
 
 };
@@ -551,12 +559,10 @@ int main() {
         }
         cout << "Encrypted nonce sent, waiting for client's proof of identity\n";
 
-        while (1) {
+        // while (1) {
 
-            cout << "Welcome, please choose an action below : \n";
-
-
-        }
+        //     cout << "Waiting for user input\n";
+        // }
     }
 
     return 0;

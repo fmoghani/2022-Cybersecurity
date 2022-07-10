@@ -11,3 +11,6 @@
 // Symmetric cipher constants
 #define blockSize 16
 #define ivSize 16
+
+// Constant relative to user
+#define maxCommandSize 32

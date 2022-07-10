@@ -6,6 +6,7 @@
 #include <openssl/evp.h>
 #include <openssl/pem.h>
 #include <openssl/rand.h>
+#include <openssl/err.h>
 #include <openssl/x509_vfy.h>
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -271,8 +272,8 @@ int encryptSym(unsigned char * plaintext, int plainSize, unsigned char * ciphert
         cerr << "Error creating context for symmetric encryption\n";
         return 0;
     }
-    int bytesWritten = 0;
-    int encryptedSize = 0;
+    int bytesWritten;
+    int encryptedSize;
 
     // Encrypt plaintext
     ret = EVP_EncryptInit(ctx, cipher, privKey, iv);
@@ -281,7 +282,7 @@ int encryptSym(unsigned char * plaintext, int plainSize, unsigned char * ciphert
         return 0;
     }
     ret = EVP_EncryptUpdate(ctx, ciphertext, &bytesWritten, plaintext, plainSize);
-    encryptedSize += bytesWritten;
+    encryptedSize = bytesWritten;
     if (ret <= 0) {
         cerr << "Error during update for symmetric encryption\n";
         return 0;
@@ -328,6 +329,7 @@ int decryptSym(unsigned char * ciphertext, int cipherSize, unsigned char * plain
     ret = EVP_DecryptFinal(ctx, plaintext + decryptedSize, &bytesWritten);
     if (ret <= 0) {
         cerr << "Error during finalization for symmetric decryption\n";
+        ERR_print_errors_fp(stderr);
         return 0;
     }
     decryptedSize += bytesWritten;

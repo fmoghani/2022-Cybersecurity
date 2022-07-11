@@ -5,6 +5,9 @@
 #include <stdio.h>
 #include <limits.h>
 #include <string.h>
+#include <algorithm>
+#include <string>
+#include <cctype>
 #include <openssl/evp.h>
 #include <openssl/pem.h>
 #include <openssl/rand.h>
@@ -24,6 +27,7 @@
 #include "../const.h"
 
 using namespace std;
+using namespace std::experimental;
 
 class Server
 {
@@ -31,6 +35,9 @@ class Server
     // Sockets
     int socketfd, clientfd;
     struct sockaddr_in serverAddr, clientAddr;
+
+    // Connexion status
+    int CONNEXION_STATUS = 0;
 
     // Client infos
     string clientUsername;
@@ -43,17 +50,19 @@ class Server
     EVP_PKEY * clientPubKey;
     EVP_PKEY * prvKey;
 
-    // Diffie-Hellman session keys
-    EVP_PKEY * dhparams;
-    EVP_PKEY * serverDHPubKey;
-    unsigned char * sessionDH;
+    // Keys
     unsigned char * sessionKey;
+    unsigned char * tempKey;
 
 public:
 
     // Get username
     string getClientUsername() {
         return clientUsername;
+    }
+
+    int getConnexionStatus() {
+        return CONNEXION_STATUS;
     }
 
     // Generate a random and fresh nonce
@@ -108,7 +117,7 @@ public:
         }
 
         // Concatenate random number and timestamp
-        char * tempNonce = (char *) malloc(nonceSize);
+        char * tempNonce = (char *) malloc(randBytesSize + timeBufferSize);
         if (!tempNonce) {
             cerr << "Error allocating char buffer for nonce\n";
             close(clientfd);
@@ -216,6 +225,11 @@ public:
         free(usernameLen);
         free(buffer);
 
+        CONNEXION_STATUS = 1;
+
+        // Temporary key
+        tempKey = (unsigned char *)"01234567890123450123456789012345";
+
         return 1;
     }
 
@@ -280,8 +294,8 @@ public:
         const EVP_CIPHER * cipher = EVP_aes_256_cbc();
         int encryptedKeySize = EVP_PKEY_size(clientPubKey);
         int ivLength = EVP_CIPHER_iv_length(cipher);
-        int blockSize = EVP_CIPHER_block_size(cipher);
-        int cipherSize = sessionKeySize + blockSize;
+        int blockSizeEnvelope = EVP_CIPHER_block_size(cipher);
+        int cipherSize = sessionKeySize + blockSizeEnvelope;
         int encryptedSize = 0;
 
         // Create buffers for encrypted session key, iv, encrypted key
@@ -324,14 +338,14 @@ public:
         EVP_CIPHER_CTX_free(ctx);
 
         // TEST
-        cout << "iv :\n";
-        BIO_dump_fp(stdout, (const char *) iv, ivLength);
-        cout << "encrypted key :\n";
-        BIO_dump_fp(stdout, (const char *) encryptedKey, encryptedKeySize);
-        cout << "encrypted session key :\n";
+        cout << "\nENVELOPE TEST\n";
+        cout << "encryptedSize = " << encryptedSize << "encrypted secret :\n";
         BIO_dump_fp(stdout, (const char *) encryptedSecret, encryptedSize);
+        cout << "encryptedKeySize = " << encryptedKeySize << "encrypted key :\n";
+        BIO_dump_fp(stdout, (const char *) encryptedKey, encryptedKeySize);
         cout << "sessionKey :\n";
         BIO_dump_fp(stdout, (const char *) sessionKey, sessionKeySize);
+        cout << "ENVELOPE TEST END\n\n";
 
         // Send the encrypted key
         ret = sendInt(clientfd, encryptedKeySize);
@@ -394,16 +408,15 @@ public:
 
         // Encrypt nonce using symmetric key
         int encryptedSize;
-        const EVP_CIPHER * cipher = EVP_aes_256_cbc();
-        unsigned char * encryptedNonce = (unsigned char *) malloc(nonceSize + EVP_CIPHER_block_size(cipher));
-        unsigned char * iv = (unsigned char *) malloc(EVP_CIPHER_iv_length(cipher));
+        unsigned char * encryptedNonce = (unsigned char *) malloc(nonceSize + blockSize);
+        unsigned char * iv = (unsigned char *) malloc(ivSize);
         if (!encryptedNonce || !iv) {
             cerr << "Error allocating buffers for encryptedNonce and iv\n";
             close(clientfd);
             return 0;
         }
-        cout << "before encrypt\n";
-        ret = encryptSym(nonce, nonceSize, encryptedNonce, iv, sessionKey);
+
+        ret = encryptSym(nonce, nonceSize, encryptedNonce, iv, tempKey);
         if (!ret) {
             cerr << "Error encrypting the nonce\n";
             close(clientfd);
@@ -411,21 +424,31 @@ public:
         }
         encryptedSize = ret;
 
-        // Send encrypted nonce, encryptedSize and iv
+        // TEST
+        cout << "\nTEST NONCE\n";
+        cout << "encryptedNonceSize = " << encryptedSize << " encryptedNonce :\n";
+        BIO_dump_fp(stdout, (const char *) encryptedNonce, encryptedSize);
+        cout << "iv Size = " << ivSize << " iv :\n";
+        BIO_dump_fp(stdout, (const char *) iv, ivSize);
+        cout << "TEST NONCE END\n\n";
+
+        // Send encrypted nonce
         ret = sendInt(clientfd, encryptedSize);
         if (!ret) {
             cerr << "Error sending encrypted size for nonce to client\n";
             close(clientfd);
             return 0;
         }
-        ret = sendChar(clientfd, encryptedNonce);
-        if (!ret) {
+        ret = send(clientfd, encryptedNonce, encryptedSize, 0);
+        if (ret <= 0) {
             cerr << "Error sending encrypted nonce to client\n";
             close(clientfd);
             return 0;
         }
-        ret = sendChar(clientfd, iv);
-        if (!ret) {
+
+        // Send iv
+        ret = send(clientfd, iv, ivSize, 0);
+        if (ret <= 0) {
             cerr << "Error sending iv for nonce decryption to client\n";
             close(clientfd);
             return 0;
@@ -434,77 +457,439 @@ public:
         return 1;
     }
 
-    // Receive and check client response to the challenge
-    int authenticateClient() {
+    int uploadFile() {
+        cout << "upload\n";
+        return 1;
+    }
+
+    int downloadFile() {
+        return 1;
+    }
+
+    int deleteFile() {
+        return 1;
+    }
+
+    int listFiles() {
+        return 1;
+    }
+
+    int renameFile() {
 
         int ret;
 
-        // Receive client's proof of identity
-        unsigned char * clientProof = (unsigned char *) malloc(sizeof(int));
-        ret = readChar(clientfd, clientProof); // Function from utils.h
+        // Receive filename
+        unsigned char * iv = (unsigned char *) malloc(ivSize);
+        ret = read(clientfd, iv, ivSize);
         if (!ret) {
-            cerr << "Error cannot read client response\n";
-            close(clientfd);
-        }
-
-        // Compare response with the nonce sent previously and if it does not match, disconnect client
-        ret = memcmp(nonce, clientProof, nonceSize);
-        cout << nonce << "\n";
-        cout << clientProof << "\n";
-        free(clientProof);
-        free(nonce);
-        if (ret) {
-            // Client not authenticated
-            close(clientfd);
+            cout << "Error reading iv\n";
             return 0;
         }
-        else {
-            // Client succesfully authenticated
-            return 1;
+        int * encryptedSizePtr = (int *) malloc(sizeof(int));
+        if (!encryptedSizePtr) {
+            cout << "Error allocating buffer for encrypted filename size\n";
+            return 0;
         }
+        ret = readInt(clientfd, encryptedSizePtr);
+        if (!ret) {
+            cout << "Error reading encrypted filename size\n";
+            return 0;
+        }
+        int encryptedSize = *encryptedSizePtr;
+        free(encryptedSizePtr);
+        unsigned char * encryptedFilename = (unsigned char *) malloc(encryptedSize);
+        ret = read(clientfd, encryptedFilename, encryptedSize);
+
+        // Decrypt new filename
+        unsigned char * buggedFilename = (unsigned char *) malloc(encryptedSize);
+        int decryptedSize;
+        decryptedSize = decryptSym(encryptedFilename, encryptedSize, buggedFilename, iv, tempKey);
+        if (!decryptedSize) {
+            cout << "Error decrypting new filename\n";
+            return 0;
+        }
+        unsigned char * filename = (unsigned char *) malloc(decryptedSize);
+        memcpy(filename, buggedFilename, decryptedSize);
+        free(buggedFilename);
+
+        // Check if file exists and send the result to the client
+        int exists;
+        exists = existsFile(filename, clientUsername, decryptedSize);
+        ret = sendInt(clientfd, exists);
+        if (!ret) {
+            cout << "Error sending result of test to client\n";
+            return 0;
+        }
+        if (!exists) {
+            return 1; // If the file does not exists we get out of the function without doing anything
+        }
+
+        // Receive new encrypted filename
+        unsigned char * ivNew = (unsigned char *) malloc(ivSize);
+        ret = read(clientfd, ivNew, ivSize);
+        if (!ret) {
+            cout << "Error reading ivNew\n";
+            return 0;
+        }
+        int * encryptedNewSizePtr = (int *) malloc(sizeof(int));
+        if (!encryptedNewSizePtr) {
+            cout << "Error allocating buffer for encrypted filename size\n";
+            return 0;
+        }
+        ret = readInt(clientfd, encryptedNewSizePtr);
+        if (!ret) {
+            cout << "Error reading encrypted filename size\n";
+            return 0;
+        }
+        int encryptedNewSize = *encryptedNewSizePtr;
+        free(encryptedNewSizePtr);
+        unsigned char * encryptedNewFilename = (unsigned char *) malloc(encryptedNewSize);
+        ret = read(clientfd, encryptedNewFilename, encryptedNewSize);
+
+        // Decrypt new filename
+        unsigned char * newFilename = (unsigned char *) malloc(encryptedNewSize);
+        int decryptedNewSize;
+        decryptedNewSize = decryptSym(encryptedNewFilename, encryptedNewSize, newFilename, ivNew, tempKey);
+        if (!decryptedNewSize) {
+            cout << "Error decrypting new filename\n";
+            return 0;
+        }
+
+        // Rename file
+        string sfilename(filename, filename + decryptedSize);
+        string snewFilename(newFilename, newFilename + decryptedNewSize);
+        string soldPath = "./users_infos/" + clientUsername + "/files/" + sfilename;
+        string snewPath = "./users_infos/" + clientUsername + "/files/" + snewFilename;
+        filesystem::path oldPath(soldPath);
+        filesystem::path newPath(snewPath);
+        cout << "old path : " << oldPath << endl;
+        cout << "new path : " << newPath << endl;
+        cout << "current path : " << filesystem::current_path() << endl;
+        rename(oldPath, newPath);
+
+        if (!existsFile(newFilename, clientUsername, decryptedNewSize)) {
+            cout << "didnt worked\n";
+        };
+
+        // Free eveything
+        free(iv);
+        free(filename);
+        free(encryptedFilename);
+        free(ivNew);
+        free(newFilename);
+        free(encryptedNewFilename);
+
+        return 1;
     }
 
-    void test() {
+    int logout() {
+        
+        // Free key
+        // free(sessionKey);
+
+        // Close connexion
+        close(clientfd);
+
+        // Change connexion status
+        CONNEXION_STATUS = 0;
+
+        cout << "Client disconnected\n\n";
+
+        return 1;
+    }
+
+    int getCommand() {
+
+        int ret;
+
+        // Receive the number corresponding to the command to execute
+        int * n = (int *) malloc(sizeof(int));
+        if (!n) {
+            cerr << "Error allocating buffer for current command number\n";
+            return 0;
+        }
+        ret = readInt(clientfd, n);
+        if (!ret) {
+            cerr << "Error reading current command number\n";
+            return 0;
+        }
+        int currentCommandNum = *n;
+        free(n);
+
+        // Execute the corresponding function
+        switch(currentCommandNum) {
+
+            case 1: {
+                ret = uploadFile();
+                return ret;
+                break;
+            }
+            case 2: {
+                ret = downloadFile();
+                return ret;
+                break;
+            }
+            case 3: {
+                ret = deleteFile();
+                return ret;
+                break;
+            }
+            case 4: {
+                ret = listFiles();
+                return ret;
+                break;
+            }
+            case 5: {
+                ret = renameFile();
+                return ret;
+                break;
+            }
+            case 6: {
+                ret = logout();
+                return ret;
+                break;
+            }
+        }
+
+        return 1;
+    }
+
+    int test() {
 
         // Test the send and receive functions
 
         int ret;
 
-        // For small messages
-        int * sizeSmall = (int *) malloc(sizeof(int));
-        readInt(clientfd, sizeSmall);
-        cout << "size received : " << *sizeSmall << "\n";
-        unsigned char * shortmsg = (unsigned char *) malloc(*sizeSmall);
-        ret = read(clientfd, shortmsg, *sizeSmall);
-        cout << "bytes read : " << ret << "\n";
-        BIO_dump_fp(stdout, (const char *) shortmsg, *sizeSmall);
-        free(sizeSmall);
-        free(shortmsg);
+        // First create nonce
+        ret = createNonce();
+        if (!ret) {
+            cerr << "Error creating nonce\n";
+            close(clientfd);
+            return 0;
+        }
 
-        // For int
-        // int * n;
-        // ret = readInt(clientfd, n);
-        // if (!ret) {
-        //     cerr << "readInt failed\n";
-        //     exit(1);
-        // }
-        // if (*n != 1805) {
-        //     cerr << "Test failed\n";
-        // } else {
-        //     cerr << "Test passed, n = " << *n << "\n";
-        // }
+        // Encrypt nonce using symmetric key
+        int encryptedSize;
+        unsigned char * encryptedNonce = (unsigned char *) malloc(nonceSize + blockSize);
+        unsigned char * ivNew = (unsigned char *) malloc(ivSize);
+        if (!encryptedNonce || !ivNew) {
+            cerr << "Error allocating buffers for encryptedNonce and ivNew\n";
+            close(clientfd);
+            return 0;
+        }
 
-        // For big messages
-        int * sizeLong = (int *) malloc(sizeof(int));
-        readInt(clientfd, sizeLong);
-        cout << "size of long message = " << *sizeLong << "\n";
-        unsigned char * longmsg = (unsigned char *) malloc(*sizeLong);
-        ret = read(clientfd, longmsg, *sizeLong);
-        cout << "bytes read : " << ret << "\n";
-        cout << "long msg :\n";
-        BIO_dump_fp(stdout, (const char *) longmsg, *sizeLong);
-        free(sizeLong);
-        free(longmsg);
+        ret = encryptSym(nonce, nonceSize, encryptedNonce, ivNew, sessionKey);
+        if (!ret) {
+            cerr << "Error encrypting the nonce\n";
+            close(clientfd);
+            return 0;
+        }
+        encryptedSize = ret;
+
+        // TEST
+        cout << "nonce :\n";
+        BIO_dump_fp(stdout, (const char *) nonce, nonceSize);
+
+        // Decrypt
+        unsigned char * decryptedNonce = (unsigned char *) malloc(encryptedSize);
+        if (!decryptedNonce) {
+            cerr << "Error allocating buffer for decrypted nonce\n";
+            return 0;
+        }
+        ret = decryptSym(encryptedNonce, encryptedSize, decryptedNonce, ivNew, sessionKey);
+        if (!ret) {
+            cerr << "Error decrypting the nonce\n";
+            return 0;
+        }
+
+        // TEST
+        cout << "decryptedNonce :\n";
+        BIO_dump_fp(stdout,(const char *) decryptedNonce, nonceSize);
+
+        return 1;
+    }
+
+    int test2() {
+
+        int ret;
+
+        // Retreive user's pubkey to encrypt session key
+        string path = "users_infos/" + clientUsername + "/pubkey.pem";
+        FILE * keyFile = fopen(path.c_str(), "r");
+        if (!keyFile) {
+            cerr << "Error could not open client " << clientUsername << " public key file\n";
+            close(clientfd);
+            return 0;
+        }
+        clientPubKey = PEM_read_PUBKEY(keyFile, NULL, NULL, NULL);
+        fclose(keyFile);
+        if (!clientPubKey) {
+            cerr << "Error could not read client " << clientUsername << " public key from pem file\n";
+            close(clientfd);
+            return 0;
+        }
+
+        // Encrypt session key using client public key
+
+        // Variables for encryption
+        const EVP_CIPHER * cipher = EVP_aes_256_cbc();
+        int encryptedKeySize = EVP_PKEY_size(clientPubKey);
+        int ivLength = EVP_CIPHER_iv_length(cipher);
+        int blockSizeEnvelope = EVP_CIPHER_block_size(cipher);
+        int cipherSize = sessionKeySize + blockSizeEnvelope;
+        int encryptedSize = 0;
+
+        // Create buffers for encrypted session key, iv, encrypted key
+        unsigned char * iv = (unsigned char *) malloc(ivLength);
+        unsigned char * encryptedKey = (unsigned char *) malloc(encryptedKeySize);
+        unsigned char * encryptedSecret = (unsigned char *) malloc(cipherSize);
+        if (!iv || !encryptedKey || !encryptedSecret) {
+            cout << "Error allocating buffers during nonce encryption\n";
+            close(clientfd);
+            return 0;
+        }
+
+        // Digital envelope
+        int bytesWritten = 0;
+        EVP_CIPHER_CTX * ctx = EVP_CIPHER_CTX_new();
+        if (!ctx) {
+            cerr << "Error creating context for nonce encryption\n";
+            close(clientfd);
+            return 0;
+        }
+        ret = EVP_SealInit(ctx, cipher, &encryptedKey, &encryptedKeySize, iv, &clientPubKey, 1);
+        if (ret <= 0) {
+            cerr << "Error during initialization of encrypted nonce envelope\n";
+            close(clientfd);
+            return 0;
+        }
+        ret = EVP_SealUpdate(ctx, encryptedSecret, &bytesWritten, sessionKey, sessionKeySize);
+        if (ret <= 0) {
+            cerr << "Error during update of encrypted nonce envelope\n";
+            close(clientfd);
+            return 0;
+        }
+        encryptedSize += bytesWritten;
+        ret = EVP_SealFinal(ctx, encryptedSecret + encryptedSize, &bytesWritten);
+        if (ret <= 0) {
+            cerr << "Error during finalization of encrypted nonce envelope\n";
+            close(clientfd);
+            return 0;
+        }
+        EVP_CIPHER_CTX_free(ctx);
+
+        // TEST
+        cout << "sessionKey :\n";
+        BIO_dump_fp(stdout, (const char *) sessionKey, sessionKeySize);
+
+        // Envelope decryption
+
+        // Retreive user's prvkey
+        string pathd = "../user/user_infos/key.pem";
+        FILE * keyFileD = fopen(pathd.c_str(), "r");
+        if (!keyFileD) {
+            cerr << "Error could not open client private key file\n";
+            exit(1);
+        }
+        const char * password = "password";
+        EVP_PKEY * clientPrvKey = PEM_read_PrivateKey(keyFileD, NULL, NULL, (void *) password);
+        fclose(keyFileD);
+        if (!clientPrvKey) {
+            cerr << "Error cannot read client private key from pem file\n";
+            exit(1);
+        }
+
+        // Decrypt the challenge envelope
+        
+        // Useful variables
+        int decryptedSize;
+
+        // Create buffer for session key
+        unsigned char * sessionKeyDecrypted = (unsigned char *) malloc(encryptedSize);
+        if (!sessionKeyDecrypted) {
+            cerr << "Error allocating buffer for session key\n";
+            exit(1);
+        }
+
+        // Digital envelope
+        bytesWritten = 0;
+        EVP_CIPHER_CTX * ctxD = EVP_CIPHER_CTX_new();
+        if (!ctx) {
+            cerr << "Error creating context for envelope decryption\n";
+            exit(1);
+        }
+        ret = EVP_OpenInit(ctxD, cipher, encryptedKey, encryptedKeySize, iv, clientPrvKey);
+        if (ret <= 0) {
+            cerr << "Error during initialization for envelope decryption\n";
+            exit(1);
+        }
+        ret = EVP_OpenUpdate(ctxD, sessionKeyDecrypted, &bytesWritten, encryptedSecret, encryptedSize);
+        if (ret <= 0) {
+            cerr << "Error during update for envelope decryption\n";
+            exit(1);
+        }
+        decryptedSize = bytesWritten;
+        ret = EVP_OpenFinal(ctx, sessionKeyDecrypted + decryptedSize, &bytesWritten);
+        if (ret <= 0) {
+            cerr << "Error during finalization for envelope decryption\n";
+        }
+        decryptedSize += bytesWritten;
+        EVP_CIPHER_CTX_free(ctxD);
+        free(encryptedKey);
+        free(iv);
+        free(encryptedSecret);
+
+        // TEST
+        cout << "session key decrypted :\n";
+        BIO_dump_fp(stdout, (const char *) sessionKeyDecrypted, sessionKeySize);
+
+        // First create nonce
+        ret = createNonce();
+        if (!ret) {
+            cerr << "Error creating nonce\n";
+            close(clientfd);
+            return 0;
+        }
+
+        // Encrypt nonce using symmetric key
+        int encryptedSizeN;
+        unsigned char * encryptedNonce = (unsigned char *) malloc(nonceSize + blockSize);
+        unsigned char * ivN = (unsigned char *) malloc(ivSize);
+        if (!encryptedNonce || !ivN) {
+            cerr << "Error allocating buffers for encryptedNonce and iv\n";
+            close(clientfd);
+            return 0;
+        }
+
+        ret = encryptSym(nonce, nonceSize, encryptedNonce, ivN, sessionKey);
+        if (!ret) {
+            cerr << "Error encrypting the nonce\n";
+            close(clientfd);
+            return 0;
+        }
+        encryptedSizeN = ret;
+
+        // TEST
+        cout << "nonce :\n";
+        BIO_dump_fp(stdout, (const char *) nonce, nonceSize);
+
+        // Decrypt
+        unsigned char * decryptedNonce = (unsigned char *) malloc(encryptedSizeN);
+        if (!decryptedNonce) {
+            cerr << "Error allocating buffer for decrypted nonce\n";
+            return 0;
+        }
+        ret = decryptSym(encryptedNonce, encryptedSizeN, decryptedNonce, ivN, sessionKeyDecrypted);
+        if (!ret) {
+            cerr << "Error decrypting the nonce\n";
+            return 0;
+        }
+
+        // TEST
+        cout << "decryptedNonce :\n";
+        BIO_dump_fp(stdout,(const char *) decryptedNonce, nonceSize);
+
+        return 1;
     }
 
 };
@@ -536,6 +921,10 @@ int main() {
         }
         cout << "Session symmetric key generated\n";
 
+        // cout << "\nTEST\n";
+        // serv.test2();
+        // cout << "TEST END\n\n";
+
         ret = serv.shareKey();
         if (!ret) {
             cerr << "Error sharing key to the client, communication stopped\n\n";
@@ -543,17 +932,18 @@ int main() {
         }
         cout << "Session symmetric key sent to client\n";
 
-        // serv.sendEncryptedNonce();
-        // cout << "Encrypted nonce sent, waiting for client's proof of identity\n";
+        ret = serv.sendEncryptedNonce();
+        if (!ret) {
+            cerr << "Error sending encrypted nonce to the client, communication stopped\n\n";
+            continue;
+        }
+        cout << "Encrypted nonce sent, waiting for client's proof of identity\n";
 
-        // // Authenticate client
-        // ret = serv.authenticateClient();
-        // if (!ret)
-        // {
-        //     cout << "Client not authenticated\n";
-        //     continue;
-        // }
-        // cout << "Client " << serv.getClientUsername() << " authenticated\n";
+        while (serv.getConnexionStatus()) {
+
+            cout << "\nWaiting for user input\n";
+            serv.getCommand();
+        }
     }
 
     return 0;

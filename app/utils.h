@@ -3,9 +3,16 @@
 #include <stdio.h>
 #include <limits.h>
 #include <string.h>
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <vector>
+#include <experimental/filesystem>
+// #include <filesystem>
 #include <openssl/evp.h>
 #include <openssl/pem.h>
 #include <openssl/rand.h>
+#include <openssl/err.h>
 #include <openssl/x509_vfy.h>
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -15,6 +22,9 @@
 #include <cerrno>
 
 using namespace std;
+using std::experimental::filesystem::directory_iterator;
+
+
 
 // Function returning the X509 certificate specified by path
 X509 * readCertificate(string path) {
@@ -271,27 +281,24 @@ int encryptSym(unsigned char * plaintext, int plainSize, unsigned char * ciphert
         cerr << "Error creating context for symmetric encryption\n";
         return 0;
     }
-    int bytesWritten = 0;
-    int encryptedSize = 0;
+    int bytesWritten;
+    int encryptedSize;
 
     // Encrypt plaintext
-    cout << "before init\n";
     ret = EVP_EncryptInit(ctx, cipher, privKey, iv);
     if (ret <= 0) {
         cerr << "Error during initialization for symmetric encryption\n";
         return 0;
     }
-    cout << "before update\n";
     ret = EVP_EncryptUpdate(ctx, ciphertext, &bytesWritten, plaintext, plainSize);
-    encryptedSize += bytesWritten;
+    encryptedSize = bytesWritten;
     if (ret <= 0) {
         cerr << "Error during update for symmetric encryption\n";
         return 0;
     }
-    cout << "before final\n";
     ret = EVP_EncryptFinal(ctx, ciphertext + encryptedSize, &bytesWritten);
     encryptedSize += bytesWritten;
-    if (ret <= 0) {
+    if (ret == 0) {
         cerr << "Error during finalization for symmetric encryption\n";
         return 0;
     }
@@ -313,8 +320,8 @@ int decryptSym(unsigned char * ciphertext, int cipherSize, unsigned char * plain
         cerr << "Error creating context for symmetric decryption\n";
         return 0;
     }
-    int bytesWritten = 0;
-    int decryptedSize = 0;
+    int bytesWritten;
+    int decryptedSize;
 
     // Decrypt
     ret = EVP_DecryptInit(ctx, cipher, privKey, iv);
@@ -327,14 +334,42 @@ int decryptSym(unsigned char * ciphertext, int cipherSize, unsigned char * plain
         cerr << "Error during update for symmetric decryption\n";
         return 0;
     }
-    decryptedSize += bytesWritten;
+    decryptedSize = bytesWritten;
     ret = EVP_DecryptFinal(ctx, plaintext + decryptedSize, &bytesWritten);
     if (ret <= 0) {
         cerr << "Error during finalization for symmetric decryption\n";
+        ERR_print_errors_fp(stderr);
         return 0;
     }
     decryptedSize += bytesWritten;
     EVP_CIPHER_CTX_free(ctx);
 
     return decryptedSize;
+}
+
+// This function checks if a filename contains any banned symbol
+int checkFilename(string filename) {
+
+    if (filename.find("/") != string::npos) {
+        return 0;
+    }
+     
+    return 1;
+}
+
+// This function checks that a given file exists in the user filesystem (has to be called from server side)
+int existsFile(unsigned char * filename, string username, int filenameSize) {
+
+    string filesPath = "users_infos/" + username + "/files/";
+
+    for (const auto &file : directory_iterator(filesPath)) {
+        cout << file.path().string() << "\n";
+        std::experimental::filesystem::path currentPath = file.path().filename();
+        const char * currentFilename = currentPath.string().c_str();
+        if (!memcmp(currentFilename, (const char *) filename, filenameSize)) {
+            return 1;
+        }
+    }
+
+    return 0;
 }

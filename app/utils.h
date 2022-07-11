@@ -289,7 +289,7 @@ int encryptSym(unsigned char * plaintext, int plainSize, unsigned char * ciphert
     }
     ret = EVP_EncryptFinal(ctx, ciphertext + encryptedSize, &bytesWritten);
     encryptedSize += bytesWritten;
-    if (ret <= 0) {
+    if (ret == 0) {
         cerr << "Error during finalization for symmetric encryption\n";
         return 0;
     }

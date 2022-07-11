@@ -6,7 +6,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Sun Jul 10 20:39:25 2022
+# Make data base, printed on Mon Jul 11 11:34:10 2022
 
 # Variables
 
@@ -49,7 +49,7 @@ VTE_VERSION = 6003
 # environment
 VSCODE_NLS_CONFIG = {"locale":"en-us","availableLanguages":{},"_languagePackSupport":true}
 # environment
-JOURNAL_STREAM = 8:30321
+JOURNAL_STREAM = 8:29541
 # makefile (from 'makefile', line 2)
 CFLAGS = -Wall -g
 # environment
@@ -75,9 +75,9 @@ MAKELEVEL := 0
 # environment
 XDG_DATA_DIRS = /usr/share/ubuntu:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop
 # environment
-DBUS_SESSION_BUS_ADDRESS = unix:path=/run/user/1000/bus,guid=a0710c0b7008cb0bd7db89a662cb1c62
+DBUS_SESSION_BUS_ADDRESS = unix:path=/run/user/1000/bus,guid=d519fd6ab848eb1137b4b6b962cbc683
 # environment
-MANAGERPID = 848
+MANAGERPID = 822
 # environment
 LESSOPEN = | /usr/bin/lesspipe %s
 # environment
@@ -93,7 +93,7 @@ PATH = /home/djolopez/.local/bin:/opt/maven/bin:/usr/local/sbin:/usr/local/bin:/
 # environment
 GPG_AGENT_INFO = /run/user/1000/gnupg/S.gpg-agent:0:1
 # environment
-SESSION_MANAGER = local/djolopez-VirtualBox:@/tmp/.ICE-unix/1306,unix/djolopez-VirtualBox:/tmp/.ICE-unix/1306
+SESSION_MANAGER = local/djolopez-VirtualBox:@/tmp/.ICE-unix/1292,unix/djolopez-VirtualBox:/tmp/.ICE-unix/1292
 # environment
 XDG_RUNTIME_DIR = /run/user/1000
 # environment
@@ -103,13 +103,14 @@ SNAP = /snap/code/100
 # environment
 SNAP_VERSION = 92d25e35
 # environment
+ 
 XDG_MENU_PREFIX = gnome-
 # environment
 DISABLE_WAYLAND = 1
 # environment
 ELECTRON_RUN_AS_NODE = 1
 # environment
-INVOCATION_ID = 63689495ef4d4ee2a0dc3ee08b124bef
+INVOCATION_ID = 54d114105060440eb73ad585a46f298b
 # makefile (from 'makefile', line 3)
 LDFLAGS = -lcrypto -lstdc++fs
 # environment
@@ -133,7 +134,7 @@ PWD = /home/djolopez/Documents/INGE_S5_Pise/cybersecurity/project/2022-Cybersecu
 # default
 .LOADED := 
 # environment
-SSH_AGENT_PID = 1123
+SSH_AGENT_PID = 1130
 # environment
 ORIGINAL_XDG_CURRENT_DESKTOP = ubuntu:GNOME
 # environment
@@ -245,13 +246,13 @@ LC_ALL = C
 # environment
 DBUS_STARTER_BUS_TYPE = session
 # environment
-GNOME_TERMINAL_SCREEN = /org/gnome/Terminal/screen/26888b68_ae03_4c91_b8ae_542556ef7696
+GNOME_TERMINAL_SCREEN = /org/gnome/Terminal/screen/a3f66661_d5c0_45e8_a69d_87e8d6a56251
 # automatic
 ^F = $(notdir $^)
 # makefile (from 'makefile', line 5)
 DEPS = ./utils.h
 # environment
-GNOME_TERMINAL_SERVICE = :1.89
+GNOME_TERMINAL_SERVICE = :1.88
 # default
 SUFFIXES := 
 # environment
@@ -273,10 +274,9 @@ LANG = C
 # environment
 TERM = xterm-256color
 # environment
-VSCODE_PID = 2715
+VSCODE_PID = 9905
 # environment
-DBUS_STARTER_ADDRESS = unix:path=/run/user/1000/bus,guid=a0710c0b7008cb0bd7db89a662cb1c62
- 
+DBUS_STARTER_ADDRESS = unix:path=/run/user/1000/bus,guid=d519fd6ab848eb1137b4b6b962cbc683
 # variable set hash-table stats:
 # Load=133/1024=13%, Rehash=0, Collisions=19/165=12%
 
@@ -375,7 +375,7 @@ start-server: server/start-server.cpp
 # Not a target:
 server/start-server.cpp:
 #  Implicit rule search has been done.
-#  Last modified 2022-07-10 20:24:05.304077331
+#  Last modified 2022-07-11 11:34:09.82881618
 #  File has been updated.
 #  Successfully updated.
 
@@ -383,6 +383,7 @@ server/start-server.cpp:
 # Load=9/1024=1%, Rehash=0, Collisions=0/27=0%
 # VPATH Search Paths
 
+ 
 # No 'vpath' search paths.
 
 # No general ('VPATH' variable) search path.
@@ -393,6 +394,6 @@ server/start-server.cpp:
 # strcache performance: lookups = 31 / hit rate = 38%
 # hash-table stats:
 # Load=19/8192=0%, Rehash=0, Collisions=1/31=3%
-# Finished Make data base on Sun Jul 10 20:39:25 2022
+# Finished Make data base on Mon Jul 11 11:34:10 2022
 
  

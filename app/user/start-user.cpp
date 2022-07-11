@@ -29,6 +29,9 @@ class Client {
     int socketfd, clientfd;
     struct sockaddr_in serverAddr;
 
+    // Connexion status
+    int CONNEXION_STATUS = 0;
+
     // Client variables
     unsigned char * nonce;
     unsigned char * clientResponse;
@@ -43,6 +46,12 @@ class Client {
     string currentCommand;
 
     public :
+
+    // Retreive connexion status
+    int getConnexionStatus() {
+
+        return CONNEXION_STATUS;
+    }
 
     // Create a socket connexion
     void connectClient() {
@@ -86,6 +95,8 @@ class Client {
             exit(1);
         }
         file.close();
+
+        CONNEXION_STATUS = 1;
     }
 
     // Authenticate server
@@ -285,15 +296,26 @@ class Client {
         }
         decryptedSize = bytesWritten;
         ret = EVP_OpenFinal(ctx, sessionKey + decryptedSize, &bytesWritten);
+        if (ret <= 0) {
+            cerr << "Error during finalization for envelope decryption\n";
+        }
         decryptedSize += bytesWritten;
+
+        // TEST
+        cout << "\nENVELOPE TEST\n";
+        cout << "encryptedSize = " << encryptedSize << "encrypted secret :\n";
+        BIO_dump_fp(stdout, (const char *) encryptedSecret, encryptedSize);
+        cout << "theoric encrypted size = " << EVP_PKEY_size(clientPrvKey) << "\n";
+        cout << "encryptedKeySize = " << encryptedKeySize << "encrypted key :\n";
+        BIO_dump_fp(stdout, (const char *) encryptedKey, encryptedKeySize);
+        cout << "session key :\n";
+        BIO_dump_fp(stdout, (const char *) sessionKey, sessionKeySize);
+        cout << "ENVELOPE TEST END\n\n";
+
         EVP_CIPHER_CTX_free(ctx);
         free(encryptedKey);
         free(iv);
         free(encryptedSecret);
-
-        // TEST
-        cout << "session key :\n";
-        BIO_dump_fp(stdout, (const char *) sessionKey, sessionKeySize);
     }
 
     // Send to the server a proof of identity using the nonce
@@ -336,6 +358,14 @@ class Client {
             exit(1);
         }
 
+        // TEST
+        cout << "\nTEST NONCE\n";
+        cout << "encryptedNonceSize = " << encryptedSize << " encryptedNonce :\n";
+        BIO_dump_fp(stdout, (const char *) encryptedNonce, encryptedSize);
+        cout << "iv Size = " << ivSize << " iv :\n";
+        BIO_dump_fp(stdout, (const char *) iv, ivSize);
+        cout << "TEST NONCE END\n\n";
+
         // Decrypt nonce using the shared session key
         unsigned char * nonce = (unsigned char *) malloc(encryptedSize);
         if (!nonce) {
@@ -361,6 +391,7 @@ class Client {
     }
 
     int uploadFile() {
+        cout << ">> upload\n";
         return 1;
     }
 
@@ -381,23 +412,36 @@ class Client {
     }
 
     int logout() {
+        
+        // Free key
+        // free(sessionKey);
+
+        // Close connexion
+        close(socketfd);
+
+        // Change connexion status
+        CONNEXION_STATUS = 0;
+
+        cout << ">> Client disconnected\n";
+
         return 1;
     }
 
     // Update the map containing references to the functions for every command
     void updateCommands() {
 
-        commandsMap["upload"] = uploadFile(); 
-        commandsMap["download"] = downloadFile();
-        commandsMap["delete"] = deleteFile();
-        commandsMap["list"] = listFiles();
-        commandsMap["rename"] = renameFile();
-        commandsMap["logout"] = logout();
+        commandsMap["upload"] = 1;
+        commandsMap["download"] = 2;
+        commandsMap["delete"] = 3;
+        commandsMap["list"] = 4;
+        commandsMap["rename"] = 5;
+        commandsMap["logout"] = 6;
     }
 
     // Nothing to explain here
     void displayCommands() {
 
+        cout << ">> ";
         for (size_t index = 0; index < commands.size() - 1; index ++) {
             cout << commands[index] << ", ";
         }
@@ -410,6 +454,8 @@ class Client {
         int ret = 0;
 
         string command;
+
+        cout << ">> ";
         getline(cin, command);
 
         for (string s : commands) {
@@ -426,10 +472,51 @@ class Client {
     int startAction() {
 
         int ret;
+        int currentCommandNum = commandsMap[currentCommand];
 
-        ret = commandsMap[currentCommand];
+        // First send the function to execute to the server
+        ret = sendInt(socketfd, currentCommandNum);
+        if (!ret) {
+            cerr << "Error sending command number through socket\n";
+            return 0;
+        }
 
-        return ret;
+        // Then activate the correct function client side
+        switch(currentCommandNum) {
+
+            case 1: {
+                ret = uploadFile();
+                return ret;
+                break;
+            }
+            case 2: {
+                ret = downloadFile();
+                return ret;
+                break;
+            }
+            case 3: {
+                ret = deleteFile();
+                return ret;
+                break;
+            }
+            case 4: {
+                ret = listFiles();
+                return ret;
+                break;
+            }
+            case 5: {
+                ret = renameFile();
+                return ret;
+                break;
+            }
+            case 6: {
+                ret = logout();
+                return ret;
+                break;
+            }
+        }
+
+        return 1;
     }
 
     void test() {
@@ -458,14 +545,14 @@ int main() {
     user1.retreiveSessionKey();
     cout << "Session key received\n";
 
-    user1.proveIdentity();
-    cout << "Proof of identity sent\n";
+    // user1.proveIdentity();
+    // cout << "Proof of identity sent\n";
 
     user1.updateCommands();
 
-    while (1) {
+    while (user1.getConnexionStatus()) {
 
-        cout << ">> Choose a command from the one below :\n";
+        cout << "\n>> Choose a command from the one below :\n";
         user1.displayCommands();
 
         ret = user1.getCommand();
@@ -479,7 +566,6 @@ int main() {
             cerr << ">> Command failed, please try again\n\n";
             continue;
         }
-        cout << ">> Command was executed\n\n";
     }
 
     return 0;

@@ -48,6 +48,7 @@ class Server
 
     // Keys
     unsigned char * sessionKey;
+    unsigned char * tempKey;
 
 public:
 
@@ -221,6 +222,9 @@ public:
         free(buffer);
 
         CONNEXION_STATUS = 1;
+
+        // Temporary key
+        tempKey = (unsigned char *)"01234567890123450123456789012345";
 
         return 1;
     }
@@ -408,7 +412,7 @@ public:
             return 0;
         }
 
-        ret = encryptSym(nonce, nonceSize, encryptedNonce, iv, sessionKey);
+        ret = encryptSym(nonce, nonceSize, encryptedNonce, iv, tempKey);
         if (!ret) {
             cerr << "Error encrypting the nonce\n";
             close(clientfd);
@@ -820,12 +824,12 @@ int main() {
         }
         cout << "Session symmetric key sent to client\n";
 
-        // ret = serv.sendEncryptedNonce();
-        // if (!ret) {
-        //     cerr << "Error sending encrypted nonce to the client, communication stopped\n\n";
-        //     continue;
-        // }
-        // cout << "Encrypted nonce sent, waiting for client's proof of identity\n";
+        ret = serv.sendEncryptedNonce();
+        if (!ret) {
+            cerr << "Error sending encrypted nonce to the client, communication stopped\n\n";
+            continue;
+        }
+        cout << "Encrypted nonce sent, waiting for client's proof of identity\n";
 
         while (serv.getConnexionStatus()) {
 

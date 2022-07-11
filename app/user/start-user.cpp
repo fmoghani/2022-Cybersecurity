@@ -39,6 +39,7 @@ class Client {
     
     // Keys
     unsigned char * sessionKey;
+    unsigned char * tempKey;
 
     // Available commands
     vector<string> commands = {"upload", "download", "delete", "list", "rename", "logout"};
@@ -97,6 +98,9 @@ class Client {
         file.close();
 
         CONNEXION_STATUS = 1;
+
+        // Temporary key
+        tempKey = (unsigned char *)"01234567890123450123456789012345";
     }
 
     // Authenticate server
@@ -372,7 +376,7 @@ class Client {
             cerr << "Error allocating buffer for decrypted nonce\n";
             exit(1);
         }
-        ret = decryptSym(encryptedNonce, encryptedSize, nonce, iv, sessionKey);
+        ret = decryptSym(encryptedNonce, encryptedSize, nonce, iv, tempKey);
         if (!ret) {
             cerr << "Error decrypting the nonce\n";
             exit(1);
@@ -383,11 +387,11 @@ class Client {
         BIO_dump_fp(stdout,(const char *) nonce, nonceSize);
 
         // Send nonce to the server
-        ret = send(socketfd, nonce, nonceSize, 0);
-        if (ret <= 0) {
-            cerr << "Error sending nonce to the server\n";
-            exit(1);
-        }
+        // ret = send(socketfd, nonce, nonceSize, 0);
+        // if (ret <= 0) {
+        //     cerr << "Error sending nonce to the server\n";
+        //     exit(1);
+        // }
     }
 
     int uploadFile() {
@@ -545,8 +549,8 @@ int main() {
     user1.retreiveSessionKey();
     cout << "Session key received\n";
 
-    // user1.proveIdentity();
-    // cout << "Proof of identity sent\n";
+    user1.proveIdentity();
+    cout << "Proof of identity sent\n";
 
     user1.updateCommands();
 

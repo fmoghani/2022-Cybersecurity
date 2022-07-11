@@ -54,6 +54,27 @@ class Client {
         return CONNEXION_STATUS;
     }
 
+    // Send an encrypted value
+    int sendEncrypted(unsigned char * ciphertext, int cipherSize, unsigned char * iv) {
+
+        int ret;
+
+        ret = send(socketfd, iv, ivSize, 0);
+        if (!ret) {
+            return 0;
+        }
+        ret = sendInt(socketfd, cipherSize);
+        if (!ret) {
+            return 0;
+        }
+        ret = send(socketfd, ciphertext, cipherSize, 0);
+        if (!ret) {
+            return 0;
+        }
+
+        return 1;
+    }
+
     // Create a socket connexion
     void connectClient() {
 
@@ -412,6 +433,90 @@ class Client {
     }
 
     int renameFile() {
+
+        int ret;
+
+        cout << ">> Please input the name of the file you want to rename :\n>> ";
+        string filename;
+        getline(cin, filename);
+
+        // First check that file does not contain blacklisted characters
+        ret = checkFilename(filename);
+        if (!ret) {
+            cout << ">> Filename not valid\n";
+            return 0;
+        }
+
+        // Encrypt filename
+        int encryptedSize;
+        unsigned char * encryptedFilename = (unsigned char *) malloc(filename.size() + blockSize);
+        unsigned char * iv = (unsigned char *) malloc(ivSize);
+        if (!encryptedFilename || !iv) {
+            cout << ">> Error allocating buffers for encryption\n";
+            return 0;
+        }
+        ret = encryptSym((unsigned char *) filename.c_str(), filename.size(), encryptedFilename, iv, tempKey);
+        if (!ret) {
+            cout << ">> Error during encryption\n";
+            return 0;
+        }
+        encryptedSize = ret;
+
+        // Send infos necessary for decryption
+        ret = sendEncrypted(encryptedFilename, encryptedSize, iv);
+        if (!ret) {
+            cout << ">> Error sending encrypted filename\n";
+            return 0;
+        }
+
+        // Receive server info : does the file exists or not
+        int * responsePtr = (int *) malloc(sizeof(int));
+        ret = readInt(socketfd, responsePtr);
+        if (!ret) {
+            cout << ">> Error reading server's response\n";
+            return 0;
+        }
+        int response = *responsePtr;
+        free(responsePtr);
+        if (!response) {
+            cout << ">> File does not exists\n";
+            return 0;
+        }
+
+        // Ask for new name and check its validity
+        string newFilename;
+        cout << ">> Please type the name of the new file :\n>> ";
+        getline(cin, newFilename);
+        ret = checkFilename(newFilename);
+        if (!ret) {
+            cout << ">> New filename not valid\n";
+            return 0;
+        }
+
+        // Encrypt new filename
+        int encryptedSizeNew;
+        unsigned char * encryptedNewFilename = (unsigned char *) malloc(newFilename.size() + blockSize);
+        unsigned char * ivNew = (unsigned char *) malloc(ivSize);
+        if (!encryptedNewFilename || !ivNew) {
+            cout << ">> Error allocating buffers for encryption\n";
+            return 0;
+        }
+        ret = encryptSym((unsigned char *) newFilename.c_str(), newFilename.size(), encryptedNewFilename, ivNew, tempKey);
+        if (!ret) {
+            cout << ">> Error during encryption\n";
+            return 0;
+        }
+        encryptedSizeNew = ret;
+
+        // Send the encrypted filename
+        ret = sendEncrypted(encryptedNewFilename, encryptedSizeNew, ivNew);
+        if (!ret) {
+            cout << ">> Error sending encrypted new filename\n";
+            return 0;
+        }
+
+        cout << ">> File was renamed successfully\n";
+
         return 1;
     }
 
@@ -454,8 +559,6 @@ class Client {
 
     // Get a command from the user, verify it matches a possible action and start the action
     int getCommand() {
-
-        int ret = 0;
 
         string command;
 
@@ -526,9 +629,6 @@ class Client {
     void test() {
 
         // Test the send and receive functions
-
-        int ret;
-
         
     }
 

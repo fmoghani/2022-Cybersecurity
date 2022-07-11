@@ -5,6 +5,9 @@
 #include <stdio.h>
 #include <limits.h>
 #include <string.h>
+#include <algorithm>
+#include <string>
+#include <cctype>
 #include <openssl/evp.h>
 #include <openssl/pem.h>
 #include <openssl/rand.h>
@@ -471,6 +474,102 @@ public:
     }
 
     int renameFile() {
+
+        int ret;
+
+        // Receive filename from server
+        unsigned char * iv = (unsigned char *) malloc(ivSize);
+        ret = read(clientfd, iv, ivSize);
+        if (!ret) {
+            cout << "Error reading iv\n";
+            return 0;
+        }
+        int * encryptedSizePtr = (int *) malloc(sizeof(int));
+        if (!encryptedSizePtr) {
+            cout << "Error allocating buffer for encrypted filename size\n";
+            return 0;
+        }
+        ret = readInt(clientfd, encryptedSizePtr);
+        if (!ret) {
+            cout << "Error reading encrypted filename size\n";
+            return 0;
+        }
+        int encryptedSize = *encryptedSizePtr;
+        free(encryptedSizePtr);
+        unsigned char * encryptedFilename = (unsigned char *) malloc(encryptedSize);
+        ret = read(clientfd, encryptedFilename, encryptedSize);
+
+        // Decrypt filename
+        unsigned char * filename = (unsigned char *) malloc(encryptedSize);
+        int decryptedSize;
+        decryptedSize = decryptSym(encryptedFilename, encryptedSize, filename, iv, tempKey);
+        if (!ret) {
+            cout << "Error decrypting filename\n";
+            return 0;
+        }
+
+        // Check if file exists and send the result to the client
+        int exists;
+        exists = existsFile(filename, clientUsername, decryptedSize);
+        ret = sendInt(clientfd, exists);
+        if (!ret) {
+            cout << "Error sending result of test to client\n";
+            return 0;
+        }
+        if (!exists) {
+            return 1; // If the file does not exists we get out of the function without doing anything
+        }
+
+        // Receive new encrypted filename
+        unsigned char * ivNew = (unsigned char *) malloc(ivSize);
+        ret = read(clientfd, ivNew, ivSize);
+        if (!ret) {
+            cout << "Error reading ivNew\n";
+            return 0;
+        }
+        int * encryptedNewSizePtr = (int *) malloc(sizeof(int));
+        if (!encryptedNewSizePtr) {
+            cout << "Error allocating buffer for encrypted filename size\n";
+            return 0;
+        }
+        ret = readInt(clientfd, encryptedNewSizePtr);
+        if (!ret) {
+            cout << "Error reading encrypted filename size\n";
+            return 0;
+        }
+        int encryptedNewSize = *encryptedNewSizePtr;
+        free(encryptedNewSizePtr);
+        unsigned char * encryptedNewFilename = (unsigned char *) malloc(encryptedNewSize);
+        ret = read(clientfd, encryptedNewFilename, encryptedNewSize);
+
+        // Decrypt new filename
+        unsigned char * newFilename = (unsigned char *) malloc(encryptedNewSize);
+        int decryptedNewSize;
+        decryptedNewSize = decryptSym(encryptedNewFilename, encryptedNewSize, newFilename, ivNew, tempKey);
+        if (!decryptedNewSize) {
+            cout << "Error decrypting new filename\n";
+            return 0;
+        }
+
+        // Rename file
+        string filesPath1 = "users_infos/" + clientUsername + "/files/";
+        string filesPath2 = "users_infos/" + clientUsername + "/files/";
+        char * oldPath = strcat((char *) filesPath1.c_str(), (const char *) filename);
+        char * newPath = strcat((char *) filesPath2.c_str(), (const char *) newFilename);
+        cout << "old path : " << oldPath << endl;
+        cout << "new path : " << newPath << endl;
+        // char * const execvList[] = {"/bin/mv", oldPath, newPath, NULL};
+        // ret = execv("bin/mv", execvList);
+        ret = rename((const char *) oldPath, (const char *) newPath);
+        if (ret) {
+            cout << "Error renaming file\n";
+            return 0;
+        }
+
+        if (!existsFile(newFilename, clientUsername, decryptedNewSize)) {
+            cout << "didnt worked\n";
+        };
+
         return 1;
     }
 
@@ -563,14 +662,14 @@ public:
         // Encrypt nonce using symmetric key
         int encryptedSize;
         unsigned char * encryptedNonce = (unsigned char *) malloc(nonceSize + blockSize);
-        unsigned char * iv = (unsigned char *) malloc(ivSize);
-        if (!encryptedNonce || !iv) {
-            cerr << "Error allocating buffers for encryptedNonce and iv\n";
+        unsigned char * ivNew = (unsigned char *) malloc(ivSize);
+        if (!encryptedNonce || !ivNew) {
+            cerr << "Error allocating buffers for encryptedNonce and ivNew\n";
             close(clientfd);
             return 0;
         }
 
-        ret = encryptSym(nonce, nonceSize, encryptedNonce, iv, sessionKey);
+        ret = encryptSym(nonce, nonceSize, encryptedNonce, ivNew, sessionKey);
         if (!ret) {
             cerr << "Error encrypting the nonce\n";
             close(clientfd);
@@ -588,7 +687,7 @@ public:
             cerr << "Error allocating buffer for decrypted nonce\n";
             return 0;
         }
-        ret = decryptSym(encryptedNonce, encryptedSize, decryptedNonce, iv, sessionKey);
+        ret = decryptSym(encryptedNonce, encryptedSize, decryptedNonce, ivNew, sessionKey);
         if (!ret) {
             cerr << "Error decrypting the nonce\n";
             return 0;

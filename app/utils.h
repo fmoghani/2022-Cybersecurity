@@ -3,6 +3,12 @@
 #include <stdio.h>
 #include <limits.h>
 #include <string.h>
+#include <iostream>
+#include <fstream>
+#include <string>
+#include <vector>
+#include <experimental/filesystem>
+// #include <filesystem>
 #include <openssl/evp.h>
 #include <openssl/pem.h>
 #include <openssl/rand.h>
@@ -16,6 +22,9 @@
 #include <cerrno>
 
 using namespace std;
+using std::experimental::filesystem::directory_iterator;
+
+
 
 // Function returning the X509 certificate specified by path
 X509 * readCertificate(string path) {
@@ -336,4 +345,31 @@ int decryptSym(unsigned char * ciphertext, int cipherSize, unsigned char * plain
     EVP_CIPHER_CTX_free(ctx);
 
     return decryptedSize;
+}
+
+// This function checks if a filename contains any banned symbol
+int checkFilename(string filename) {
+
+    if (filename.find("/") != string::npos) {
+        return 0;
+    }
+     
+    return 1;
+}
+
+// This function checks that a given file exists in the user filesystem (has to be called from server side)
+int existsFile(unsigned char * filename, string username, int filenameSize) {
+
+    string filesPath = "users_infos/" + username + "/files/";
+
+    for (const auto &file : directory_iterator(filesPath)) {
+        cout << file.path().string() << "\n";
+        std::experimental::filesystem::path currentPath = file.path().filename();
+        const char * currentFilename = currentPath.string().c_str();
+        if (!memcmp(currentFilename, (const char *) filename, filenameSize)) {
+            return 1;
+        }
+    }
+
+    return 0;
 }

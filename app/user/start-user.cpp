@@ -465,21 +465,21 @@ int main() {
 
     while (1) {
 
-        cout << "Choose a command from the one below :\n";
+        cout << ">> Choose a command from the one below :\n";
         user1.displayCommands();
 
         ret = user1.getCommand();
         if (!ret) {
-            cerr << "Command not valid, please try again\n\n";
+            cerr << ">> Command not valid, please try again\n\n";
             continue;
         }
 
         ret = user1.startAction();
         if (!ret) {
-            cerr << "Command failed, please try again\n\n";
+            cerr << ">> Command failed, please try again\n\n";
             continue;
         }
-        cout << "Command was executed\n\n";
+        cout << ">> Command was executed\n\n";
     }
 
     return 0;

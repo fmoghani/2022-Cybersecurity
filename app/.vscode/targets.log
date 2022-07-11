@@ -6,7 +6,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Mon Jul 11 11:34:10 2022
+# Make data base, printed on Mon Jul 11 15:06:57 2022
 
 # Variables
 
@@ -49,7 +49,7 @@ VTE_VERSION = 6003
 # environment
 VSCODE_NLS_CONFIG = {"locale":"en-us","availableLanguages":{},"_languagePackSupport":true}
 # environment
-JOURNAL_STREAM = 8:29541
+JOURNAL_STREAM = 8:29652
 # makefile (from 'makefile', line 2)
 CFLAGS = -Wall -g
 # environment
@@ -75,7 +75,7 @@ MAKELEVEL := 0
 # environment
 XDG_DATA_DIRS = /usr/share/ubuntu:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop
 # environment
-DBUS_SESSION_BUS_ADDRESS = unix:path=/run/user/1000/bus,guid=d519fd6ab848eb1137b4b6b962cbc683
+DBUS_SESSION_BUS_ADDRESS = unix:path=/run/user/1000/bus,guid=070748aab73168fbae7541ab62cc2003
 # environment
 MANAGERPID = 822
 # environment
@@ -103,14 +103,13 @@ SNAP = /snap/code/100
 # environment
 SNAP_VERSION = 92d25e35
 # environment
- 
 XDG_MENU_PREFIX = gnome-
 # environment
 DISABLE_WAYLAND = 1
 # environment
 ELECTRON_RUN_AS_NODE = 1
 # environment
-INVOCATION_ID = 54d114105060440eb73ad585a46f298b
+INVOCATION_ID = abe8ed7f9955404ebc8484d22b6457ce
 # makefile (from 'makefile', line 3)
 LDFLAGS = -lcrypto -lstdc++fs
 # environment
@@ -134,7 +133,7 @@ PWD = /home/djolopez/Documents/INGE_S5_Pise/cybersecurity/project/2022-Cybersecu
 # default
 .LOADED := 
 # environment
-SSH_AGENT_PID = 1130
+SSH_AGENT_PID = 1085
 # environment
 ORIGINAL_XDG_CURRENT_DESKTOP = ubuntu:GNOME
 # environment
@@ -246,13 +245,13 @@ LC_ALL = C
 # environment
 DBUS_STARTER_BUS_TYPE = session
 # environment
-GNOME_TERMINAL_SCREEN = /org/gnome/Terminal/screen/a3f66661_d5c0_45e8_a69d_87e8d6a56251
+GNOME_TERMINAL_SCREEN = /org/gnome/Terminal/screen/beaa6e99_3faa_4376_874c_9c92c2d93e55
 # automatic
 ^F = $(notdir $^)
 # makefile (from 'makefile', line 5)
 DEPS = ./utils.h
 # environment
-GNOME_TERMINAL_SERVICE = :1.88
+GNOME_TERMINAL_SERVICE = :1.90
 # default
 SUFFIXES := 
 # environment
@@ -274,9 +273,10 @@ LANG = C
 # environment
 TERM = xterm-256color
 # environment
-VSCODE_PID = 9905
+VSCODE_PID = 2694
 # environment
-DBUS_STARTER_ADDRESS = unix:path=/run/user/1000/bus,guid=d519fd6ab848eb1137b4b6b962cbc683
+DBUS_STARTER_ADDRESS = unix:path=/run/user/1000/bus,guid=070748aab73168fbae7541ab62cc2003
+ 
 # variable set hash-table stats:
 # Load=133/1024=13%, Rehash=0, Collisions=19/165=12%
 
@@ -375,7 +375,7 @@ start-server: server/start-server.cpp
 # Not a target:
 server/start-server.cpp:
 #  Implicit rule search has been done.
-#  Last modified 2022-07-11 11:34:09.82881618
+#  Last modified 2022-07-11 12:08:30.001372829
 #  File has been updated.
 #  Successfully updated.
 
@@ -383,7 +383,6 @@ server/start-server.cpp:
 # Load=9/1024=1%, Rehash=0, Collisions=0/27=0%
 # VPATH Search Paths
 
- 
 # No 'vpath' search paths.
 
 # No general ('VPATH' variable) search path.
@@ -394,6 +393,6 @@ server/start-server.cpp:
 # strcache performance: lookups = 31 / hit rate = 38%
 # hash-table stats:
 # Load=19/8192=0%, Rehash=0, Collisions=1/31=3%
-# Finished Make data base on Mon Jul 11 11:34:10 2022
+# Finished Make data base on Mon Jul 11 15:06:57 2022
 
  

@@ -27,6 +27,7 @@
 #include "../const.h"
 
 using namespace std;
+using namespace std::experimental;
 
 class Server
 {
@@ -477,7 +478,7 @@ public:
 
         int ret;
 
-        // Receive filename from server
+        // Receive filename
         unsigned char * iv = (unsigned char *) malloc(ivSize);
         ret = read(clientfd, iv, ivSize);
         if (!ret) {
@@ -499,14 +500,17 @@ public:
         unsigned char * encryptedFilename = (unsigned char *) malloc(encryptedSize);
         ret = read(clientfd, encryptedFilename, encryptedSize);
 
-        // Decrypt filename
-        unsigned char * filename = (unsigned char *) malloc(encryptedSize);
+        // Decrypt new filename
+        unsigned char * buggedFilename = (unsigned char *) malloc(encryptedSize);
         int decryptedSize;
-        decryptedSize = decryptSym(encryptedFilename, encryptedSize, filename, iv, tempKey);
-        if (!ret) {
-            cout << "Error decrypting filename\n";
+        decryptedSize = decryptSym(encryptedFilename, encryptedSize, buggedFilename, iv, tempKey);
+        if (!decryptedSize) {
+            cout << "Error decrypting new filename\n";
             return 0;
         }
+        unsigned char * filename = (unsigned char *) malloc(decryptedSize);
+        memcpy(filename, buggedFilename, decryptedSize);
+        free(buggedFilename);
 
         // Check if file exists and send the result to the client
         int exists;
@@ -552,23 +556,28 @@ public:
         }
 
         // Rename file
-        string filesPath1 = "users_infos/" + clientUsername + "/files/";
-        string filesPath2 = "users_infos/" + clientUsername + "/files/";
-        char * oldPath = strcat((char *) filesPath1.c_str(), (const char *) filename);
-        char * newPath = strcat((char *) filesPath2.c_str(), (const char *) newFilename);
+        string sfilename(filename, filename + decryptedSize);
+        string snewFilename(newFilename, newFilename + decryptedNewSize);
+        string soldPath = "./users_infos/" + clientUsername + "/files/" + sfilename;
+        string snewPath = "./users_infos/" + clientUsername + "/files/" + snewFilename;
+        filesystem::path oldPath(soldPath);
+        filesystem::path newPath(snewPath);
         cout << "old path : " << oldPath << endl;
         cout << "new path : " << newPath << endl;
-        // char * const execvList[] = {"/bin/mv", oldPath, newPath, NULL};
-        // ret = execv("bin/mv", execvList);
-        ret = rename((const char *) oldPath, (const char *) newPath);
-        if (ret) {
-            cout << "Error renaming file\n";
-            return 0;
-        }
+        cout << "current path : " << filesystem::current_path() << endl;
+        rename(oldPath, newPath);
 
         if (!existsFile(newFilename, clientUsername, decryptedNewSize)) {
             cout << "didnt worked\n";
         };
+
+        // Free eveything
+        free(iv);
+        free(filename);
+        free(encryptedFilename);
+        free(ivNew);
+        free(newFilename);
+        free(encryptedNewFilename);
 
         return 1;
     }

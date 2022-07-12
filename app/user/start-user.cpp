@@ -37,43 +37,43 @@ class Client
     unsigned char *nonce;
     unsigned char *clientResponse;
     string username;
-    
+
     // Keys
-    unsigned char * sessionKey;
-    unsigned char * tempKey;
+    unsigned char *sessionKey;
+    unsigned char *tempKey;
 
     // Available commands
     vector<string> commands = {"upload", "download", "delete", "list", "rename", "logout"};
     map<string, int> commandsMap;
     string currentCommand;
 
-    // Diffie-Hellman session keys
-    EVP_PKEY *dhparams;
-    EVP_PKEY *clientDHPubKey; // Client public key
-    unsigned char *sessionDH;
-    unsigned char *sessionKey;
-
+public:
     // Retreive connexion status
-    int getConnexionStatus() {
+    int getConnexionStatus()
+    {
 
         return CONNEXION_STATUS;
     }
 
     // Send an encrypted value
-    int sendEncrypted(unsigned char * ciphertext, int cipherSize, unsigned char * iv) {
+    int sendEncrypted(unsigned char *ciphertext, int cipherSize, unsigned char *iv)
+    {
 
         int ret;
 
         ret = send(socketfd, iv, ivSize, 0);
-        if (!ret) {
+        if (!ret)
+        {
             return 0;
         }
         ret = sendInt(socketfd, cipherSize);
-        if (!ret) {
+        if (!ret)
+        {
             return 0;
         }
         ret = send(socketfd, ciphertext, cipherSize, 0);
-        if (!ret) {
+        if (!ret)
+        {
             return 0;
         }
 
@@ -266,8 +266,9 @@ class Client
         }
         int encryptedSize = *size;
         free(size);
-        unsigned char * encryptedSecret = (unsigned char *) malloc(encryptedSize);
-        if (!encryptedSecret) {
+        unsigned char *encryptedSecret = (unsigned char *)malloc(encryptedSize);
+        if (!encryptedSecret)
+        {
             cerr << "Error allocating buffer for encrypted session key\n";
             exit(1);
         }
@@ -359,7 +360,8 @@ class Client
         }
         decryptedSize = bytesWritten;
         ret = EVP_OpenFinal(ctx, sessionKey + decryptedSize, &bytesWritten);
-        if (ret <= 0) {
+        if (ret <= 0)
+        {
             cerr << "Error during finalization for envelope decryption\n";
         }
         decryptedSize += bytesWritten;
@@ -367,12 +369,12 @@ class Client
         // TEST
         cout << "\nENVELOPE TEST\n";
         cout << "encryptedSize = " << encryptedSize << "encrypted secret :\n";
-        BIO_dump_fp(stdout, (const char *) encryptedSecret, encryptedSize);
+        BIO_dump_fp(stdout, (const char *)encryptedSecret, encryptedSize);
         cout << "theoric encrypted size = " << EVP_PKEY_size(clientPrvKey) << "\n";
         cout << "encryptedKeySize = " << encryptedKeySize << "encrypted key :\n";
-        BIO_dump_fp(stdout, (const char *) encryptedKey, encryptedKeySize);
+        BIO_dump_fp(stdout, (const char *)encryptedKey, encryptedKeySize);
         cout << "session key :\n";
-        BIO_dump_fp(stdout, (const char *) sessionKey, sessionKeySize);
+        BIO_dump_fp(stdout, (const char *)sessionKey, sessionKeySize);
         cout << "ENVELOPE TEST END\n\n";
 
         EVP_CIPHER_CTX_free(ctx);
@@ -388,36 +390,42 @@ class Client
         int ret;
 
         // Receive encrypted nonce
-        int * size = (int *) malloc(sizeof(int));
-        if (!size) {
+        int *size = (int *)malloc(sizeof(int));
+        if (!size)
+        {
             cerr << "Error allocating buffer for size of encrypted nonce\n";
         }
         ret = readInt(socketfd, size);
-        if (!ret) {
+        if (!ret)
+        {
             cerr << "Error reading encrypted nonce size\n";
             exit(1);
         }
         int encryptedSize = *size;
         free(size);
-        unsigned char * encryptedNonce = (unsigned char *) malloc(encryptedSize);
-        if (!encryptedNonce) {
+        unsigned char *encryptedNonce = (unsigned char *)malloc(encryptedSize);
+        if (!encryptedNonce)
+        {
             cerr << "Error allocating buffer for encrypted nonce\n";
             exit(1);
         }
         ret = read(socketfd, encryptedNonce, encryptedSize);
-        if (ret <= 0) {
+        if (ret <= 0)
+        {
             cerr << "Error reading encrypted nonce\n";
             exit(1);
         }
 
         // Receive iv
-        unsigned char * iv = (unsigned char *) malloc(ivSize);
-        if (!iv) {
+        unsigned char *iv = (unsigned char *)malloc(ivSize);
+        if (!iv)
+        {
             cerr << "Error allocating buffer for iv\n";
             exit(1);
         }
         ret = read(socketfd, iv, ivSize);
-        if (ret <= 0) {
+        if (ret <= 0)
+        {
             cerr << "Error reading iv for nonce decryption\n";
             exit(1);
         }
@@ -425,26 +433,28 @@ class Client
         // TEST
         cout << "\nTEST NONCE\n";
         cout << "encryptedNonceSize = " << encryptedSize << " encryptedNonce :\n";
-        BIO_dump_fp(stdout, (const char *) encryptedNonce, encryptedSize);
+        BIO_dump_fp(stdout, (const char *)encryptedNonce, encryptedSize);
         cout << "iv Size = " << ivSize << " iv :\n";
-        BIO_dump_fp(stdout, (const char *) iv, ivSize);
+        BIO_dump_fp(stdout, (const char *)iv, ivSize);
         cout << "TEST NONCE END\n\n";
 
         // Decrypt nonce using the shared session key
-        unsigned char * nonce = (unsigned char *) malloc(encryptedSize);
-        if (!nonce) {
+        unsigned char *nonce = (unsigned char *)malloc(encryptedSize);
+        if (!nonce)
+        {
             cerr << "Error allocating buffer for decrypted nonce\n";
             exit(1);
         }
         ret = decryptSym(encryptedNonce, encryptedSize, nonce, iv, tempKey);
-        if (!ret) {
+        if (!ret)
+        {
             cerr << "Error decrypting the nonce\n";
             exit(1);
         }
 
         // TEST
         cout << "nonce :\n";
-        BIO_dump_fp(stdout,(const char *) nonce, nonceSize);
+        BIO_dump_fp(stdout, (const char *)nonce, nonceSize);
 
         // Send nonce to the server
         // ret = send(socketfd, nonce, nonceSize, 0);
@@ -454,24 +464,117 @@ class Client
         // }
     }
 
-    int uploadFile() {
+    int uploadFile()
+    {
         cout << ">> upload\n";
         return 1;
     }
 
-    int downloadFile() {
+    int downloadFile()
+    {
         return 1;
     }
 
-    int deleteFile() {
+    int deleteFile()
+    {
+        int ret;
+
+        cout << ">> Please input the file you want to delete: \n>> ";
+        string fileName;
+        getline(cin, fileName);
+
+        // Check if filename does not contain restricted chars
+        ret = checkFilename(fileName);
+        if (!ret)
+        {
+            cout << ">> Filename is not valid \n";
+            return 0;
+        }
+
+        // Encrypt filename and send to server
+        int encryptedFileSize;
+        unsigned char *encryptedFileName = (unsigned char *)malloc(fileName.size() + blockSize);
+        unsigned char *iv = (unsigned char *)malloc(ivSize);
+        if (!encryptedFileName || !iv)
+        {
+            cout << ">> Error allocating buffers for encryption\n";
+            return 0;
+        }
+        ret = encryptSym((unsigned char *)fileName.c_str(), fileName.size(), encryptedFileName, iv, tempKey);
+        if (!ret)
+        {
+            cout << ">> Error during decryption\n";
+            return 0;
+        }
+        encryptedFileSize = ret;
+
+        // Send data for decryption to server
+        ret = sendEncrypted(encryptedFileName, encryptedFileSize, iv);
+        if (!ret)
+        {
+            cout << ">> Error sending encrypted filename\n";
+            return 0;
+        }
+
+        // Receive server info : does the file exists or not
+        int *responsePtr = (int *)malloc(sizeof(int));
+        ret = readInt(socketfd, responsePtr);
+        if (!ret)
+        {
+            cout << ">> Error reading server's response\n";
+            return 0;
+        }
+        int response = *responsePtr;
+        free(responsePtr);
+        if (!response)
+        {
+            cout << ">> File does not exists\n";
+            return 0;
+        }
+
+        cout << ">> File was deleted successfully.\n";
         return 1;
     }
 
-    int listFiles() {
+    int listFiles()
+    {
+        int ret;
+
+        // Receive encrypted filename
+        int *size = (int *)malloc(sizeof(int));
+        if (!size)
+        {
+            cerr << "Error allocating buffer for encrypted filename\n";
+            exit(1);
+        }
+        ret = readInt(socketfd, size);
+        if (!ret)
+        {
+            cerr << "Error reading encrypted filesize\n";
+            exit(1);
+        }
+        int encryptedSize = *size;
+        free(size);
+        cout << "Encrypted Size: " << encryptedSize; // Debug purposes
+        unsigned char *encryptedSecret = (unsigned char *)malloc(encryptedSize);
+        if (!encryptedSecret)
+        {
+            cerr << "Error allocating buffer for encrypted filesize key\n";
+            exit(1);
+        }
+        ret = read(socketfd, encryptedSecret, encryptedSize);
+        if (ret <= 0)
+        {
+            cerr << "Error reading encrypted filename key\n";
+            exit(1);
+        }
+        cout << ret;
+
         return 1;
     }
 
-    int renameFile() {
+    int renameFile()
+    {
 
         int ret;
 
@@ -481,21 +584,24 @@ class Client
 
         // First check that file does not contain blacklisted characters
         ret = checkFilename(filename);
-        if (!ret) {
+        if (!ret)
+        {
             cout << ">> Filename not valid\n";
             return 0;
         }
 
         // Encrypt filename
         int encryptedSize;
-        unsigned char * encryptedFilename = (unsigned char *) malloc(filename.size() + blockSize);
-        unsigned char * iv = (unsigned char *) malloc(ivSize);
-        if (!encryptedFilename || !iv) {
+        unsigned char *encryptedFilename = (unsigned char *)malloc(filename.size() + blockSize);
+        unsigned char *iv = (unsigned char *)malloc(ivSize);
+        if (!encryptedFilename || !iv)
+        {
             cout << ">> Error allocating buffers for encryption\n";
             return 0;
         }
-        ret = encryptSym((unsigned char *) filename.c_str(), filename.size(), encryptedFilename, iv, tempKey);
-        if (!ret) {
+        ret = encryptSym((unsigned char *)filename.c_str(), filename.size(), encryptedFilename, iv, tempKey);
+        if (!ret)
+        {
             cout << ">> Error during encryption\n";
             return 0;
         }
@@ -503,21 +609,24 @@ class Client
 
         // Send infos necessary for decryption
         ret = sendEncrypted(encryptedFilename, encryptedSize, iv);
-        if (!ret) {
+        if (!ret)
+        {
             cout << ">> Error sending encrypted filename\n";
             return 0;
         }
 
         // Receive server info : does the file exists or not
-        int * responsePtr = (int *) malloc(sizeof(int));
+        int *responsePtr = (int *)malloc(sizeof(int));
         ret = readInt(socketfd, responsePtr);
-        if (!ret) {
+        if (!ret)
+        {
             cout << ">> Error reading server's response\n";
             return 0;
         }
         int response = *responsePtr;
         free(responsePtr);
-        if (!response) {
+        if (!response)
+        {
             cout << ">> File does not exists\n";
             return 0;
         }
@@ -527,21 +636,24 @@ class Client
         cout << ">> Please type the name of the new file :\n>> ";
         getline(cin, newFilename);
         ret = checkFilename(newFilename);
-        if (!ret) {
+        if (!ret)
+        {
             cout << ">> New filename not valid\n";
             return 0;
         }
 
         // Encrypt new filename
         int encryptedSizeNew;
-        unsigned char * encryptedNewFilename = (unsigned char *) malloc(newFilename.size() + blockSize);
-        unsigned char * ivNew = (unsigned char *) malloc(ivSize);
-        if (!encryptedNewFilename || !ivNew) {
+        unsigned char *encryptedNewFilename = (unsigned char *)malloc(newFilename.size() + blockSize);
+        unsigned char *ivNew = (unsigned char *)malloc(ivSize);
+        if (!encryptedNewFilename || !ivNew)
+        {
             cout << ">> Error allocating buffers for encryption\n";
             return 0;
         }
-        ret = encryptSym((unsigned char *) newFilename.c_str(), newFilename.size(), encryptedNewFilename, ivNew, tempKey);
-        if (!ret) {
+        ret = encryptSym((unsigned char *)newFilename.c_str(), newFilename.size(), encryptedNewFilename, ivNew, tempKey);
+        if (!ret)
+        {
             cout << ">> Error during encryption\n";
             return 0;
         }
@@ -549,7 +661,8 @@ class Client
 
         // Send the encrypted filename
         ret = sendEncrypted(encryptedNewFilename, encryptedSizeNew, ivNew);
-        if (!ret) {
+        if (!ret)
+        {
             cout << ">> Error sending encrypted new filename\n";
             return 0;
         }
@@ -559,8 +672,9 @@ class Client
         return 1;
     }
 
-    int logout() {
-        
+    int logout()
+    {
+
         // Free key
         // free(sessionKey);
 
@@ -576,7 +690,8 @@ class Client
     }
 
     // Update the map containing references to the functions for every command
-    void updateCommands() {
+    void updateCommands()
+    {
 
         commandsMap["upload"] = 1;
         commandsMap["download"] = 2;
@@ -587,25 +702,30 @@ class Client
     }
 
     // Nothing to explain here
-    void displayCommands() {
+    void displayCommands()
+    {
 
         cout << ">> ";
-        for (size_t index = 0; index < commands.size() - 1; index ++) {
+        for (size_t index = 0; index < commands.size() - 1; index++)
+        {
             cout << commands[index] << ", ";
         }
         cout << commands.back() << "\n";
     }
 
     // Get a command from the user, verify it matches a possible action and start the action
-    int getCommand() {
+    int getCommand()
+    {
 
         string command;
 
         cout << ">> ";
         getline(cin, command);
 
-        for (string s : commands) {
-            if (!command.compare(s)) {
+        for (string s : commands)
+        {
+            if (!command.compare(s))
+            {
                 currentCommand = s;
                 return 1; // Command matches a possible command
             }
@@ -615,60 +735,69 @@ class Client
     }
 
     // Start the action corresponding to the current command
-    int startAction() {
+    int startAction()
+    {
 
         int ret;
         int currentCommandNum = commandsMap[currentCommand];
 
         // First send the function to execute to the server
         ret = sendInt(socketfd, currentCommandNum);
-        if (!ret) {
+        if (!ret)
+        {
             cerr << "Error sending command number through socket\n";
             return 0;
         }
 
         // Then activate the correct function client side
-        switch(currentCommandNum) {
+        switch (currentCommandNum)
+        {
 
-            case 1: {
-                ret = uploadFile();
-                return ret;
-                break;
-            }
-            case 2: {
-                ret = downloadFile();
-                return ret;
-                break;
-            }
-            case 3: {
-                ret = deleteFile();
-                return ret;
-                break;
-            }
-            case 4: {
-                ret = listFiles();
-                return ret;
-                break;
-            }
-            case 5: {
-                ret = renameFile();
-                return ret;
-                break;
-            }
-            case 6: {
-                ret = logout();
-                return ret;
-                break;
-            }
+        case 1:
+        {
+            ret = uploadFile();
+            return ret;
+            break;
+        }
+        case 2:
+        {
+            ret = downloadFile();
+            return ret;
+            break;
+        }
+        case 3:
+        {
+            ret = deleteFile();
+            return ret;
+            break;
+        }
+        case 4:
+        {
+            ret = listFiles();
+            return ret;
+            break;
+        }
+        case 5:
+        {
+            ret = renameFile();
+            return ret;
+            break;
+        }
+        case 6:
+        {
+            ret = logout();
+            return ret;
+            break;
+        }
         }
 
         return 1;
     }
 
-    void test() {
+    void test()
+    {
 
         // Test the send and receive functions
-        
     }
 };
 
@@ -693,19 +822,22 @@ int main()
 
     user1.updateCommands();
 
-    while (user1.getConnexionStatus()) {
+    while (user1.getConnexionStatus())
+    {
 
         cout << "\n>> Choose a command from the one below :\n";
         user1.displayCommands();
 
         ret = user1.getCommand();
-        if (!ret) {
+        if (!ret)
+        {
             cerr << ">> Command not valid, please try again\n\n";
             continue;
         }
 
         ret = user1.startAction();
-        if (!ret) {
+        if (!ret)
+        {
             cerr << ">> Command failed, please try again\n\n";
             continue;
         }

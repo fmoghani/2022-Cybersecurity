@@ -193,6 +193,8 @@ public:
             exit(1);
         }
         cout << "Listening to port : " << PORT << "\n";
+
+        CONNEXION_STATUS = 1;
     }
 
     // Handles client connexion request
@@ -583,7 +585,6 @@ public:
 
         // Delete file
         error_code ec;
-        string sfilename(filename, filename + decryptedSize);
         string spath = "./users_infos/" + clientUsername + "/files/" + sfilename;
         filesystem::path path(spath);
         remove(path, ec);
@@ -592,6 +593,8 @@ public:
         free(iv);
         free(filename);
         free(encryptedFilename);
+
+        cout << "--- FILE DELETED ---\n";
 
         return 1;
     }

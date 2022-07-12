@@ -514,12 +514,15 @@ public:
             cout << ">> Error allocating buffers for encryption\n";
             return 0;
         }
-        ret = encryptSym((unsigned char *)fileName.c_str(), fileName.size(), encryptedFileName, iv, tempKey);
+        unsigned char * charFilename = (unsigned char *) malloc(fileName.size());
+        copy(fileName.begin(), fileName.end(), charFilename);
+        ret = encryptSym(charFilename, fileName.size(), encryptedFileName, iv, tempKey);
         if (!ret)
         {
             cout << ">> Error during decryption\n";
             return 0;
         }
+        free(charFilename);
         encryptedFileSize = ret;
 
         // Send data for decryption to server
@@ -581,12 +584,15 @@ public:
             cout << ">> Error allocating buffers for encryption\n";
             return 0;
         }
-        ret = encryptSym((unsigned char *)filename.c_str(), filename.size(), encryptedFilename, iv, tempKey);
+        unsigned char * charFilename = (unsigned char *) malloc(filename.size());
+        copy(filename.begin(), filename.end(), charFilename);
+        ret = encryptSym(charFilename, filename.size(), encryptedFilename, iv, tempKey);
         if (!ret)
         {
             cout << ">> Error during encryption\n";
             return 0;
         }
+        free(charFilename);
         encryptedSize = ret;
 
         // Send infos necessary for decryption
@@ -633,12 +639,15 @@ public:
             cout << ">> Error allocating buffers for encryption\n";
             return 0;
         }
-        ret = encryptSym((unsigned char *)newFilename.c_str(), newFilename.size(), encryptedNewFilename, ivNew, tempKey);
+        unsigned char * charNewFilename = (unsigned char *) malloc(newFilename.size());
+        copy(newFilename.begin(), newFilename.end(), charNewFilename);
+        ret = encryptSym(charNewFilename, newFilename.size(), encryptedNewFilename, ivNew, tempKey);
         if (!ret)
         {
             cout << ">> Error during encryption\n";
             return 0;
         }
+        free(charNewFilename);
         encryptedSizeNew = ret;
 
         // Send the encrypted filename
@@ -805,8 +814,8 @@ int main()
     user1.retreiveSessionKey();
     cout << "Session key received\n";
 
-    user1.proveIdentity();
-    cout << "Proof of identity sent\n";
+    // user1.proveIdentity();
+    // cout << "Proof of identity sent\n";
 
     user1.updateCommands();
 

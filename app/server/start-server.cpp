@@ -1,5 +1,3 @@
-
-
 #include <iostream>
 #include <string>
 #include <stdio.h>
@@ -572,14 +570,9 @@ public:
         // Delete file
         error_code ec;
         string sfilename(filename, filename + decryptedSize);
-        string soldPath = "./users_infos/" + clientUsername + "/files/" + sfilename;
-        filesystem::path oldPath(soldPath);
-        remove(oldPath, ec);
-
-        if (existsFile(filename, clientUsername, decryptedSize))
-        {
-            cout << "File not Deleted\n";
-        };
+        string spath = "./users_infos/" + clientUsername + "/files/" + sfilename;
+        filesystem::path path(spath);
+        remove(path, ec);
 
         // Free Buffers
         free(iv);

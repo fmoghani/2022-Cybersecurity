@@ -1,43 +1,81 @@
 make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # GNU Make 4.2.1
+ 
 # Built for x86_64-pc-linux-gnu
+ 
 # Copyright (C) 1988-2016 Free Software Foundation, Inc.
+ 
 # License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+ 
 # This is free software: you are free to change and redistribute it.
+ 
 # There is NO WARRANTY, to the extent permitted by law.
+ 
 
-# Make data base, printed on Mon Jul 11 19:25:56 2022
+ 
+# Make data base, printed on Tue Jul 12 11:00:24 2022
+ 
 
 # Variables
+ 
 
+ 
 # 'override' directive
+ 
 GNUMAKEFLAGS := 
+ 
 # automatic
+ 
 <D = $(patsubst %/,%,$(dir $<))
+ 
 # automatic
+ 
 ?F = $(notdir $?)
+ 
 # environment
+ 
 DESKTOP_SESSION = ubuntu
+ 
 # default
+ 
 .SHELLFLAGS := -c
+ 
 # environment
+ 
 XDG_SESSION_CLASS = user
+ 
 # environment
+ 
 SNAP_COMMON = /var/snap/code/common
+ 
 # environment
+ 
 XDG_SESSION_TYPE = x11
+ 
 # makefile (from 'makefile', line 4)
+ 
 TARGET = user server
+ 
 # automatic
+ 
 ?D = $(patsubst %/,%,$(dir $?))
+ 
 # automatic
+ 
 @D = $(patsubst %/,%,$(dir $@))
+ 
 # environment
+ 
 XAUTHORITY = /run/user/1000/gdm/Xauthority
+ 
 # environment
+ 
 GDMSESSION = ubuntu
+ 
 # environment
+ 
 XMODIFIERS = @im=ibus
+ 
 # makefile
 CURDIR := /home/djolopez/Documents/INGE_S5_Pise/cybersecurity/project/2022-Cybersecurity/app
 # makefile
@@ -49,7 +87,7 @@ VTE_VERSION = 6003
 # environment
 VSCODE_NLS_CONFIG = {"locale":"en-us","availableLanguages":{},"_languagePackSupport":true}
 # environment
-JOURNAL_STREAM = 8:30369
+JOURNAL_STREAM = 8:31629
 # makefile (from 'makefile', line 2)
 CFLAGS = -Wall -g
 # environment
@@ -75,9 +113,9 @@ MAKELEVEL := 0
 # environment
 XDG_DATA_DIRS = /usr/share/ubuntu:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop
 # environment
-DBUS_SESSION_BUS_ADDRESS = unix:path=/run/user/1000/bus,guid=10012d34e322238e5ddbf42562cc5c9f
+DBUS_SESSION_BUS_ADDRESS = unix:path=/run/user/1000/bus,guid=921789403fc5895b7e354ba162cd37db
 # environment
-MANAGERPID = 786
+MANAGERPID = 823
 # environment
 LESSOPEN = | /usr/bin/lesspipe %s
 # environment
@@ -93,7 +131,7 @@ PATH = /home/djolopez/.local/bin:/opt/maven/bin:/usr/local/sbin:/usr/local/bin:/
 # environment
 GPG_AGENT_INFO = /run/user/1000/gnupg/S.gpg-agent:0:1
 # environment
-SESSION_MANAGER = local/djolopez-VirtualBox:@/tmp/.ICE-unix/1311,unix/djolopez-VirtualBox:/tmp/.ICE-unix/1311
+SESSION_MANAGER = local/djolopez-VirtualBox:@/tmp/.ICE-unix/1282,unix/djolopez-VirtualBox:/tmp/.ICE-unix/1282
 # environment
 XDG_RUNTIME_DIR = /run/user/1000
 # environment
@@ -109,7 +147,7 @@ DISABLE_WAYLAND = 1
 # environment
 ELECTRON_RUN_AS_NODE = 1
 # environment
-INVOCATION_ID = 3c4e60aa61304bf3b9b5c0e08dfb4a8f
+INVOCATION_ID = 99b285382e4b440f90644dbdcd63f887
 # makefile (from 'makefile', line 3)
 LDFLAGS = -lcrypto -lstdc++fs
 # environment
@@ -133,7 +171,7 @@ PWD = /home/djolopez/Documents/INGE_S5_Pise/cybersecurity/project/2022-Cybersecu
 # default
 .LOADED := 
 # environment
-SSH_AGENT_PID = 1132
+SSH_AGENT_PID = 1094
 # environment
 ORIGINAL_XDG_CURRENT_DESKTOP = ubuntu:GNOME
 # environment
@@ -245,13 +283,13 @@ LC_ALL = C
 # environment
 DBUS_STARTER_BUS_TYPE = session
 # environment
-GNOME_TERMINAL_SCREEN = /org/gnome/Terminal/screen/edddfdd4_e2ea_410f_a7ed_e56771cb6388
+GNOME_TERMINAL_SCREEN = /org/gnome/Terminal/screen/110525db_523b_4cab_a3a8_0882e1d3fcd1
 # automatic
 ^F = $(notdir $^)
 # makefile (from 'makefile', line 5)
 DEPS = ./utils.h
 # environment
-GNOME_TERMINAL_SERVICE = :1.90
+GNOME_TERMINAL_SERVICE = :1.86
 # default
 SUFFIXES := 
 # environment
@@ -273,10 +311,9 @@ LANG = C
 # environment
 TERM = xterm-256color
 # environment
-VSCODE_PID = 2735
+VSCODE_PID = 2529
 # environment
-DBUS_STARTER_ADDRESS = unix:path=/run/user/1000/bus,guid=10012d34e322238e5ddbf42562cc5c9f
- 
+DBUS_STARTER_ADDRESS = unix:path=/run/user/1000/bus,guid=921789403fc5895b7e354ba162cd37db
 # variable set hash-table stats:
 # Load=133/1024=13%, Rehash=0, Collisions=19/165=12%
 
@@ -286,7 +323,7 @@ DBUS_STARTER_ADDRESS = unix:path=/run/user/1000/bus,guid=10012d34e322238e5ddbf42
 
 # Directories
 
-# . (device 2053, inode 1444485): 9 files, no impossibilities.
+# . (device 2053, inode 1204911): 9 files, no impossibilities.
 
 # 9 files, no impossibilities in 1 directories.
 
@@ -316,11 +353,17 @@ makefile:
 #  Implicit rule search has been done.
 #  Last modified 2022-07-07 19:21:54.722254
 #  File has been updated.
+ 
 #  Successfully updated.
+ 
 
+ 
 # Not a target:
+ 
 user/start-user.cpp:
+ 
 #  Implicit rule search has not been done.
+ 
 #  Modification time never checked.
 #  File has not been updated.
 
@@ -375,7 +418,7 @@ start-server: server/start-server.cpp
 # Not a target:
 server/start-server.cpp:
 #  Implicit rule search has been done.
-#  Last modified 2022-07-11 19:21:12.79089123
+#  Last modified 2022-07-12 10:50:50.469899039
 #  File has been updated.
 #  Successfully updated.
 
@@ -393,6 +436,6 @@ server/start-server.cpp:
 # strcache performance: lookups = 31 / hit rate = 38%
 # hash-table stats:
 # Load=19/8192=0%, Rehash=0, Collisions=1/31=3%
-# Finished Make data base on Mon Jul 11 19:25:56 2022
+# Finished Make data base on Tue Jul 12 11:00:24 2022
 
  

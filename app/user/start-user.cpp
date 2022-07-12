@@ -239,6 +239,7 @@ public:
         }
         int encryptedKeySize = (*sizeKey); // Divided by 8 because encrypted key size is sent in bits
         free(sizeKey);
+<<<<<<< HEAD
         unsigned char *encryptedKey = (unsigned char *)malloc(encryptedKeySize);
         if (!encryptedKey)
         {
@@ -247,9 +248,20 @@ public:
         ret = read(socketfd, encryptedKey, encryptedKeySize);
         if (ret <= 0)
         {
+=======
+        unsigned char * tempEncryptedKey = (unsigned char *) malloc(encryptedKeySize);
+        if (!tempEncryptedKey) {
+            cerr << "Error allocating buffer for encrypted key\n";
+        }
+        ret = read(socketfd, tempEncryptedKey, encryptedKeySize);
+        if(ret <= 0) {
+>>>>>>> eloi
             cerr << "Error reading encrypted key\n";
             exit(1);
         }
+        unsigned char * encryptedKey = (unsigned char *) malloc(encryptedKeySize);
+        memcpy(encryptedKey, tempEncryptedKey, encryptedKeySize);
+        free(tempEncryptedKey);
 
         // Receive encrypted session key
         int *size = (int *)malloc(sizeof(int));
@@ -266,6 +278,7 @@ public:
         }
         int encryptedSize = *size;
         free(size);
+<<<<<<< HEAD
         unsigned char *encryptedSecret = (unsigned char *)malloc(encryptedSize);
         if (!encryptedSecret)
         {
@@ -275,9 +288,21 @@ public:
         ret = read(socketfd, encryptedSecret, encryptedSize);
         if (ret <= 0)
         {
+=======
+        unsigned char * tempEncryptedSecret = (unsigned char *) malloc(encryptedSize);
+        if (!tempEncryptedSecret) {
+            cerr << "Error allocating buffer for encrypted session key\n";
+            exit(1);
+        }
+        ret = read(socketfd, tempEncryptedSecret, encryptedSize);
+        if (ret <= 0) {
+>>>>>>> eloi
             cerr << "Error reading encrypted session key\n";
             exit(1);
         }
+        unsigned char * encryptedSecret = (unsigned char *) malloc(encryptedSize);
+        memcpy(encryptedSecret, tempEncryptedSecret, encryptedSize);
+        free(tempEncryptedSecret);
 
         // Receive iv
         int *sizeIv = (int *)malloc(sizeof(int));
@@ -294,6 +319,7 @@ public:
         }
         int ivLength = *sizeIv;
         free(sizeIv);
+<<<<<<< HEAD
         unsigned char *iv = (unsigned char *)malloc(ivLength);
         if (!iv)
         {
@@ -303,9 +329,37 @@ public:
         ret = read(socketfd, iv, ivLength);
         if (ret <= 0)
         {
+=======
+        unsigned char * tempIv = (unsigned char *) malloc(ivLength);
+        if (!tempIv) {
+            cerr << "Error allocating buffer for iv\n";
+            exit(1);
+        }
+        ret = read(socketfd, tempIv, ivLength);
+        if(ret <= 0) {
+>>>>>>> eloi
             cerr << "Error reading iv\n";
             exit(1);
         }
+        unsigned char * iv = (unsigned char *) malloc(ivLength);
+        memcpy(iv, tempIv, ivLength);
+        free(tempIv);
+
+        // TEST
+        string siv(iv, iv+ivLength);
+        string sencryptedSecret(encryptedSecret, encryptedSecret+encryptedSize);
+        string sencryptedKey(encryptedKey, encryptedKey+encryptedKeySize);
+        cout << "\nENVELOPE TEST\n";
+        cout << "iv :\n";
+        cout << siv << endl;
+        // BIO_dump_fp(stdout, (const char *) iv, ivSize);
+        cout << "encryptedSize = " << encryptedSize << " encrypted secret :\n";
+        cout << sencryptedSecret << endl;
+        // BIO_dump_fp(stdout, (const char *) encryptedSecret, encryptedSize);
+        cout << "encryptedKeySize = " << encryptedKeySize << "encrypted key :\n";
+        cout << sencryptedKey << endl;
+        // BIO_dump_fp(stdout, (const char *) encryptedKey, encryptedKeySize);
+        cout << "ENVELOPE TEST END\n\n";
 
         // Retreive user's prvkey
         string path = "user_infos/key.pem";
@@ -330,10 +384,16 @@ public:
         const EVP_CIPHER *cipher = EVP_aes_256_cbc();
         int decryptedSize;
 
+<<<<<<< HEAD
         // Create buffer for session key
         unsigned char *sessionKey = (unsigned char *)malloc(sessionKeySize);
         if (!sessionKey)
         {
+=======
+        // Create buffer for temporary session key
+        sessionKey = (unsigned char *) malloc(sessionKeySize);
+        if (!sessionKey) {
+>>>>>>> eloi
             cerr << "Error allocating buffer for session key\n";
             exit(1);
         }
@@ -368,6 +428,7 @@ public:
 
         // TEST
         cout << "\nENVELOPE TEST\n";
+<<<<<<< HEAD
         cout << "encryptedSize = " << encryptedSize << "encrypted secret :\n";
         BIO_dump_fp(stdout, (const char *)encryptedSecret, encryptedSize);
         cout << "theoric encrypted size = " << EVP_PKEY_size(clientPrvKey) << "\n";
@@ -375,6 +436,11 @@ public:
         BIO_dump_fp(stdout, (const char *)encryptedKey, encryptedKeySize);
         cout << "session key :\n";
         BIO_dump_fp(stdout, (const char *)sessionKey, sessionKeySize);
+=======
+        cout << "sessionKey :\n";
+        // cout << sessionKey << "\"" << endl;
+        BIO_dump_fp(stdout, (const char *) sessionKey, sessionKeySize);
+>>>>>>> eloi
         cout << "ENVELOPE TEST END\n\n";
 
         EVP_CIPHER_CTX_free(ctx);
@@ -445,9 +511,14 @@ public:
             cerr << "Error allocating buffer for decrypted nonce\n";
             exit(1);
         }
+<<<<<<< HEAD
         ret = decryptSym(encryptedNonce, encryptedSize, nonce, iv, tempKey);
         if (!ret)
         {
+=======
+        ret = decryptSym(encryptedNonce, encryptedSize, nonce, iv, sessionKey);
+        if (!ret) {
+>>>>>>> eloi
             cerr << "Error decrypting the nonce\n";
             exit(1);
         }
@@ -634,6 +705,12 @@ public:
             cout << ">> Error sending encrypted new filename\n";
             return 0;
         }
+
+        // Free everything
+        free(encryptedFilename);
+        free(iv);
+        free(encryptedNewFilename);
+        free(ivNew);
 
         cout << ">> File was renamed successfully\n";
 

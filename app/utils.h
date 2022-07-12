@@ -22,6 +22,7 @@
 #include <cerrno>
 
 using namespace std;
+using namespace std::experimental;
 using std::experimental::filesystem::directory_iterator;
 
 
@@ -358,18 +359,14 @@ int checkFilename(string filename) {
 }
 
 // This function checks that a given file exists in the user filesystem (has to be called from server side)
-int existsFile(unsigned char * filename, string username, int filenameSize) {
+int existsFile2(string filename, string username) {
 
-    string filesPath = "users_infos/" + username + "/files/";
+    string spath = "./users_infos/" + username + "/files/" + filename;
 
-    for (const auto &file : directory_iterator(filesPath)) {
-        cout << file.path().string() << "\n";
-        std::experimental::filesystem::path currentPath = file.path().filename();
-        const char * currentFilename = currentPath.string().c_str();
-        if (!memcmp(currentFilename, (const char *) filename, filenameSize)) {
-            return 1;
-        }
+    FILE * file = fopen(spath.c_str(), "rb");
+    if (!file) {
+        return 0;
     }
 
-    return 0;
+    return 1;
 }

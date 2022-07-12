@@ -12,9 +12,13 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # There is NO WARRANTY, to the extent permitted by law.
  
 
+<<<<<<< HEAD
  
 # Make data base, printed on Tue Jul 12 11:00:24 2022
  
+=======
+# Make data base, printed on Tue Jul 12 08:47:51 2022
+>>>>>>> eloi
 
 # Variables
  
@@ -87,7 +91,11 @@ VTE_VERSION = 6003
 # environment
 VSCODE_NLS_CONFIG = {"locale":"en-us","availableLanguages":{},"_languagePackSupport":true}
 # environment
+<<<<<<< HEAD
 JOURNAL_STREAM = 8:31629
+=======
+JOURNAL_STREAM = 8:29675
+>>>>>>> eloi
 # makefile (from 'makefile', line 2)
 CFLAGS = -Wall -g
 # environment
@@ -113,9 +121,15 @@ MAKELEVEL := 0
 # environment
 XDG_DATA_DIRS = /usr/share/ubuntu:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop
 # environment
+<<<<<<< HEAD
 DBUS_SESSION_BUS_ADDRESS = unix:path=/run/user/1000/bus,guid=921789403fc5895b7e354ba162cd37db
 # environment
 MANAGERPID = 823
+=======
+DBUS_SESSION_BUS_ADDRESS = unix:path=/run/user/1000/bus,guid=5a4b1061963ecaa2d56f842462cd1800
+# environment
+MANAGERPID = 819
+>>>>>>> eloi
 # environment
 LESSOPEN = | /usr/bin/lesspipe %s
 # environment
@@ -131,7 +145,11 @@ PATH = /home/djolopez/.local/bin:/opt/maven/bin:/usr/local/sbin:/usr/local/bin:/
 # environment
 GPG_AGENT_INFO = /run/user/1000/gnupg/S.gpg-agent:0:1
 # environment
+<<<<<<< HEAD
 SESSION_MANAGER = local/djolopez-VirtualBox:@/tmp/.ICE-unix/1282,unix/djolopez-VirtualBox:/tmp/.ICE-unix/1282
+=======
+SESSION_MANAGER = local/djolopez-VirtualBox:@/tmp/.ICE-unix/1313,unix/djolopez-VirtualBox:/tmp/.ICE-unix/1313
+>>>>>>> eloi
 # environment
 XDG_RUNTIME_DIR = /run/user/1000
 # environment
@@ -147,7 +165,11 @@ DISABLE_WAYLAND = 1
 # environment
 ELECTRON_RUN_AS_NODE = 1
 # environment
+<<<<<<< HEAD
 INVOCATION_ID = 99b285382e4b440f90644dbdcd63f887
+=======
+INVOCATION_ID = 5804ac00a9b94540815be50621f8fcb8
+>>>>>>> eloi
 # makefile (from 'makefile', line 3)
 LDFLAGS = -lcrypto -lstdc++fs
 # environment
@@ -171,7 +193,11 @@ PWD = /home/djolopez/Documents/INGE_S5_Pise/cybersecurity/project/2022-Cybersecu
 # default
 .LOADED := 
 # environment
+<<<<<<< HEAD
 SSH_AGENT_PID = 1094
+=======
+SSH_AGENT_PID = 1119
+>>>>>>> eloi
 # environment
 ORIGINAL_XDG_CURRENT_DESKTOP = ubuntu:GNOME
 # environment
@@ -283,13 +309,21 @@ LC_ALL = C
 # environment
 DBUS_STARTER_BUS_TYPE = session
 # environment
+<<<<<<< HEAD
 GNOME_TERMINAL_SCREEN = /org/gnome/Terminal/screen/110525db_523b_4cab_a3a8_0882e1d3fcd1
+=======
+GNOME_TERMINAL_SCREEN = /org/gnome/Terminal/screen/07c4f677_daec_4137_a25f_11421b458535
+>>>>>>> eloi
 # automatic
 ^F = $(notdir $^)
 # makefile (from 'makefile', line 5)
 DEPS = ./utils.h
 # environment
+<<<<<<< HEAD
 GNOME_TERMINAL_SERVICE = :1.86
+=======
+GNOME_TERMINAL_SERVICE = :1.88
+>>>>>>> eloi
 # default
 SUFFIXES := 
 # environment
@@ -311,9 +345,16 @@ LANG = C
 # environment
 TERM = xterm-256color
 # environment
+<<<<<<< HEAD
 VSCODE_PID = 2529
 # environment
 DBUS_STARTER_ADDRESS = unix:path=/run/user/1000/bus,guid=921789403fc5895b7e354ba162cd37db
+=======
+VSCODE_PID = 3069
+# environment
+DBUS_STARTER_ADDRESS = unix:path=/run/user/1000/bus,guid=5a4b1061963ecaa2d56f842462cd1800
+ 
+>>>>>>> eloi
 # variable set hash-table stats:
 # Load=133/1024=13%, Rehash=0, Collisions=19/165=12%
 
@@ -418,7 +459,11 @@ start-server: server/start-server.cpp
 # Not a target:
 server/start-server.cpp:
 #  Implicit rule search has been done.
+<<<<<<< HEAD
 #  Last modified 2022-07-12 10:50:50.469899039
+=======
+#  Last modified 2022-07-11 23:52:46.961354961
+>>>>>>> eloi
 #  File has been updated.
 #  Successfully updated.
 
@@ -436,6 +481,10 @@ server/start-server.cpp:
 # strcache performance: lookups = 31 / hit rate = 38%
 # hash-table stats:
 # Load=19/8192=0%, Rehash=0, Collisions=1/31=3%
+<<<<<<< HEAD
 # Finished Make data base on Tue Jul 12 11:00:24 2022
+=======
+# Finished Make data base on Tue Jul 12 08:47:51 2022
+>>>>>>> eloi
 
  

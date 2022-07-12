@@ -243,8 +243,6 @@ public:
         free(usernameLen);
         free(buffer);
 
-        CONNEXION_STATUS = 1;
-
         // Temporary key
         tempKey = (unsigned char *)"01234567890123450123456789012345";
 
@@ -289,9 +287,14 @@ public:
         return 1;
     }
 
+<<<<<<< HEAD
     // Create and send a challenge to authenticate client
     int shareKey()
     {
+=======
+    // Create key and send a digital envelope to the client containing key
+    int shareKey() {
+>>>>>>> eloi
 
         int ret;
 
@@ -368,13 +371,31 @@ public:
         EVP_CIPHER_CTX_free(ctx);
 
         // TEST
+        string siv(iv, iv+ivLength);
+        string sencryptedSecret(encryptedSecret, encryptedSecret+encryptedSize);
+        string sencryptedKey(encryptedKey, encryptedKey+encryptedKeySize);
         cout << "\nENVELOPE TEST\n";
+<<<<<<< HEAD
         cout << "encryptedSize = " << encryptedSize << "encrypted secret :\n";
         BIO_dump_fp(stdout, (const char *)encryptedSecret, encryptedSize);
         cout << "encryptedKeySize = " << encryptedKeySize << "encrypted key :\n";
         BIO_dump_fp(stdout, (const char *)encryptedKey, encryptedKeySize);
         cout << "sessionKey :\n";
         BIO_dump_fp(stdout, (const char *)sessionKey, sessionKeySize);
+=======
+        cout << "iv :\n";
+        cout << siv << endl;
+        // BIO_dump_fp(stdout, (const char *) iv, ivSize);
+        cout << "encryptedSize = " << encryptedSize << " encrypted secret :\n";
+        cout << sencryptedSecret << endl;
+        // BIO_dump_fp(stdout, (const char *) encryptedSecret, encryptedSize);
+        cout << "encryptedKeySize = " << encryptedKeySize << " encrypted key :\n";
+        cout << sencryptedKey << endl;
+        // BIO_dump_fp(stdout, (const char *) encryptedKey, encryptedKeySize);
+        // cout << "sessionKey :\n";
+        // cout << sessionKey << "\"" << endl;
+        // BIO_dump_fp(stdout, (const char *) sessionKey, sessionKeySize);
+>>>>>>> eloi
         cout << "ENVELOPE TEST END\n\n";
 
         // Send the encrypted key
@@ -500,8 +521,20 @@ public:
         return 1;
     }
 
+<<<<<<< HEAD
     int uploadFile()
     {
+=======
+    int authenticateClient() {
+
+
+        CONNEXION_STATUS = 1;
+
+        return 1;
+    }
+
+    int uploadFile() {
+>>>>>>> eloi
         cout << "upload\n";
         return 1;
     }
@@ -632,7 +665,8 @@ public:
 
         // Check if file exists and send the result to the client
         int exists;
-        exists = existsFile(filename, clientUsername, decryptedSize);
+        string sfilename(filename, filename + decryptedSize);
+        exists = existsFile(sfilename, clientUsername);
         ret = sendInt(clientfd, exists);
         if (!ret)
         {
@@ -680,22 +714,21 @@ public:
         }
 
         // Rename file
-        string sfilename(filename, filename + decryptedSize);
         string snewFilename(newFilename, newFilename + decryptedNewSize);
         string soldPath = "./users_infos/" + clientUsername + "/files/" + sfilename;
         string snewPath = "./users_infos/" + clientUsername + "/files/" + snewFilename;
         filesystem::path oldPath(soldPath);
         filesystem::path newPath(snewPath);
-        cout << "old path : " << oldPath << endl;
-        cout << "new path : " << newPath << endl;
-        cout << "current path : " << filesystem::current_path() << endl;
         rename(oldPath, newPath);
 
+<<<<<<< HEAD
         if (!existsFile(newFilename, clientUsername, decryptedNewSize))
         {
             cout << "didnt worked\n";
         };
 
+=======
+>>>>>>> eloi
         // Free eveything
         free(iv);
         free(filename);
@@ -703,6 +736,8 @@ public:
         free(ivNew);
         free(newFilename);
         free(encryptedNewFilename);
+
+        cout << "--- FILE RENAMED ---\n";
 
         return 1;
     }

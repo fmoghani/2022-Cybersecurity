@@ -239,23 +239,12 @@ public:
         }
         int encryptedKeySize = (*sizeKey); // Divided by 8 because encrypted key size is sent in bits
         free(sizeKey);
-<<<<<<< HEAD
-        unsigned char *encryptedKey = (unsigned char *)malloc(encryptedKeySize);
-        if (!encryptedKey)
-        {
-            cerr << "Error allocating buffer for encrypted key\n";
-        }
-        ret = read(socketfd, encryptedKey, encryptedKeySize);
-        if (ret <= 0)
-        {
-=======
         unsigned char * tempEncryptedKey = (unsigned char *) malloc(encryptedKeySize);
         if (!tempEncryptedKey) {
             cerr << "Error allocating buffer for encrypted key\n";
         }
         ret = read(socketfd, tempEncryptedKey, encryptedKeySize);
         if(ret <= 0) {
->>>>>>> eloi
             cerr << "Error reading encrypted key\n";
             exit(1);
         }
@@ -278,17 +267,6 @@ public:
         }
         int encryptedSize = *size;
         free(size);
-<<<<<<< HEAD
-        unsigned char *encryptedSecret = (unsigned char *)malloc(encryptedSize);
-        if (!encryptedSecret)
-        {
-            cerr << "Error allocating buffer for encrypted session key\n";
-            exit(1);
-        }
-        ret = read(socketfd, encryptedSecret, encryptedSize);
-        if (ret <= 0)
-        {
-=======
         unsigned char * tempEncryptedSecret = (unsigned char *) malloc(encryptedSize);
         if (!tempEncryptedSecret) {
             cerr << "Error allocating buffer for encrypted session key\n";
@@ -296,7 +274,6 @@ public:
         }
         ret = read(socketfd, tempEncryptedSecret, encryptedSize);
         if (ret <= 0) {
->>>>>>> eloi
             cerr << "Error reading encrypted session key\n";
             exit(1);
         }
@@ -319,17 +296,6 @@ public:
         }
         int ivLength = *sizeIv;
         free(sizeIv);
-<<<<<<< HEAD
-        unsigned char *iv = (unsigned char *)malloc(ivLength);
-        if (!iv)
-        {
-            cerr << "Error allocating buffer for iv\n";
-            exit(1);
-        }
-        ret = read(socketfd, iv, ivLength);
-        if (ret <= 0)
-        {
-=======
         unsigned char * tempIv = (unsigned char *) malloc(ivLength);
         if (!tempIv) {
             cerr << "Error allocating buffer for iv\n";
@@ -337,7 +303,6 @@ public:
         }
         ret = read(socketfd, tempIv, ivLength);
         if(ret <= 0) {
->>>>>>> eloi
             cerr << "Error reading iv\n";
             exit(1);
         }
@@ -384,16 +349,9 @@ public:
         const EVP_CIPHER *cipher = EVP_aes_256_cbc();
         int decryptedSize;
 
-<<<<<<< HEAD
-        // Create buffer for session key
-        unsigned char *sessionKey = (unsigned char *)malloc(sessionKeySize);
-        if (!sessionKey)
-        {
-=======
         // Create buffer for temporary session key
         sessionKey = (unsigned char *) malloc(sessionKeySize);
         if (!sessionKey) {
->>>>>>> eloi
             cerr << "Error allocating buffer for session key\n";
             exit(1);
         }
@@ -428,19 +386,9 @@ public:
 
         // TEST
         cout << "\nENVELOPE TEST\n";
-<<<<<<< HEAD
-        cout << "encryptedSize = " << encryptedSize << "encrypted secret :\n";
-        BIO_dump_fp(stdout, (const char *)encryptedSecret, encryptedSize);
-        cout << "theoric encrypted size = " << EVP_PKEY_size(clientPrvKey) << "\n";
-        cout << "encryptedKeySize = " << encryptedKeySize << "encrypted key :\n";
-        BIO_dump_fp(stdout, (const char *)encryptedKey, encryptedKeySize);
-        cout << "session key :\n";
-        BIO_dump_fp(stdout, (const char *)sessionKey, sessionKeySize);
-=======
         cout << "sessionKey :\n";
         // cout << sessionKey << "\"" << endl;
         BIO_dump_fp(stdout, (const char *) sessionKey, sessionKeySize);
->>>>>>> eloi
         cout << "ENVELOPE TEST END\n\n";
 
         EVP_CIPHER_CTX_free(ctx);
@@ -511,14 +459,9 @@ public:
             cerr << "Error allocating buffer for decrypted nonce\n";
             exit(1);
         }
-<<<<<<< HEAD
         ret = decryptSym(encryptedNonce, encryptedSize, nonce, iv, tempKey);
         if (!ret)
         {
-=======
-        ret = decryptSym(encryptedNonce, encryptedSize, nonce, iv, sessionKey);
-        if (!ret) {
->>>>>>> eloi
             cerr << "Error decrypting the nonce\n";
             exit(1);
         }

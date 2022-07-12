@@ -287,14 +287,8 @@ public:
         return 1;
     }
 
-<<<<<<< HEAD
-    // Create and send a challenge to authenticate client
-    int shareKey()
-    {
-=======
     // Create key and send a digital envelope to the client containing key
     int shareKey() {
->>>>>>> eloi
 
         int ret;
 
@@ -375,14 +369,6 @@ public:
         string sencryptedSecret(encryptedSecret, encryptedSecret+encryptedSize);
         string sencryptedKey(encryptedKey, encryptedKey+encryptedKeySize);
         cout << "\nENVELOPE TEST\n";
-<<<<<<< HEAD
-        cout << "encryptedSize = " << encryptedSize << "encrypted secret :\n";
-        BIO_dump_fp(stdout, (const char *)encryptedSecret, encryptedSize);
-        cout << "encryptedKeySize = " << encryptedKeySize << "encrypted key :\n";
-        BIO_dump_fp(stdout, (const char *)encryptedKey, encryptedKeySize);
-        cout << "sessionKey :\n";
-        BIO_dump_fp(stdout, (const char *)sessionKey, sessionKeySize);
-=======
         cout << "iv :\n";
         cout << siv << endl;
         // BIO_dump_fp(stdout, (const char *) iv, ivSize);
@@ -395,7 +381,6 @@ public:
         // cout << "sessionKey :\n";
         // cout << sessionKey << "\"" << endl;
         // BIO_dump_fp(stdout, (const char *) sessionKey, sessionKeySize);
->>>>>>> eloi
         cout << "ENVELOPE TEST END\n\n";
 
         // Send the encrypted key
@@ -521,10 +506,6 @@ public:
         return 1;
     }
 
-<<<<<<< HEAD
-    int uploadFile()
-    {
-=======
     int authenticateClient() {
 
 
@@ -534,7 +515,6 @@ public:
     }
 
     int uploadFile() {
->>>>>>> eloi
         cout << "upload\n";
         return 1;
     }
@@ -588,7 +568,8 @@ public:
 
         // Check if file exists and send the result to the client
         int exists;
-        exists = existsFile(filename, clientUsername, decryptedSize);
+        string sfilename(filename, filename + decryptedSize);
+        exists = existsFile(sfilename, clientUsername);
         ret = sendInt(clientfd, exists);
         if (!ret)
         {
@@ -721,14 +702,6 @@ public:
         filesystem::path newPath(snewPath);
         rename(oldPath, newPath);
 
-<<<<<<< HEAD
-        if (!existsFile(newFilename, clientUsername, decryptedNewSize))
-        {
-            cout << "didnt worked\n";
-        };
-
-=======
->>>>>>> eloi
         // Free eveything
         free(iv);
         free(filename);

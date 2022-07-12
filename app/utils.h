@@ -359,7 +359,7 @@ int checkFilename(string filename) {
 }
 
 // This function checks that a given file exists in the user filesystem (has to be called from server side)
-int existsFile2(string filename, string username) {
+int existsFile(string filename, string username) {
 
     string spath = "./users_infos/" + username + "/files/" + filename;
 

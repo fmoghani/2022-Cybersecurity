@@ -20,7 +20,6 @@
 // #include <filesystem>
 #include <experimental/filesystem>
 #include <cerrno>
-#include "users_infos/khabib/DH.h"
 #include "../utils.h"
 #include "../const.h"
 
@@ -40,13 +39,6 @@ class Server
     // Client infos
     string clientUsername;
     unsigned char *nonce;
-
-    // Map containing all the get_DH2048() functions specific to each user
-    std::map<std::string, DH *> dhMap;
-
-    // Keys
-    EVP_PKEY *clientPubKey;
-    EVP_PKEY *prvKey;
 
     // Keys
     unsigned char *sessionKey;
@@ -145,14 +137,6 @@ public:
         free(tempNonce);
 
         return 1;
-    }
-
-    // Update server's map
-    void updateDHMap()
-    {
-
-        // Add users and their corresponding dhparam function when needed
-        dhMap["khabib"] = get_DH2048_khabib();
     }
 
     // Creates a socket and makes it listen
@@ -303,7 +287,7 @@ public:
             close(clientfd);
             return 0;
         }
-        clientPubKey = PEM_read_PUBKEY(keyFile, NULL, NULL, NULL);
+        EVP_PKEY * clientPubKey = PEM_read_PUBKEY(keyFile, NULL, NULL, NULL);
         fclose(keyFile);
         if (!clientPubKey)
         {
@@ -876,7 +860,7 @@ public:
             close(clientfd);
             return 0;
         }
-        clientPubKey = PEM_read_PUBKEY(keyFile, NULL, NULL, NULL);
+        EVP_PKEY * clientPubKey = PEM_read_PUBKEY(keyFile, NULL, NULL, NULL);
         fclose(keyFile);
         if (!clientPubKey)
         {
@@ -1072,7 +1056,6 @@ int main()
     int ret;
 
     Server serv;
-    serv.updateDHMap();
     cout << "Starting server...\n";
     serv.startSocket();
     cout << "Socket connection established\n";

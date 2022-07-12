@@ -15,7 +15,6 @@
 #include <cerrno>
 #include <map>
 #include <vector>
-#include "user_infos/DH.h"
 #include "../utils.h"
 #include "../const.h"
 
@@ -35,7 +34,6 @@ class Client
 
     // Client variables
     unsigned char *nonce;
-    unsigned char *clientResponse;
     string username;
 
     // Keys

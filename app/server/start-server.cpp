@@ -17,6 +17,9 @@
 #include <ctime>
 #include <unistd.h>
 #include <map>
+#include <stdlib.h>
+#include <errno.h>
+#include <dirent.h>
 // #include <filesystem>
 #include <experimental/filesystem>
 #include <cerrno>
@@ -54,6 +57,31 @@ public:
     int getConnexionStatus()
     {
         return CONNEXION_STATUS;
+    }
+
+    // Send an encrypted value
+    int sendEncrypted(unsigned char *ciphertext, int cipherSize, unsigned char *iv)
+    {
+
+        int ret;
+
+        ret = send(clientfd, iv, ivSize, 0);
+        if (!ret)
+        {
+            return 0;
+        }
+        ret = sendInt(clientfd, cipherSize);
+        if (!ret)
+        {
+            return 0;
+        }
+        ret = send(clientfd, ciphertext, cipherSize, 0);
+        if (!ret)
+        {
+            return 0;
+        }
+
+        return 1;
     }
 
     // Generate a random and fresh nonce
@@ -583,8 +611,57 @@ public:
         return 1;
     }
 
-    int listFiles()
-    {
+    int listFiles() {
+
+        int ret;
+
+        string filesPath = "users_infos/" + clientUsername + "/files/";
+        int filesNumber = 0;
+
+        // First retrieve the number of files
+        for (const auto &file : directory_iterator(filesPath)) {
+            filesNumber += 1;
+        }
+
+        // Send the number of files to the client
+        ret = sendInt(clientfd, filesNumber);
+        if (!ret) {
+            cout << "Error sending number of files to the client\n";
+            return 0;
+        }
+
+        // Iterate through files and send them
+        for (const auto &file : directory_iterator(filesPath)) {
+
+            // Encrypt the filename
+            int encryptedSize;
+            string filename = file.path().filename().string();
+            unsigned char *encryptedFilename = (unsigned char *)malloc(filename.size() + blockSize);
+            unsigned char *iv = (unsigned char *)malloc(ivSize);
+            if (!encryptedFilename || !iv) {
+                cout << ">> Error allocating buffers for encryption\n";
+                return 0;
+            }
+            unsigned char * charFilename = (unsigned char *) malloc(filename.size());
+            copy(filename.begin(), filename.end(), charFilename);
+            ret = encryptSym(charFilename, filename.size(), encryptedFilename, iv, tempKey);
+            if (!ret) {
+                cout << ">> Error during encryption\n";
+                return 0;
+            }
+            free(charFilename);
+            encryptedSize = ret;
+
+            // Send the encrypted filename to the server
+            ret = sendEncrypted(encryptedFilename, encryptedSize, iv);
+            if (!ret) {
+                cout << "Error sending encrypted filename\n";
+                return 0;
+            }
+        }
+
+        cout << "--- FILES LISTED ---";
+
         return 1;
     }
 
@@ -1092,13 +1169,13 @@ int main()
         }
         cout << "Session symmetric key sent to client\n";
 
-        ret = serv.sendEncryptedNonce();
-        if (!ret)
-        {
-            cerr << "Error sending encrypted nonce to the client, communication stopped\n\n";
-            continue;
-        }
-        cout << "Encrypted nonce sent, waiting for client's proof of identity\n";
+        // ret = serv.sendEncryptedNonce();
+        // if (!ret)
+        // {
+        //     cerr << "Error sending encrypted nonce to the client, communication stopped\n\n";
+        //     continue;
+        // }
+        // cout << "Encrypted nonce sent, waiting for client's proof of identity\n";
 
         while (serv.getConnexionStatus())
         {

@@ -540,35 +540,60 @@ public:
     {
         int ret;
 
-        // Receive encrypted filename
-        int *size = (int *)malloc(sizeof(int));
-        if (!size)
-        {
-            cerr << "Error allocating buffer for encrypted filename\n";
-            exit(1);
+        // Receive number of files
+        int * numPtr = (int *) malloc(sizeof(int));
+        ret = readInt(socketfd, numPtr);
+        if (!ret) {
+            cout << "Error reading number of files\n";
+            return 0;
         }
-        ret = readInt(socketfd, size);
-        if (!ret)
-        {
-            cerr << "Error reading encrypted filesize\n";
-            exit(1);
+        int filesNumber = *numPtr;
+        free(numPtr);
+
+        // Iterate the correct number of times, read and decrypt the filenames
+        for (int i = 0; i < filesNumber; i++) {
+
+            // Read filename
+            unsigned char *iv = (unsigned char *)malloc(ivSize);
+            ret = read(socketfd, iv, ivSize);
+            if (!ret) {
+                cout << "Error reading iv\n";
+                return 0;
+            }
+            int *encryptedSizePtr = (int *)malloc(sizeof(int));
+            if (!encryptedSizePtr) {
+                cout << "Error allocating buffer for encrypted filename size\n";
+                return 0;
+            }
+            ret = readInt(socketfd, encryptedSizePtr);
+            if (!ret) {
+                cout << "Error reading encrypted filename size\n";
+                return 0;
+            }
+            int encryptedSize = *encryptedSizePtr;
+            free(encryptedSizePtr);
+            unsigned char *encryptedFilename = (unsigned char *)malloc(encryptedSize);
+            ret = read(socketfd, encryptedFilename, encryptedSize);
+
+            // Decrypt filename
+            unsigned char *buggedFilename = (unsigned char *)malloc(encryptedSize);
+            int decryptedSize;
+            decryptedSize = decryptSym(encryptedFilename, encryptedSize, buggedFilename, iv, tempKey);
+            if (!decryptedSize)
+            {
+                cout << "Error decrypting filename\n";
+                return 0;
+            }
+            unsigned char *filename = (unsigned char *)malloc(decryptedSize);
+            memcpy(filename, buggedFilename, decryptedSize);
+            free(buggedFilename);
+
+            // Display the filename
+            string sfilename(filename, filename + decryptedSize);
+            cout << sfilename << endl;
         }
-        int encryptedSize = *size;
-        free(size);
-        cout << "Encrypted Size: " << encryptedSize; // Debug purposes
-        unsigned char *encryptedSecret = (unsigned char *)malloc(encryptedSize);
-        if (!encryptedSecret)
-        {
-            cerr << "Error allocating buffer for encrypted filesize key\n";
-            exit(1);
-        }
-        ret = read(socketfd, encryptedSecret, encryptedSize);
-        if (ret <= 0)
-        {
-            cerr << "Error reading encrypted filename key\n";
-            exit(1);
-        }
-        cout << ret;
+
+        cout << ">> Files listed\n";
 
         return 1;
     }
@@ -817,8 +842,8 @@ int main()
     user1.retreiveSessionKey();
     cout << "Session key received\n";
 
-    user1.proveIdentity();
-    cout << "Proof of identity sent\n";
+    // user1.proveIdentity();
+    // cout << "Proof of identity sent\n";
 
     user1.updateCommands();
 

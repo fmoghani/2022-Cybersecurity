@@ -56,6 +56,7 @@ class Server
     unsigned char *tempKey;
 
 public:
+
     // Get username
     string getClientUsername()
     {
@@ -65,6 +66,31 @@ public:
     int getConnexionStatus()
     {
         return CONNEXION_STATUS;
+    }
+
+    // Send an encrypted value
+    int sendEncrypted(unsigned char *ciphertext, int cipherSize, unsigned char *iv)
+    {
+
+        int ret;
+
+        ret = send(clientfd, iv, ivSize, 0);
+        if (!ret)
+        {
+            return 0;
+        }
+        ret = sendInt(clientfd, cipherSize);
+        if (!ret)
+        {
+            return 0;
+        }
+        ret = send(clientfd, ciphertext, cipherSize, 0);
+        if (!ret)
+        {
+            return 0;
+        }
+
+        return 1;
     }
 
     // Generate a random and fresh nonce
@@ -590,57 +616,58 @@ public:
         return 1;
     }
 
-    int listFiles()
-    {
-        // Declare a pointer to the Dir type and structure
+    int listFiles() {
+
         int ret;
-        DIR *directry;
-        struct dirent *en;
 
-        // Open the Client's directry
-        string userpath = "./users_infos/" + clientUsername + "/files/";
-        directry = opendir(userpath.c_str());
+        string filesPath = "users_infos/" + clientUsername + "/files/";
+        int filesNumber = 0;
 
-        // Loop through the directry and read out the files
-        if (directry)
-        {
-            while ((en = readdir(directry)) != NULL)
-            {
-                /* Print all the files */
-                // cout << "\n" << en->d_name;
+        // First retrieve the number of files
+        for (const auto &file : directory_iterator(filesPath)) {
+            filesNumber += 1;
+        }
 
-                // Encrypt filename using symmetric key
-                int encryptedSize;
-                unsigned char *encryptedFilename = (unsigned char *)malloc(sizeof(en) + blockSize);
-                unsigned char *iv = (unsigned char *)malloc(ivSize);
+        // Send the number of files to the client
+        ret = sendInt(clientfd, filesNumber);
+        if (!ret) {
+            cout << "Error sending number of files to the client\n";
+            return 0;
+        }
 
-                // // Check for the encrypted buffers
-                if (!encryptedFilename || !iv)
-                {
-                    cerr << "Error allocating buffers for encryption\n";
-                    return 0;
-                }
+        // Iterate through files and send them
+        for (const auto &file : directory_iterator(filesPath)) {
 
-                ret = encryptSym((unsigned char *)en, sizeof(en), encryptedFilename, iv, tempKey);
-                if (!ret)
-                {
-                    cout << ">> Error during encryption\n";
-                    return 0;
-                }
-                encryptedSize = ret;
+            // Encrypt the filename
+            int encryptedSize;
+            string filename = file.path().filename().string();
+            unsigned char *encryptedFilename = (unsigned char *)malloc(filename.size() + blockSize);
+            unsigned char *iv = (unsigned char *)malloc(ivSize);
+            if (!encryptedFilename || !iv) {
+                cout << ">> Error allocating buffers for encryption\n";
+                return 0;
+            }
+            unsigned char * charFilename = (unsigned char *) malloc(filename.size());
+            copy(filename.begin(), filename.end(), charFilename);
+            ret = encryptSym(charFilename, filename.size(), encryptedFilename, iv, tempKey);
+            if (!ret) {
+                cout << ">> Error during encryption\n";
+                return 0;
+            }
+            free(charFilename);
+            encryptedSize = ret;
 
-                // // Send the encrypted filename
-                ret = send(clientfd, encryptedFilename, encryptedSize, 0);
-                if (ret <= 0)
-                {
-                    cerr << "Error sending filenames to client\n";
-                    return 0;
-                }
+            // Send the encrypted filename to the server
+            ret = sendEncrypted(encryptedFilename, encryptedSize, iv);
+            if (!ret) {
+                cout << "Error sending encrypted filename\n";
+                return 0;
             }
         }
-        // Close the directry
-        closedir(directry);
-        return 0;
+
+        cout << "--- FILES LISTED ---";
+
+        return 1;
     }
 
     int renameFile()
@@ -1154,13 +1181,13 @@ int main()
         }
         cout << "Session symmetric key sent to client\n";
 
-        ret = serv.sendEncryptedNonce();
-        if (!ret)
-        {
-            cerr << "Error sending encrypted nonce to the client, communication stopped\n\n";
-            continue;
-        }
-        cout << "Encrypted nonce sent, waiting for client's proof of identity\n";
+        // ret = serv.sendEncryptedNonce();
+        // if (!ret)
+        // {
+        //     cerr << "Error sending encrypted nonce to the client, communication stopped\n\n";
+        //     continue;
+        // }
+        // cout << "Encrypted nonce sent, waiting for client's proof of identity\n";
 
         while (serv.getConnexionStatus())
         {

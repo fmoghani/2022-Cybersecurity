@@ -206,7 +206,6 @@ public:
         }
         cout << "Listening to port : " << PORT << "\n";
 
-        CONNEXION_STATUS = 1;
     }
 
     // Handles client connexion request
@@ -369,6 +368,7 @@ public:
             return 0;
         }
         encryptedSize += bytesWritten;
+        cout << "encrypted size after update : " << encryptedSize << endl;
         ret = EVP_SealFinal(ctx, encryptedSecret + encryptedSize, &bytesWritten);
         if (ret <= 0)
         {
@@ -376,25 +376,27 @@ public:
             close(clientfd);
             return 0;
         }
+        encryptedSize += bytesWritten;
+        cout << "encrypted size after final : " << encryptedSize << endl;
         EVP_CIPHER_CTX_free(ctx);
 
         // TEST
-        string siv(iv, iv+ivLength);
-        string sencryptedSecret(encryptedSecret, encryptedSecret+encryptedSize);
-        string sencryptedKey(encryptedKey, encryptedKey+encryptedKeySize);
+        // string siv(iv, iv+ivLength);
+        // string sencryptedSecret(encryptedSecret, encryptedSecret+encryptedSize);
+        // string sencryptedKey(encryptedKey, encryptedKey+encryptedKeySize);
         cout << "\nENVELOPE TEST\n";
-        cout << "iv :\n";
-        cout << siv << endl;
+        // cout << "iv :\n";
+        // cout << siv << endl;
         // BIO_dump_fp(stdout, (const char *) iv, ivSize);
-        cout << "encryptedSize = " << encryptedSize << " encrypted secret :\n";
-        cout << sencryptedSecret << endl;
+        // cout << "encryptedSize = " << encryptedSize << " encrypted secret :\n";
+        // cout << sencryptedSecret << endl;
         // BIO_dump_fp(stdout, (const char *) encryptedSecret, encryptedSize);
-        cout << "encryptedKeySize = " << encryptedKeySize << " encrypted key :\n";
-        cout << sencryptedKey << endl;
+        // cout << "encryptedKeySize = " << encryptedKeySize << " encrypted key :\n";
+        // cout << sencryptedKey << endl;
         // BIO_dump_fp(stdout, (const char *) encryptedKey, encryptedKeySize);
-        // cout << "sessionKey :\n";
+        cout << "sessionKey :\n";
         // cout << sessionKey << "\"" << endl;
-        // BIO_dump_fp(stdout, (const char *) sessionKey, sessionKeySize);
+        BIO_dump_fp(stdout, (const char *) sessionKey, sessionKeySize);
         cout << "ENVELOPE TEST END\n\n";
 
         // Send the encrypted key
@@ -475,7 +477,7 @@ public:
             return 0;
         }
 
-        ret = encryptSym(nonce, nonceSize, encryptedNonce, iv, tempKey);
+        ret = encryptSym(nonce, nonceSize, encryptedNonce, iv, sessionKey);
         if (!ret)
         {
             cerr << "Error encrypting the nonce\n";
@@ -485,12 +487,12 @@ public:
         encryptedSize = ret;
 
         // TEST
-        cout << "\nTEST NONCE\n";
-        cout << "encryptedNonceSize = " << encryptedSize << " encryptedNonce :\n";
-        BIO_dump_fp(stdout, (const char *)encryptedNonce, encryptedSize);
-        cout << "iv Size = " << ivSize << " iv :\n";
-        BIO_dump_fp(stdout, (const char *)iv, ivSize);
-        cout << "TEST NONCE END\n\n";
+        // cout << "\nTEST NONCE\n";
+        // cout << "encryptedNonceSize = " << encryptedSize << " encryptedNonce :\n";
+        // BIO_dump_fp(stdout, (const char *)encryptedNonce, encryptedSize);
+        // cout << "iv Size = " << ivSize << " iv :\n";
+        // BIO_dump_fp(stdout, (const char *)iv, ivSize);
+        // cout << "TEST NONCE END\n\n";
 
         // Send encrypted nonce
         ret = sendInt(clientfd, encryptedSize);
@@ -522,6 +524,29 @@ public:
 
     int authenticateClient() {
 
+        int ret;
+
+        // Receive client's nonce
+        unsigned char * clientResponse = (unsigned char *) malloc(nonceSize);
+        if (!clientResponse) {
+            cerr << "Error allocating buffer for client response\n";
+            close(clientfd);
+            return 0;
+        }
+        ret = read(clientfd, clientResponse, nonceSize);
+        if (ret <= 0) {
+            cerr << "Error reading client's nonce\n";
+            close(clientfd);
+            return 0;
+        }
+
+        // Compare nonce and client response
+        ret = memcmp(nonce, clientResponse, nonceSize);
+        if (ret) {
+            cerr << "Client could not be authenticated\n";
+            close(clientfd);
+            return 0;
+        }
 
         CONNEXION_STATUS = 1;
 
@@ -1169,13 +1194,20 @@ int main()
         }
         cout << "Session symmetric key sent to client\n";
 
-        // ret = serv.sendEncryptedNonce();
-        // if (!ret)
-        // {
-        //     cerr << "Error sending encrypted nonce to the client, communication stopped\n\n";
-        //     continue;
-        // }
-        // cout << "Encrypted nonce sent, waiting for client's proof of identity\n";
+        ret = serv.sendEncryptedNonce();
+        if (!ret)
+        {
+            cerr << "Error sending encrypted nonce to the client, communication stopped\n\n";
+            continue;
+        }
+        cout << "Encrypted nonce sent, waiting for client's proof of identity\n";
+
+        ret = serv.authenticateClient();
+        if (!ret) {
+            cerr << "Client could not be authenticated, communication stopped\n\n";
+            continue;
+        }
+        cout << "Client authenticated, session started\n";
 
         while (serv.getConnexionStatus())
         {

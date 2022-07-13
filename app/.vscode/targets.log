@@ -1,170 +1,286 @@
 make all --print-data-base --no-builtin-variables --no-builtin-rules --question
-# GNU Make 3.81
-# Copyright (C) 2006  Free Software Foundation, Inc.
-# This is free software; see the source for copying conditions.
-# There is NO warranty; not even for MERCHANTABILITY or FITNESS FOR A
-# PARTICULAR PURPOSE.
+# GNU Make 4.2.1
+# Built for x86_64-pc-linux-gnu
+# Copyright (C) 1988-2016 Free Software Foundation, Inc.
+# License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+# This is free software: you are free to change and redistribute it.
+# There is NO WARRANTY, to the extent permitted by law.
 
-# This program built for i386-apple-darwin11.3.0
-
-# Make data base, printed on Wed Jul 13 03:25:42 2022
+# Make data base, printed on Wed Jul 13 15:44:04 2022
 
 # Variables
 
+# 'override' directive
+GNUMAKEFLAGS := 
 # automatic
 <D = $(patsubst %/,%,$(dir $<))
 # automatic
 ?F = $(notdir $?)
 # environment
-VSCODE_LOG_NATIVE = false
-# makefile (from `makefile', line 4)
+DESKTOP_SESSION = ubuntu
+# default
+.SHELLFLAGS := -c
+# environment
+XDG_SESSION_CLASS = user
+# environment
+SNAP_COMMON = /var/snap/code/common
+# environment
+XDG_SESSION_TYPE = x11
+# makefile (from 'makefile', line 4)
 TARGET = user server
 # automatic
 ?D = $(patsubst %/,%,$(dir $?))
 # automatic
 @D = $(patsubst %/,%,$(dir $@))
-# automatic
-@F = $(notdir $@)
+# environment
+XAUTHORITY = /run/user/1000/gdm/Xauthority
+# environment
+GDMSESSION = ubuntu
+# environment
+XMODIFIERS = @im=ibus
 # makefile
-CURDIR := /Users/mac/Documents/GitHub/2022-Cybersecurity/app
+CURDIR := /home/djolopez/Documents/INGE_S5_Pise/cybersecurity/project/2022-Cybersecurity/app
 # makefile
 SHELL = /bin/sh
 # environment
-VSCODE_NLS_CONFIG = {"locale":"en-gb","availableLanguages":{},"_languagePackSupport":true}
+SNAP_DATA = /var/snap/code/101
 # environment
-_ = /usr/bin/make
-# makefile (from `makefile', line 2)
+VTE_VERSION = 6003
+# environment
+VSCODE_NLS_CONFIG = {"locale":"en-us","availableLanguages":{},"_languagePackSupport":true}
+# environment
+JOURNAL_STREAM = 8:30564
+# makefile (from 'makefile', line 2)
 CFLAGS = -Wall -g
-# makefile (from `makefile', line 1)
+# environment
+XDG_CONFIG_DIRS = /etc/xdg/xdg-ubuntu:/etc/xdg
+# environment
+SNAP_INSTANCE_NAME = code
+# environment
+SNAP_ARCH = amd64
+# environment
+MAVEN_HOME = /opt/maven
+# makefile (from 'makefile', line 1)
 MAKEFILE_LIST :=  makefile
 # environment
-VSCODE_VERBOSE_LOGGING = true
+JAVA_HOME = /usr/lib/jvm/default-java
+# automatic
+@F = $(notdir $@)
 # environment
-__CFBundleIdentifier = com.microsoft.VSCode
+IM_CONFIG_PHASE = 1
 # environment
-VSCODE_IPC_HOOK_EXTHOST = /var/folders/t_/2jwn3cbx16b9pchvzgb4jvfh0000gn/T/vscode-ipc-c2f7bdd9-98b3-4cf6-8814-3e4dd0cb390e.sock
+USERNAME = djolopez
 # environment
-VSCODE_CWD = /
+MAKELEVEL := 0
 # environment
-PATH = /Users/mac/miniconda3/bin:/Users/mac/miniconda3/condabin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Applications/VMware Fusion.app/Contents/Public:/Library/TeX/texbin:/usr/local/go/bin:/usr/local/share/dotnet:/opt/X11/bin:~/.dotnet/tools:/Library/Frameworks/Mono.framework/Versions/Current/Commands:/Users/mac/.zsh/misc
+XDG_DATA_DIRS = /usr/share/ubuntu:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop
 # environment
-VSCODE_LOG_STACK = false
+DBUS_SESSION_BUS_ADDRESS = unix:path=/run/user/1000/bus,guid=59c7ff7df0cedc67d892886f62cebe6c
+# environment
+MANAGERPID = 818
+# environment
+LESSOPEN = | /usr/bin/lesspipe %s
+# environment
+LC_NAME = fr_FR.UTF-8
+# environment
+VSCODE_CWD = /home/djolopez/Documents/INGE_S5_Pise/cybersecurity/project/2022-Cybersecurity/app
+# environment
+GSETTINGS_SCHEMA_DIR = /snap/code/101/usr/share/glib-2.0/schemas
+# default
+MAKE_HOST := x86_64-pc-linux-gnu
+# environment
+PATH = /home/djolopez/.local/bin:/opt/maven/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
+# environment
+GPG_AGENT_INFO = /run/user/1000/gnupg/S.gpg-agent:0:1
+# environment
+SESSION_MANAGER = local/djolopez-VirtualBox:@/tmp/.ICE-unix/1296,unix/djolopez-VirtualBox:/tmp/.ICE-unix/1296
+# environment
+XDG_RUNTIME_DIR = /run/user/1000
+# environment
+GDK_PIXBUF_MODULE_FILE = /home/djolopez/snap/code/common/.cache/gdk-pixbuf-loaders.cache
+# environment
+SNAP = /snap/code/101
+# environment
+SNAP_VERSION = b06ae3b2
+# environment
+XDG_MENU_PREFIX = gnome-
+# environment
+DISABLE_WAYLAND = 1
 # environment
 ELECTRON_RUN_AS_NODE = 1
-# makefile (from `makefile', line 3)
-LDFLAGS = -lcrypto -lstdc++fs
-# default
-.FEATURES := target-specific order-only second-expansion else-if archives jobserver check-symlink
 # environment
-SSH_AUTH_SOCK = /private/tmp/com.apple.launchd.jWOzSWHKZk/Listeners
+INVOCATION_ID = 34e70f21a8724ae6a7964ac1f6606c4b
+# makefile (from 'makefile', line 3)
+LDFLAGS = -lcrypto -lstdc++fs
+# environment
+GDK_PIXBUF_MODULEDIR = /snap/code/101/usr/lib/x86_64-linux-gnu/gdk-pixbuf-2.0/2.10.0/loaders
+# default
+.FEATURES := target-specific order-only second-expansion else-if shortest-stem undefine oneshell archives jobserver output-sync check-symlink load
+# environment
+LS_COLORS = rs=0:di=01;34:ln=01;36:mh=00:pi=40;33:so=01;35:do=01;35:bd=40;33;01:cd=40;33;01:or=40;31;01:mi=00:su=37;41:sg=30;43:ca=30;41:tw=30;42:ow=34;42:st=37;44:ex=01;32:*.tar=01;31:*.tgz=01;31:*.arc=01;31:*.arj=01;31:*.taz=01;31:*.lha=01;31:*.lz4=01;31:*.lzh=01;31:*.lzma=01;31:*.tlz=01;31:*.txz=01;31:*.tzo=01;31:*.t7z=01;31:*.zip=01;31:*.z=01;31:*.dz=01;31:*.gz=01;31:*.lrz=01;31:*.lz=01;31:*.lzo=01;31:*.xz=01;31:*.zst=01;31:*.tzst=01;31:*.bz2=01;31:*.bz=01;31:*.tbz=01;31:*.tbz2=01;31:*.tz=01;31:*.deb=01;31:*.rpm=01;31:*.jar=01;31:*.war=01;31:*.ear=01;31:*.sar=01;31:*.rar=01;31:*.alz=01;31:*.ace=01;31:*.zoo=01;31:*.cpio=01;31:*.7z=01;31:*.rz=01;31:*.cab=01;31:*.wim=01;31:*.swm=01;31:*.dwm=01;31:*.esd=01;31:*.jpg=01;35:*.jpeg=01;35:*.mjpg=01;35:*.mjpeg=01;35:*.gif=01;35:*.bmp=01;35:*.pbm=01;35:*.pgm=01;35:*.ppm=01;35:*.tga=01;35:*.xbm=01;35:*.xpm=01;35:*.tif=01;35:*.tiff=01;35:*.png=01;35:*.svg=01;35:*.svgz=01;35:*.mng=01;35:*.pcx=01;35:*.mov=01;35:*.mpg=01;35:*.mpeg=01;35:*.m2v=01;35:*.mkv=01;35:*.webm=01;35:*.ogm=01;35:*.mp4=01;35:*.m4v=01;35:*.mp4v=01;35:*.vob=01;35:*.qt=01;35:*.nuv=01;35:*.wmv=01;35:*.asf=01;35:*.rm=01;35:*.rmvb=01;35:*.flc=01;35:*.avi=01;35:*.fli=01;35:*.flv=01;35:*.gl=01;35:*.dl=01;35:*.xcf=01;35:*.xwd=01;35:*.yuv=01;35:*.cgm=01;35:*.emf=01;35:*.ogv=01;35:*.ogx=01;35:*.aac=00;36:*.au=00;36:*.flac=00;36:*.m4a=00;36:*.mid=00;36:*.midi=00;36:*.mka=00;36:*.mp3=00;36:*.mpc=00;36:*.ogg=00;36:*.ra=00;36:*.wav=00;36:*.oga=00;36:*.opus=00;36:*.spx=00;36:*.xspf=00;36:
+# environment
+XDG_SESSION_DESKTOP = ubuntu
+# environment
+SSH_AUTH_SOCK = /run/user/1000/keyring/ssh
 # automatic
 %F = $(notdir $%)
 # environment
-DISPLAY = /private/tmp/com.apple.launchd.xJd2vNW3wx/org.xquartz:0
+DISPLAY = :0
 # environment
-CONDA_EXE = /Users/mac/miniconda3/bin/conda
+SNAP_INSTANCE_KEY = 
 # environment
-VSCODE_PIPE_LOGGING = true
+PWD = /home/djolopez/Documents/INGE_S5_Pise/cybersecurity/project/2022-Cybersecurity/app
+# default
+.LOADED := 
 # environment
-PWD = /Users/mac/Documents/GitHub/2022-Cybersecurity/app
+SSH_AGENT_PID = 1116
 # environment
-ORIGINAL_XDG_CURRENT_DESKTOP = undefined
+ORIGINAL_XDG_CURRENT_DESKTOP = ubuntu:GNOME
+# environment
+GTK_MODULES = gail:atk-bridge
 # environment
 VSCODE_AMD_ENTRYPOINT = vs/workbench/api/node/extensionHostProcess
 # environment
-HOME = /Users/mac
-# default
-MAKEFILEPATH = $(shell /usr/bin/xcode-select -print-path 2>/dev/null || echo /Developer)/Makefiles
+HOME = /home/djolopez
 # environment
-VSCODE_CODE_CACHE_PATH = /Users/mac/Library/Application Support/Code/CachedData/30d9c6cd9483b2cc586687151bcbcd635f373630
+LESSCLOSE = /usr/bin/lesspipe %s %s
 # environment
-LOGNAME = mac
+VSCODE_CLI = 1
+# environment
+VSCODE_CODE_CACHE_PATH = /home/djolopez/.config/Code/CachedData/b06ae3b2d2dbfe28bca3134cc6be65935cdfea6a
+# environment
+LOGNAME = djolopez
 # environment
 APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL = 1
 # environment
-CONDA_PROMPT_MODIFIER = (base) 
+SNAP_LIBRARY_PATH = /var/lib/snapd/lib/gl:/var/lib/snapd/lib/gl32:/var/lib/snapd/void
+# environment
+SNAP_CONTEXT = JVo183CtBfhVj8DiBlL2efcbO7fBdAGPA5Cl4oJyx3B8FW4DB2oE
+# automatic
++F = $(notdir $+)
+# environment
+ELECTRON_NO_ATTACH_CONSOLE = 1
+# environment
+M2_HOME = /opt/maven
+# environment
+SNAP_USER_COMMON = /home/djolopez/snap/code/common
 # environment
 VSCODE_HANDLES_UNCAUGHT_ERRORS = true
+# environment
+GNOME_DESKTOP_SESSION_ID = this-is-deprecated
 # automatic
 ^D = $(patsubst %/,%,$(dir $^))
 # environment
-CONDA_DEFAULT_ENV = base
+LC_TIME = fr_FR.UTF-8
 # environment
-XPC_FLAGS = 0x0
+SNAP_REAL_HOME = /home/djolopez
+# environment
+COLORTERM = truecolor
 # default
 MAKE = $(MAKE_COMMAND)
 # default
 MAKECMDGOALS := all
 # environment
-SHLVL = 1
-# makefile (from `makefile', line 1)
-CC = g++
-# default
-MAKE_VERSION := 3.81
+QT_IM_MODULE = ibus
 # environment
-USER = mac
+SNAP_USER_DATA = /home/djolopez/snap/code/101
+# environment
+SHLVL = 0
+# makefile (from 'makefile', line 1)
+CC = g++
+# environment
+GNOME_SHELL_SESSION_MODE = ubuntu
+# default
+MAKE_VERSION := 4.2.1
+# environment
+USER = djolopez
+# environment
+SNAP_REVISION = 101
+# environment
+LC_MONETARY = fr_FR.UTF-8
 # makefile
 .DEFAULT_GOAL := all
+# environment
+XDG_CURRENT_DESKTOP = Unity
 # automatic
 %D = $(patsubst %/,%,$(dir $%))
 # environment
-CONDA_SHLVL = 1
+LC_TELEPHONE = fr_FR.UTF-8
 # default
-MAKE_COMMAND := /Library/Developer/CommandLineTools/usr/bin/make
+MAKE_COMMAND := make
+# environment
+OLDPWD = /home/djolopez/Documents/INGE_S5_Pise/cybersecurity/project/2022-Cybersecurity/app/server
 # default
 .VARIABLES := 
-# environment
-TMPDIR = /var/folders/t_/2jwn3cbx16b9pchvzgb4jvfh0000gn/T/
 # automatic
 *F = $(notdir $*)
 # environment
-VSCODE_IPC_HOOK = /Users/mac/Library/Application Support/Code/1.68.1-main.sock
+VSCODE_IPC_HOOK = /run/user/1000/vscode-0941bf64-1.69.1-main.sock
 # makefile
-MAKEFLAGS = Rrqp
+MAKEFLAGS = pqrR
 # environment
-MFLAGS = -Rrqp
+MFLAGS = -pqrR
 # automatic
 *D = $(patsubst %/,%,$(dir $*))
-# environment
-XPC_SERVICE_NAME = application.com.microsoft.VSCode.61507554.61507560
 # automatic
 +D = $(patsubst %/,%,$(dir $+))
-# automatic
-+F = $(notdir $+)
 # environment
-__CF_USER_TEXT_ENCODING = 0x1F5:0x0:0x0
+GDK_BACKEND = x11
 # environment
-COMMAND_MODE = unix2003
+LC_PAPER = fr_FR.UTF-8
+# environment
+QT_ACCESSIBILITY = 1
 # default
 MAKEFILES := 
+# environment
+SNAP_COOKIE = JVo183CtBfhVj8DiBlL2efcbO7fBdAGPA5Cl4oJyx3B8FW4DB2oE
+# environment
+LC_NUMERIC = fr_FR.UTF-8
 # automatic
 <F = $(notdir $<)
 # environment
+LC_MEASUREMENT = fr_FR.UTF-8
+# environment
+SNAP_NAME = code
+# environment
 LC_ALL = C
 # environment
-CONDA_PYTHON_EXE = /Users/mac/miniconda3/bin/python
+DBUS_STARTER_BUS_TYPE = session
+# environment
+GNOME_TERMINAL_SCREEN = /org/gnome/Terminal/screen/faacc438_d3c3_4550_9cbd_48d8c80feb26
 # automatic
 ^F = $(notdir $^)
-# makefile (from `makefile', line 5)
+# makefile (from 'makefile', line 5)
 DEPS = ./utils.h
+# environment
+GNOME_TERMINAL_SERVICE = :1.89
 # default
 SUFFIXES := 
 # environment
-_CE_M = 
+SNAP_REEXEC = 
+# environment
+CHROME_DESKTOP = code-url-handler.desktop
+# environment
+WINDOWPATH = 2
 # default
-.INCLUDE_DIRS = /usr/local/include
+.INCLUDE_DIRS = /usr/include /usr/local/include /usr/include
 # environment
-MAKELEVEL := 0
+LC_IDENTIFICATION = fr_FR.UTF-8
+# default
+.RECIPEPREFIX := 
 # environment
-CONDA_PREFIX = /Users/mac/miniconda3
-# environment
-VSCODE_PID = 18791
-# environment
-_CE_CONDA = 
+LC_ADDRESS = fr_FR.UTF-8
 # environment
 LANG = C
+# environment
+TERM = xterm-256color
+# environment
+VSCODE_PID = 5642
+ 
+# environment
+DBUS_STARTER_ADDRESS = unix:path=/run/user/1000/bus,guid=59c7ff7df0cedc67d892886f62cebe6c
 # variable set hash-table stats:
-# Load=76/1024=7%, Rehash=0, Collisions=2/106=2%
+# Load=134/1024=13%, Rehash=0, Collisions=19/166=11%
 
 # Pattern-specific Variable Values
 
@@ -172,7 +288,7 @@ LANG = C
 
 # Directories
 
-# . (device 16777223, inode 62625006): 9 files, no impossibilities.
+# . (device 2053, inode 1205064): 9 files, no impossibilities.
 
 # 9 files, no impossibilities in 1 directories.
 
@@ -183,13 +299,13 @@ LANG = C
 # Files
 
 all: start-server start-user
-#  Command-line target.
+#  Command line target.
 #  Implicit rule search has been done.
 #  File does not exist.
 #  File has been updated.
 #  Needs to be updated (-q is set).
 # variable set hash-table stats:
-# Load=0/32=0%, Rehash=0, Collisions=0/6=0%
+# Load=0/32=0%, Rehash=0, Collisions=0/7=0%
 
 # Not a target:
 .SUFFIXES:
@@ -200,11 +316,9 @@ all: start-server start-user
 # Not a target:
 makefile:
 #  Implicit rule search has been done.
-#  Last modified 2022-07-13 03:23:58
+#  Last modified 2022-07-13 09:47:58.688721308
 #  File has been updated.
 #  Successfully updated.
-# variable set hash-table stats:
-# Load=0/32=0%, Rehash=0, Collisions=0/0=0%
 
 # Not a target:
 user/start-user.cpp:
@@ -222,22 +336,20 @@ start-user: user/start-user.cpp
 #  Implicit rule search has not been done.
 #  Modification time never checked.
 #  File has not been updated.
-#  commands to execute (from `makefile', line 13):
+#  recipe to execute (from 'makefile', line 13):
 	$(CC) $(CFLAGS) $< -o user/$@ -I$(DEPS) $(LDFLAGS)
-	
 
 clean:
 #  Implicit rule search has not been done.
 #  Modification time never checked.
 #  File has not been updated.
-#  commands to execute (from `makefile', line 16):
+#  recipe to execute (from 'makefile', line 16):
 	rm server/start-server
 	rm user/start-user
-	
 
 start-server: server/start-server.cpp
 #  Implicit rule search has not been done.
-#  Implicit/static pattern stem: `'
+#  Implicit/static pattern stem: ''
 #  File does not exist.
 #  File has been updated.
 #  Needs to be updated (-q is set).
@@ -258,33 +370,31 @@ start-server: server/start-server.cpp
 # automatic
 # ? := server/start-server.cpp
 # variable set hash-table stats:
-# Load=8/32=25%, Rehash=0, Collisions=1/16=6%
-#  commands to execute (from `makefile', line 10):
+# Load=8/32=25%, Rehash=0, Collisions=1/17=6%
+#  recipe to execute (from 'makefile', line 10):
 	$(CC) $(CFLAGS) $< -o server/$@ -I$(DEPS) $(LDFLAGS)
-	
 
 # Not a target:
 server/start-server.cpp:
 #  Implicit rule search has been done.
-#  Last modified 2022-07-13 03:23:58
+#  Last modified 2022-07-13 15:24:46.890462666
 #  File has been updated.
 #  Successfully updated.
-# variable set hash-table stats:
-# Load=0/32=0%, Rehash=0, Collisions=0/0=0%
 
 # files hash-table stats:
 # Load=9/1024=1%, Rehash=0, Collisions=0/27=0%
 # VPATH Search Paths
 
-# No `vpath' search paths.
+# No 'vpath' search paths.
 
-# No general (`VPATH' variable) search path.
+# No general ('VPATH' variable) search path.
 
-# # of strings in strcache: 1
-# # of strcache buffers: 1
-# strcache size: total = 4096 / max = 4096 / min = 4096 / avg = 4096
-# strcache free: total = 4087 / max = 4087 / min = 4087 / avg = 4087
+# strcache buffers: 1 (0) / strings = 19 / storage = 192 B / avg = 10 B
+# current buf: size = 8162 B / used = 192 B / count = 19 / avg = 10 B
 
-# Finished Make data base on Wed Jul 13 03:25:42 2022
+# strcache performance: lookups = 31 / hit rate = 38%
+# hash-table stats:
+# Load=19/8192=0%, Rehash=0, Collisions=1/31=3%
+# Finished Make data base on Wed Jul 13 15:44:04 2022
 
  

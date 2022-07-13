@@ -535,99 +535,94 @@ public:
 
         cout << "Client "<< clientUsername << " upload request\n";
 
-        //Read File Path
+        // Read File Path
         int * filepathEncLen = (int *) malloc(sizeof(int));
         unsigned char * iv = (unsigned char *) malloc(ivSize);
-        unsigned char * filepathEnc = (unsigned char *) malloc(*filepathEncLen);
-
+        if (!filepathEncLen || !iv) {
+            cout << "Error allocating buffers to receive encrypted filename\n";
+            return 0;
+        }
         if (!filepathEncLen) {
             cerr << "Error allocating buffer for upload filepath length\n";
-            close(clientfd);
             return 0;
         }
         ret = readInt(clientfd, filepathEncLen);
         if (!ret) {
             cerr << "Error upload filepath length\n";
-            close(clientfd);
             return 0;
-        }        
+        }
+        unsigned char * filepathEnc = (unsigned char *) malloc(*filepathEncLen);
         if (!filepathEnc) {
             cerr << "Error allocating buffer for upload filepath\n";
-            close(clientfd);
             return 0;
         }
         ret = read(clientfd, filepathEnc, *filepathEncLen);
         if (!ret) {
             cerr << "Error reading upload filepath\n";
-            close(clientfd);
             return 0;
         }
-
         ret = read(clientfd, iv, ivSize);
         if (!ret) {
             cerr << "Error reading iv for upload filepath\n";
-            close(clientfd);
             return 0;
         }
 
-        // cout << "\nTEST IF SESSION KEY IS MATCH: " << *filepathEncLen<<"\n";
-        // BIO_dump_fp(stdout, (const char *) filepathEnc, *filepathEncLen);
-        // BIO_dump_fp(stdout, (const char *) iv, ivSize);
-        // BIO_dump_fp(stdout, (const char *) sessionKey, sessionKeySize);
-
+        // Decrypt filename
         unsigned char * decryptedFilepath = (unsigned char *) malloc(*filepathEncLen);
         ret = decryptSym(filepathEnc, *filepathEncLen, decryptedFilepath, iv, tempKey);
         if (!ret) {
             cerr << "Error decrypting the upload filepath\n";
             return 0;
         }
-        decryptedFilepath[ret] = NULL;
-        string filepath = std::string(reinterpret_cast<char *>(decryptedFilepath));
-
+        string filepath(decryptedFilepath, decryptedFilepath + ret);
         string spath = "users_infos/" + clientUsername + "/files/" + filepath;
         filesystem::path path(spath);
 
+        // Free things
         free(filepathEncLen);
         free(filepathEnc);
+        free(decryptedFilepath);
 
-
+        // Read size of file
         int * upload_size = (int *) malloc(sizeof(int));
         ret = readInt(clientfd, upload_size);
         if (!ret) {
             cerr << "Error upload filepath length\n";
-            close(clientfd);
             return 0;
         }
-
         int remainedBlock = *upload_size;
+        free(upload_size);
 
+        // Create file in user's file folder
         ofstream wf(path, ios::out | ios::binary);
         if(!wf) {
             cout << "Cannot open file to write upload file!" << endl;
-            return 1;
+            return 0;
         }
 
+        // Read file content
         while(remainedBlock>0){
 
+            // Receive data
             int * uploadBlockLen = (int *) malloc(sizeof(int));
             ret = readInt(clientfd, uploadBlockLen);
             if (!ret) {
                 cerr << "Error upload block length\n";
-                close(clientfd);
                 return 0;
             }
-
             unsigned char * iv = (unsigned char *) malloc(ivSize);
             unsigned char * cyberBuffer = (unsigned char *) malloc(*uploadBlockLen);
             unsigned char * plainBuffer = (unsigned char *) malloc(UPLOAD_BUFFER_SIZE);
-
+            if (!iv || !cyberBuffer || !plainBuffer) {
+                cerr << "Error allocating buffers for file block decryption\n";
+                return 0;
+            }
             ret = read(clientfd, cyberBuffer, *uploadBlockLen);
             if (!ret) {
                 cerr << "Error reading encrypted upload block\n";
                 close(clientfd);
                 return 0;
             }
-
             ret = read(clientfd, iv, ivSize);
             if (!ret) {
                 cerr << "Error reading iv for upload block\n";
@@ -635,49 +630,26 @@ public:
                 return 0;
             }
 
+            // Decrypt data
             ret = decryptSym(cyberBuffer, *uploadBlockLen, plainBuffer, iv, tempKey);
             if (!ret) {
                 cerr << "Error decrypting the upload block\n";
                 return 0;
             }
-
             int plaintextLen = ret; 
 
+            // Write decrypted content into the file on user's filesystem
             for(int i = 0; i < plaintextLen; i++){
                 wf.write((char *) &plainBuffer[i], sizeof(char));
-                // cout<<plainBuffer[i];
             }
-
             remainedBlock -= plaintextLen;
         }
         wf.close();
 
         if(!wf.good()) {
             cout << "Error occurred at writing time while saving uploaded file!" << endl;
-            return 1;
+            return 0;
         }
-
-        // std::ifstream infile(fullPath);
-
-        // //get length of file
-        // int upload_size = 137;
-        // infile.seekg(0, std::ios::beg);
-        
-        // char buffer[8] = "test\n";
-        // int remainbytes = upload_size;
-        // // don't overflow the buffer!
-        // while(remainbytes > 0){
-
-        //     int readsize = 8;
-
-        //     //Read Data
-        //     //Decrypt Data
-        //     //Write Data into the fiel
-
-        //     std::ofstream("user_cloud/khabib/test.txt", std::ios::binary).write(buffer, readsize);
-        //     remainbytes -= 8;
-
-        // }
 
         cout << "--- FILE UPLOADED ---\n";
         
@@ -687,76 +659,64 @@ public:
     int downloadFile() {
 
         int ret;
+
         cout << "Client "<< clientUsername << " download request\n";
         
         //Read File Path
         int * filepathEncLen = (int *) malloc(sizeof(int));
         unsigned char * iv = (unsigned char *) malloc(ivSize);
-        unsigned char * filepathEnc = (unsigned char *) malloc(*filepathEncLen);
-
+        if (!filepathEncLen || !iv) {
+            cerr << "Error allocating buffers for enrypted filename\n";
+            return 0;
+        }
         if (!filepathEncLen) {
             cerr << "Error allocating buffer for upload filepath length\n";
-            close(clientfd);
             return 0;
         }
         ret = readInt(clientfd, filepathEncLen);
         if (!ret) {
             cerr << "Error upload filepath length\n";
-            close(clientfd);
             return 0;
         }
-
+        unsigned char * filepathEnc = (unsigned char *) malloc(*filepathEncLen);
         if (!filepathEnc) {
             cerr << "Error allocating buffer for upload filepath\n";
-            close(clientfd);
             return 0;
         }
         ret = read(clientfd, filepathEnc, *filepathEncLen);
         if (!ret) {
             cerr << "Error reading upload filepath\n";
-            close(clientfd);
             return 0;
         }
-
         ret = read(clientfd, iv, ivSize);
         if (!ret) {
             cerr << "Error reading iv for upload filepath\n";
-            close(clientfd);
             return 0;
         }
 
-        // cout << "\nTEST IF SESSION KEY IS MATCH: " << *filepathEncLen<<"\n";
-        // BIO_dump_fp(stdout, (const char *) filepathEnc, *filepathEncLen);
-        // BIO_dump_fp(stdout, (const char *) iv, ivSize);
-        // BIO_dump_fp(stdout, (const char *) sessionKey, sessionKeySize);
-
+        // Decrypt filename
         unsigned char * decryptedFilepath = (unsigned char *) malloc(*filepathEncLen);
         ret = decryptSym(filepathEnc, *filepathEncLen, decryptedFilepath, iv, tempKey);
         if (!ret) {
             cerr << "Error decrypting the upload filepath\n";
             return 0;
         }
-        decryptedFilepath[ret] = NULL;
-        string filepath = std::string(reinterpret_cast<char *>(decryptedFilepath));
+        string filepath(decryptedFilepath, decryptedFilepath + ret);
 
-        cout << "Requested download file " << filepath << "\n";
-
-        ret = checkFilename(filepath);
-        if (!ret)
-        {
-            cout << ">> Filename is not valid \n";
+        // Check existence of the file and send the response to the client
+        ret = existsFile(filepath, clientUsername);
+        int exists = ret;
+        ret = sendInt(clientfd, exists);
+        if (!ret) {
+            cout << "File does not exists\n";
             return 0;
         }
 
-        // string spath = "users_infos/" + clientUsername + "/files/" + filepath;
+        cout << "Requested file: " << filepath << "\n";
 
-
-        fs::path fullPath = "users_infos";
-        fullPath = fullPath/clientUsername;
-        fullPath = fullPath/"files";
-        fullPath.append(filepath);
-        
-        // cout << fullPath << "\n";
+        // Get complete path to the file
+        string sfullPath = "users_info/" + clientUsername + "/files" + filepath;
+        fs::path fullPath(sfullPath);
 
         free(filepathEncLen);
         free(iv);
@@ -766,42 +726,33 @@ public:
         // open file
         std::ifstream infile(fullPath);
 
-        // Send file length to server 
+        // Send file size to client 
         infile.seekg(0, std::ios::end);
         int upload_size = infile.tellg();
-        // cout << "File Size is " << upload_size << "\n";
-
         ret = sendInt(clientfd, upload_size);
         if (!ret) {
-            cerr << "Error sending upload filesize to server\n";
+            cerr << "Error sending upload filesize to client\n";
             return 0;
         }
 
         //send file block by block
         infile.seekg(0, std::ios::beg);
-
         char plainBuffer[UPLOAD_BUFFER_SIZE];
         int remainbytes = upload_size;
-
         while((!infile.eof() && (remainbytes > 0))){
 
             int readlength = sizeof (plainBuffer);
-            
             readlength = std::min(readlength,remainbytes);
-            
             remainbytes -= readlength;
-
             infile.read(plainBuffer, readlength);
-
-            // if(readlength < sizeof(plainBuffer)){
-            //     readlength -= 1;
-            // }
             
+            // Encrypt the block
             unsigned char * cyperBuffer = (unsigned char *) malloc(readlength + blockSize);
             unsigned char * iv = (unsigned char *) malloc(ivSize);
-
-            // cout << "Read length: "<<readlength<<"\n";
-
+            if (!cyperBuffer || !iv) {
+                cerr << "Error allocating buffer for encrypting file block\n";
+                return 0;
+            }
             int ret = encryptSym((unsigned char *)plainBuffer, readlength, cyperBuffer, iv, tempKey);
             if (!ret) {
                 cerr << "Error encrypting the upload block\n";
@@ -809,16 +760,7 @@ public:
             }
             int encryptedSize = ret;
 
-            // TEST
-            // cout << "\nUPLOAD ENCRYPTION\n";
-            // cout << "\nUPLOAD ENCRYPTION\n";
-            // cout << "encryptedBufferSize = " << encryptedSize << " encryptedBuffer :\n";
-            // BIO_dump_fp(stdout, (const char *) encryptedBuffer, encryptedSize);
-            // cout << "iv Size = " << ivSize << " iv :\n";
-            // BIO_dump_fp(stdout, (const char *) iv, ivSize);
-            // cout << "TEST UPLOAD ENCRYPTION END\n\n";
-
-            // Send encrypted nonce
+            // Send encrypted block
             ret = sendInt(clientfd, encryptedSize);
             if (!ret) {
                 cerr << "Error sending upload buffer size to server\n";
@@ -834,42 +776,9 @@ public:
                 cerr << "Error sending upload buffer iv to server\n";
                 return 0;
             }
-
-            // unsigned char * decryptedBufferTest = (unsigned char *) malloc(encryptedSize);
-            // ret = decryptSym(encryptedBuffer, encryptedSize, decryptedBufferTest, iv, sessionKey);
-            // if (!ret) {
-            //     cerr << "Error decrypting the nonce\n";
-            //     return 0;
-            // }
-            // cout << "REEEET" << ret;
-            // BIO_dump_fp(stdout, (const char *) decryptedBufferTest, ret);
         }
         infile.close();
-
         
-
-        // std::ifstream infile(fullPath);
-
-        // //get length of file
-        // int upload_size = 137;
-        // infile.seekg(0, std::ios::beg);
-        
-        // char buffer[8] = "test\n";
-        // int remainbytes = upload_size;
-        // // don't overflow the buffer!
-        // while(remainbytes > 0){
-
-        //     int readsize = 8;
-
-        //     //Read Data
-        //     //Decrypt Data
-        //     //Write Data into the fiel
-
-        //     std::ofstream("user_cloud/khabib/test.txt", std::ios::binary).write(buffer, readsize);
-        //     remainbytes -= 8;
-
-        // }
-
         cout << "--- FILE DOWNLOADED ---\n";
         
         return 1;

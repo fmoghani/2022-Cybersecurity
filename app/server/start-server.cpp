@@ -28,7 +28,6 @@
 
 using namespace std;
 using namespace std::experimental;
-#define UPLOAD_BUFFER_SIZE 8
 namespace fs = std::experimental::filesystem;
 
 class Server
@@ -534,7 +533,8 @@ public:
         
         int ret;
 
-        cout << "Client: "<< clientUsername << " upload request\n";
+        cout << "Client "<< clientUsername << " upload request\n";
+
         //Read File Path
         int * filepathEncLen = (int *) malloc(sizeof(int));
         unsigned char * iv = (unsigned char *) malloc(ivSize);
@@ -570,10 +570,10 @@ public:
             return 0;
         }
 
-        cout << "\nTEST IF SESSION KEY IS MATCH: " << *filepathEncLen<<"\n";
-        BIO_dump_fp(stdout, (const char *) filepathEnc, *filepathEncLen);
-        BIO_dump_fp(stdout, (const char *) iv, ivSize);
-        BIO_dump_fp(stdout, (const char *) sessionKey, sessionKeySize);
+        // cout << "\nTEST IF SESSION KEY IS MATCH: " << *filepathEncLen<<"\n";
+        // BIO_dump_fp(stdout, (const char *) filepathEnc, *filepathEncLen);
+        // BIO_dump_fp(stdout, (const char *) iv, ivSize);
+        // BIO_dump_fp(stdout, (const char *) sessionKey, sessionKeySize);
 
         unsigned char * decryptedFilepath = (unsigned char *) malloc(*filepathEncLen);
         ret = decryptSym(filepathEnc, *filepathEncLen, decryptedFilepath, iv, tempKey);
@@ -584,12 +584,8 @@ public:
         decryptedFilepath[ret] = NULL;
         string filepath = std::string(reinterpret_cast<char *>(decryptedFilepath));
 
-        cout<<"File name:" << filepath;
-
         string spath = "users_infos/" + clientUsername + "/files/" + filepath;
         filesystem::path path(spath);
-        
-        cout << path;
 
         free(filepathEncLen);
         free(filepathEnc);
@@ -603,13 +599,7 @@ public:
             return 0;
         }
 
-
-        cout << *upload_size;
-
         int remainedBlock = *upload_size;
-
-
-
 
         ofstream wf(path, ios::out | ios::binary);
         if(!wf) {
@@ -655,7 +645,7 @@ public:
 
             for(int i = 0; i < plaintextLen; i++){
                 wf.write((char *) &plainBuffer[i], sizeof(char));
-                cout<<plainBuffer[i];
+                // cout<<plainBuffer[i];
             }
 
             remainedBlock -= plaintextLen;
@@ -688,6 +678,8 @@ public:
         //     remainbytes -= 8;
 
         // }
+
+        cout << "--- FILE UPLOADED ---\n";
         
         return 1;
     }
@@ -695,9 +687,8 @@ public:
     int downloadFile() {
 
         int ret;
-        cout << "Client: "<< clientUsername << " downlaod request\n";
+        cout << "Client "<< clientUsername << " download request\n";
         
-
         //Read File Path
         int * filepathEncLen = (int *) malloc(sizeof(int));
         unsigned char * iv = (unsigned char *) malloc(ivSize);
@@ -748,7 +739,7 @@ public:
         decryptedFilepath[ret] = NULL;
         string filepath = std::string(reinterpret_cast<char *>(decryptedFilepath));
 
-        cout<<"Requested download file: " << filepath << "\n";
+        cout << "Requested download file " << filepath << "\n";
 
         ret = checkFilename(filepath);
         if (!ret)
@@ -765,7 +756,7 @@ public:
         fullPath = fullPath/"files";
         fullPath.append(filepath);
         
-        cout << fullPath << "\n";
+        // cout << fullPath << "\n";
 
         free(filepathEncLen);
         free(iv);
@@ -778,7 +769,7 @@ public:
         // Send file length to server 
         infile.seekg(0, std::ios::end);
         int upload_size = infile.tellg();
-        cout << "File Size is" << upload_size<<".\n";
+        // cout << "File Size is " << upload_size << "\n";
 
         ret = sendInt(clientfd, upload_size);
         if (!ret) {
@@ -809,7 +800,7 @@ public:
             unsigned char * cyperBuffer = (unsigned char *) malloc(readlength + blockSize);
             unsigned char * iv = (unsigned char *) malloc(ivSize);
 
-            cout << "Read length: "<<readlength<<"\n";
+            // cout << "Read length: "<<readlength<<"\n";
 
             int ret = encryptSym((unsigned char *)plainBuffer, readlength, cyperBuffer, iv, tempKey);
             if (!ret) {
@@ -852,9 +843,6 @@ public:
             // }
             // cout << "REEEET" << ret;
             // BIO_dump_fp(stdout, (const char *) decryptedBufferTest, ret);
-            
-            
-
         }
         infile.close();
 
@@ -881,9 +869,10 @@ public:
         //     remainbytes -= 8;
 
         // }
+
+        cout << "--- FILE DOWNLOADED ---\n";
         
         return 1;
-
     }
 
     int deleteFile()

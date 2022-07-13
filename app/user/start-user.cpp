@@ -21,8 +21,6 @@
 using namespace std;
 
 #define PORT 1805
-#define UPLOAD_BUFFER_SIZE 8
-#define MAX_FILE_SIZE_FOR_UPLOAD 4000000000
 namespace fs = std::experimental::filesystem;
 
 class Client
@@ -480,7 +478,7 @@ public:
     }
 
     int uploadFile() {
-        cout << ">> To upload a file, please write the file name you.\n";
+        cout << ">> To upload a file, please write the file name :\n";
         cout << ">> ";
 
         string filepath;
@@ -491,7 +489,7 @@ public:
         filesystem::path path_to_loadfile(filepath);
 
         std::string filename = filepath.substr(filepath.find_last_of("/") + 1);
-        cout << ">>" << filename<<"\n";
+        // cout << ">>" << filename<<"\n";
         
         // Check File extention
         std::string::size_type idx;
@@ -560,7 +558,7 @@ public:
             cerr << "File Size is larger than supported" << upload_size<<".\n";    
             return 0;
         }
-        cout << "File Size is" << upload_size<<".\n";
+        cout << ">> File Size is " << upload_size<<"\n";
         ret = sendInt(socketfd, upload_size);
         if (!ret) {
             cerr << "Error sending upload filesize to server\n";
@@ -633,12 +631,14 @@ public:
         }
         infile.close();
 
+        cout << ">> File uploaded successfully\n";
+
         return 1;
     }
 
     int downloadFile() {
 
-        cout << ">> To downlaod a file, please write the complete file path of your clode file with extention.\n";
+        cout << ">> To download a file, please write the complete file path of your cloud file with extention\n";
         cout << ">> ";
 
 
@@ -648,7 +648,7 @@ public:
 
         // Check File Existence
         std::string filename = filepath.substr(filepath.find_last_of("/") + 1);
-        cout << ">>" << filename<<"\n";
+        // cout << ">>" << filename<<"\n";
         
         // Check File extention
         std::string::size_type idx;
@@ -657,7 +657,7 @@ public:
         if(idx != std::string::npos)
         {
             std::string extension = filename.substr(idx+1);
-            cout << ">>" << extension<<"\n";
+            // cout << ">>" << extension<<"\n";
         }
         else
         {
@@ -696,19 +696,16 @@ public:
             return 0;
         }
 
-        // RecieveFile
-
+        // ReceiveFile
         int * upload_size = (int *) malloc(sizeof(int));
         ret = readInt(socketfd, upload_size);
         if (!ret) {
             cerr << "Error upload filepath length\n";
             return 0;
         }
-
-
-        cout << *upload_size;
-
+        // cout << *upload_size;
         int remainedBlock = *upload_size;
+        free(upload_size);
 
         ofstream wf(filename, ios::out | ios::binary);
         if(!wf) {
@@ -747,7 +744,7 @@ public:
                 cerr << "Error decrypting the upload block\n";
                 return 0;
             }
-
+            free(uploadBlockLen);
             int plaintextLen = ret;
 
             for(int i = 0; i < plaintextLen; i++){
@@ -865,6 +862,8 @@ public:
         // Decript Data
 
         // Store Data inside file
+
+        cout << ">> Files downloaded successfully\n";
 
         return 1;
     }

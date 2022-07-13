@@ -45,7 +45,6 @@ class Server
 
     // Keys
     unsigned char *sessionKey;
-    unsigned char *tempKey;
 
 public:
     // Get username
@@ -256,8 +255,101 @@ public:
         free(usernameLen);
         free(buffer);
 
-        // Temporary key
-        tempKey = (unsigned char *)"01234567890123450123456789012345";
+        return 1;
+    }
+
+    int sendIdProof() {
+
+        int ret;
+
+        // Receive client's nonce
+        unsigned char * serverNonce = (unsigned char *) malloc(nonceSize);
+        if (!serverNonce) {
+            cerr << "Error allocating buffer for server nonce\n";
+            close(clientfd);
+            return 0;
+        }
+        ret = read(clientfd, serverNonce, nonceSize);
+        if (ret <= 0) {
+            cerr << "Error reading server nonce\n";
+            close(clientfd);
+            return 0;
+        }
+
+        // Retreive server's private key
+        string path = "server_infos/prvkey.pem";
+        FILE *keyFile = fopen(path.c_str(), "r");
+        if (!keyFile)
+        {
+            cerr << "Error could not open server private key file\n";
+            close(clientfd);
+            return 0;
+        }
+        const char *password = "password";
+        EVP_PKEY * serverPrvKey = PEM_read_PrivateKey(keyFile, NULL, NULL, (void *) password);
+        fclose(keyFile);
+        if (!serverPrvKey)
+        {
+            cerr << "Error cannot read server private key from pem file\n";
+            close(clientfd);
+            return 0;
+        }
+
+        // Allocate buffer for signature
+        unsigned char * sig = (unsigned char *) malloc(EVP_PKEY_size(serverPrvKey));
+        if (!sig) {
+            cerr << "Error allocating buffer for server's signature\n";
+            close(clientfd);
+            return 0;
+        }
+
+        // Sign nonce using private key
+        const EVP_MD * md = EVP_sha256();
+        EVP_MD_CTX * ctx = EVP_MD_CTX_new();
+        if (!ctx) {
+            cerr << "Error creating context for signature\n";
+            close(clientfd);
+            return 0;
+        }
+        ret = EVP_SignInit(ctx, md);
+        if (!ret) {
+            cerr << "Error during initialization for signature\n";
+            close(clientfd);
+            return 0;
+        }
+        ret = EVP_SignUpdate(ctx, serverNonce, nonceSize);
+        if (!ret) {
+            cerr << "Error during update for signature\n";
+            close(clientfd);
+            return 0;
+        }
+        unsigned int sigSize;
+        ret = EVP_SignFinal(ctx, sig, &sigSize, serverPrvKey);
+        if (!ret) {
+            cerr << "Error during finalization for signature\n";
+            close(clientfd);
+            return 0;
+        }
+
+        // Send signature to client
+        ret = sendInt(clientfd, sigSize);
+        if (!ret) {
+            cerr << "Error sending signature size to client\n";
+            close(clientfd);
+            return 0;
+        }
+        ret = send(clientfd, sig, sigSize, 0);
+        if (ret <= 0) {
+            cerr << "Error sending signature to client\n";
+            close(clientfd);
+            return 0;
+        }
+
+        // Free everything
+        EVP_MD_CTX_free(ctx);
+        EVP_PKEY_free(serverPrvKey);
+        free(serverNonce);
+        free(sig);
 
         return 1;
     }
@@ -368,7 +460,6 @@ public:
             return 0;
         }
         encryptedSize += bytesWritten;
-        cout << "encrypted size after update : " << encryptedSize << endl;
         ret = EVP_SealFinal(ctx, encryptedSecret + encryptedSize, &bytesWritten);
         if (ret <= 0)
         {
@@ -377,7 +468,6 @@ public:
             return 0;
         }
         encryptedSize += bytesWritten;
-        cout << "encrypted size after final : " << encryptedSize << endl;
         EVP_CIPHER_CTX_free(ctx);
 
         // Send the encrypted key
@@ -520,6 +610,8 @@ public:
             close(clientfd);
             return 0;
         }
+        free(nonce);
+        free(clientResponse);
 
         CONNEXION_STATUS = 1;
 
@@ -568,7 +660,7 @@ public:
         // Decrypt new filename
         unsigned char *buggedFilename = (unsigned char *)malloc(encryptedSize);
         int decryptedSize;
-        decryptedSize = decryptSym(encryptedFilename, encryptedSize, buggedFilename, iv, tempKey);
+        decryptedSize = decryptSym(encryptedFilename, encryptedSize, buggedFilename, iv, sessionKey);
         if (!decryptedSize)
         {
             cout << "Error decrypting new filename\n";
@@ -642,7 +734,7 @@ public:
             }
             unsigned char * charFilename = (unsigned char *) malloc(filename.size());
             copy(filename.begin(), filename.end(), charFilename);
-            ret = encryptSym(charFilename, filename.size(), encryptedFilename, iv, tempKey);
+            ret = encryptSym(charFilename, filename.size(), encryptedFilename, iv, sessionKey);
             if (!ret) {
                 cout << ">> Error during encryption\n";
                 return 0;
@@ -658,7 +750,7 @@ public:
             }
         }
 
-        cout << "--- FILES LISTED ---";
+        cout << "--- FILES LISTED ---\n";
 
         return 1;
     }
@@ -696,7 +788,7 @@ public:
         // Decrypt new filename
         unsigned char *buggedFilename = (unsigned char *)malloc(encryptedSize);
         int decryptedSize;
-        decryptedSize = decryptSym(encryptedFilename, encryptedSize, buggedFilename, iv, tempKey);
+        decryptedSize = decryptSym(encryptedFilename, encryptedSize, buggedFilename, iv, sessionKey);
         if (!decryptedSize)
         {
             cout << "Error decrypting new filename\n";
@@ -749,7 +841,7 @@ public:
         // Decrypt new filename
         unsigned char *newFilename = (unsigned char *)malloc(encryptedNewSize);
         int decryptedNewSize;
-        decryptedNewSize = decryptSym(encryptedNewFilename, encryptedNewSize, newFilename, ivNew, tempKey);
+        decryptedNewSize = decryptSym(encryptedNewFilename, encryptedNewSize, newFilename, ivNew, sessionKey);
         if (!decryptedNewSize)
         {
             cout << "Error decrypting new filename\n";
@@ -882,7 +974,14 @@ int main()
             cerr << "Error accepting client connection, communication stopped\n\n";
             continue;
         }
-        cout << "Client " << serv.getClientUsername() << " connected\n";
+        cout << "Client " << serv.getClientUsername() << " connected, for challenge\n";
+
+        ret = serv.sendIdProof();
+        if (!ret) {
+            cerr << "Error sending identification proof to the client, communication stopped\n";
+            continue;
+        }
+        cout << "Proof of ID sent to the client\n";
 
         ret = serv.generateSessionKey();
         if (!ret)

@@ -33,12 +33,12 @@ class Client
     int CONNEXION_STATUS = 0;
 
     // Client variables
+    unsigned char * serverNonce;
     unsigned char *nonce;
     string username;
 
     // Keys
     unsigned char *sessionKey;
-    unsigned char *tempKey;
 
     // Available commands
     vector<string> commands = {"upload", "download", "delete", "list", "rename", "logout"};
@@ -74,6 +74,89 @@ public:
         {
             return 0;
         }
+
+        return 1;
+    }
+
+    // Generate a random and fresh nonce
+    int createNonce()
+    {
+
+        int ret;
+
+        // Generate a 16 bytes random number to ensure unpredictability
+        unsigned char *randomBuf = (unsigned char *)malloc(randBytesSize);
+        if (!randomBuf)
+        {
+            cerr << "Error allocating unsigned buffer for random bytes\n";
+            close(clientfd);
+            return 0;
+        }
+        RAND_poll();
+        ret = RAND_bytes(randomBuf, randBytesSize);
+        if (!ret)
+        {
+            cerr << "Error generating random bytes\n";
+            close(clientfd);
+            return 0;
+        }
+        char *random = (char *)malloc(randBytesSize);
+        if (!random)
+        {
+            cerr << "Error allocating buffer for random bytes *\n";
+            close(clientfd);
+            return 0;
+        }
+        memcpy(random, randomBuf, randBytesSize);
+        free(randomBuf);
+
+        // Generate a char timestamp to ensure uniqueness
+        char *now = (char *)malloc(timeBufferSize);
+        if (!now)
+        {
+            cerr << "Error allocating buffer for date and time\n";
+            close(clientfd);
+            return 0;
+        }
+        time_t currTime;
+        tm *currentTime;
+        time(&currTime);
+        currentTime = localtime(&currTime);
+        if (!currentTime)
+        {
+            cerr << "Error creating pointer containing current time\n";
+            close(clientfd);
+            return 0;
+        }
+        ret = strftime(now, timeBufferSize, "%Y%j%H%M%S", currentTime);
+        if (!ret)
+        {
+            cerr << "Error putting time in a char array\n";
+            close(clientfd);
+            return 0;
+        }
+
+        // Concatenate random number and timestamp
+        char *tempNonce = (char *)malloc(randBytesSize + timeBufferSize);
+        if (!tempNonce)
+        {
+            cerr << "Error allocating char buffer for nonce\n";
+            close(clientfd);
+            return 0;
+        }
+        memcpy(tempNonce, random, randBytesSize);
+        free(random);
+        strcat(tempNonce, now);
+        free(now);
+        serverNonce = (unsigned char *)malloc(nonceSize);
+        if (!nonce)
+        {
+            cerr << "Error allocating buffer for nonce\n";
+            close(clientfd);
+            return 0;
+        }
+        memcpy(serverNonce, tempNonce, nonceSize);
+        free(tempNonce);
 
         return 1;
     }
@@ -125,9 +208,26 @@ public:
             exit(1);
         }
         file.close();
+    }
 
-        // Temporary key
-        tempKey = (unsigned char *)"01234567890123450123456789012345";
+    // Create and send challenge to the server
+    void sendChallenge() {
+
+        int ret;
+
+        // Create nonce
+        ret = createNonce();
+        if (!ret) {
+            cerr << "Error creating nonce for server\n";
+            exit(1);
+        }
+
+        // Send the challenge
+        ret = send(socketfd, serverNonce, nonceSize, 0);
+        if (ret <= 0) {
+            cerr << "Error sending nonce to the server\n";
+            exit(1);
+        }
     }
 
     // Authenticate server
@@ -212,6 +312,57 @@ public:
         }
         X509_STORE_CTX_free(ctx);
         X509_STORE_free(store);
+
+        // Receive server sig
+        int * sizePtr = (int *) malloc(sizeof(int));
+        if (!sizePtr) {
+            cerr << "Error allocating buffer for sig size\n";
+            exit(1);
+        }
+        ret = readInt(socketfd, sizePtr);
+        if (!ret) {
+            cerr << "Error reading sig size\n";
+            exit(1);
+        }
+        int sigSize = *sizePtr;
+        free(sizePtr);
+        unsigned char * sig = (unsigned char *) malloc(sigSize);
+        if (!sig) {
+            cerr << "Error allocating buffer for signature\n";
+            exit(1);
+        }
+        ret = read(socketfd, sig, sigSize);
+        if (ret <= 0) {
+            cerr << "Error reading sig\n";
+            exit(1);
+        }
+
+        // Verify signature
+        const EVP_MD * md = EVP_sha256();
+        EVP_MD_CTX * mdCtx = EVP_MD_CTX_new();
+        if (!ctx) {
+            cerr << "Error creating context for verifying sig\n";
+            exit(1);
+        }
+        ret = EVP_VerifyInit(mdCtx, md);
+        if (!ret) {
+            cerr << "Error during init for verifying sig\n";
+            exit(1);
+        }
+        ret = EVP_VerifyUpdate(mdCtx, serverNonce, nonceSize);
+        if (ret <= 0) {
+            cerr << "Error during update for verifying sig\n";
+            exit(1);
+        }
+        ret = EVP_VerifyFinal(mdCtx, sig, sigSize, X509_get0_pubkey(serverCert));
+        if (!ret) {
+            cerr << "Server could not be authenticated\n";
+            exit(1);
+        }
+        if (ret < 0) {
+            cerr << "Error during finalization for verifying sig\n";
+            exit(1);
+        }
     }
 
     // Receive server's envelope and decrypt it to retreive session key
@@ -439,6 +590,11 @@ public:
             exit(1);
         }
 
+        // Free everything
+        free(encryptedNonce);
+        free(iv);
+        free(nonce);
+
         CONNEXION_STATUS = 1;
     }
 
@@ -480,7 +636,7 @@ public:
         }
         unsigned char * charFilename = (unsigned char *) malloc(fileName.size());
         copy(fileName.begin(), fileName.end(), charFilename);
-        ret = encryptSym(charFilename, fileName.size(), encryptedFileName, iv, tempKey);
+        ret = encryptSym(charFilename, fileName.size(), encryptedFileName, iv, sessionKey);
         if (!ret)
         {
             cout << ">> Error during decryption\n";
@@ -559,7 +715,7 @@ public:
             // Decrypt filename
             unsigned char *buggedFilename = (unsigned char *)malloc(encryptedSize);
             int decryptedSize;
-            decryptedSize = decryptSym(encryptedFilename, encryptedSize, buggedFilename, iv, tempKey);
+            decryptedSize = decryptSym(encryptedFilename, encryptedSize, buggedFilename, iv, sessionKey);
             if (!decryptedSize)
             {
                 cout << "Error decrypting filename\n";
@@ -607,7 +763,7 @@ public:
         }
         unsigned char * charFilename = (unsigned char *) malloc(filename.size());
         copy(filename.begin(), filename.end(), charFilename);
-        ret = encryptSym(charFilename, filename.size(), encryptedFilename, iv, tempKey);
+        ret = encryptSym(charFilename, filename.size(), encryptedFilename, iv, sessionKey);
         if (!ret)
         {
             cout << ">> Error during encryption\n";
@@ -662,7 +818,7 @@ public:
         }
         unsigned char * charNewFilename = (unsigned char *) malloc(newFilename.size());
         copy(newFilename.begin(), newFilename.end(), charNewFilename);
-        ret = encryptSym(charNewFilename, newFilename.size(), encryptedNewFilename, ivNew, tempKey);
+        ret = encryptSym(charNewFilename, newFilename.size(), encryptedNewFilename, ivNew, sessionKey);
         if (!ret)
         {
             cout << ">> Error during encryption\n";
@@ -823,6 +979,9 @@ int main()
     cout << "Starting client...\n";
     user1.connectClient();
     cout << "Client successfuly connected to the server\n";
+
+    user1.sendChallenge();
+    cout << "Challenge sent to the client\n";
 
     user1.authenticateServer();
     cout << "Server authenticated, waiting for server's envelope...\n";

@@ -21,6 +21,7 @@
 using namespace std;
 
 #define PORT 1805
+namespace fs = std::experimental::filesystem;
 
 class Client
 {
@@ -598,14 +599,257 @@ public:
         CONNEXION_STATUS = 1;
     }
 
-    int uploadFile()
-    {
-        cout << ">> upload\n";
+    int uploadFile() {
+
+        int ret;
+
+        cout << ">> To upload a file, please write the file name :\n>> ";
+
+        // Get Upload File path from User
+        string filepath;
+        getline(cin, filepath);
+
+        // Check valididy of filename
+        ret = checkFilename(filepath);
+        if (!ret) {
+            cout << "Filename not valid\n";
+            return 0;
+        }
+
+        // Check File Existence
+        FILE * file = fopen(filepath.c_str(), "rb");
+        if (!file) {
+            cout << ">> File doesn't exists\n";
+            return 0;
+        }
+
+        // Check file size
+        std::ifstream infile(filepath);
+        infile.seekg(0, std::ios::end);
+        int upload_size = infile.tellg();
+        if(upload_size > MAX_FILE_SIZE_FOR_UPLOAD){
+            cout << "File size is larger than supported (maxSize = " << upload_size << " bytes)\n";    
+            return 0;
+        }
+
+        // Send encrypted filename to server 
+        unsigned char * encryptedFilepath = (unsigned char *) malloc(filepath.size() + blockSize);
+        unsigned char * iv = (unsigned char *) malloc(ivSize);
+        if (!encryptedFilepath || !iv) {
+            cout << "Error allocating buffer to encrypt filename\n";
+            return 0;
+        }
+        unsigned char * charFilepath = (unsigned char *) malloc(filepath.size());
+        copy(filepath.begin(), filepath.end(), charFilepath);
+        ret = encryptSym(charFilepath, filepath.size(), encryptedFilepath, iv, sessionKey);
+        if (!ret) {
+            cerr << "Error encrypting the upload filepath\n";
+            return 0;
+        }
+        int encryptedSize = ret;
+        ret = sendInt(socketfd, encryptedSize);
+        if (!ret) {
+            cerr << "Error sending encrypted size for upload filepath to server\n";
+            return 0;
+        }
+        ret = send(socketfd, encryptedFilepath, encryptedSize, 0);
+        if (ret <= 0) {
+            cerr << "Error sending encrypted upload filepath to server\n";
+            return 0;
+        }
+        // Send iv
+        ret = send(socketfd, iv, ivSize, 0);
+        if (ret <= 0) {
+            cerr << "Error sending iv for upload filepath decryption to server\n";
+            return 0;
+        }
+
+        // Send filesize to the server
+        cout << ">> File Size is " << upload_size<<"\n";
+        ret = sendInt(socketfd, upload_size);
+        if (!ret) {
+            cerr << "Error sending upload filesize to server\n";
+            return 0;
+        }
+
+        //send file block by block
+        infile.seekg(0, std::ios::beg);
+        char plainBuffer[UPLOAD_BUFFER_SIZE];
+        int remainbytes = upload_size;
+        while((!infile.eof()) && (remainbytes > 0)){
+
+            int readlength = sizeof(plainBuffer);
+            readlength = std::min(readlength,remainbytes);
+            remainbytes -= readlength;
+            infile.read(plainBuffer, readlength);
+            unsigned char * cyperBuffer = (unsigned char *) malloc(readlength + blockSize);
+            unsigned char * iv = (unsigned char *) malloc(ivSize);
+            if (!cyperBuffer || !iv) {
+                cerr << "Error allocating buffers for file block encryption\n";
+                return 0;
+            }
+            int ret = encryptSym((unsigned char *)plainBuffer, readlength, cyperBuffer, iv, sessionKey);
+            if (!ret) {
+                cerr << "Error encrypting the upload block\n";
+                return 0;
+            }
+            int encryptedSize = ret;
+
+            // Send encrypted block
+            ret = sendInt(socketfd, encryptedSize);
+            if (!ret) {
+                cerr << "Error sending upload buffer size to server\n";
+                return 0;
+            }
+            ret = send(socketfd, cyperBuffer, encryptedSize, 0);
+            if (ret <= 0) {
+                cerr << "Error sending encrypted upload buffer to server\n";
+                return 0;
+            }
+            ret = send(socketfd, iv, ivSize, 0);
+            if (ret <= 0) {
+                cerr << "Error sending upload buffer iv to server\n";
+                return 0;
+            }
+        }
+        infile.close();
+
+        cout << ">> File uploaded successfully\n";
+
         return 1;
     }
 
-    int downloadFile()
-    {
+    int downloadFile() {
+
+        int ret;
+
+        cout << ">> Please type the name of the file to download:\n>> ";
+
+        // Get Upload File path from User
+        string filepath;
+        getline(cin, filepath);
+
+        // Check validity of filename
+        ret = checkFilename(filepath);
+        if (!ret) {
+            cout << ">> Filename not valid\n";
+            return 0;
+        }
+
+        // Encrypt filename
+        unsigned char * encryptedFilepath = (unsigned char *) malloc(filepath.length() + blockSize);
+        unsigned char * iv = (unsigned char *) malloc(ivSize);
+        if (!encryptedFilepath || !iv) {
+            cerr << "Error allocating buffers to encrypt filename\n";
+            return 0;
+        }
+        ret = encryptSym((unsigned char *)filepath.c_str(), filepath.length(), encryptedFilepath, iv, sessionKey);
+        if (!ret) {
+            cerr << "Error encrypting the upload filepath\n";
+            return 0;
+        }
+
+        // Send encrypted filename
+        int encryptedSize = ret;
+        ret = sendInt(socketfd, encryptedSize);
+        if (!ret) {
+            cerr << "Error sending encrypted size for upload filepath to server\n";
+            return 0;
+        }
+        ret = send(socketfd, encryptedFilepath, encryptedSize, 0);
+        if (ret <= 0) {
+            cerr << "Error sending encrypted upload filepath to server\n";
+            return 0;
+        }
+
+        // Send iv
+        ret = send(socketfd, iv, ivSize, 0);
+        if (ret <= 0) {
+            cerr << "Error sending iv for upload filepath decryption to server\n";
+            return 0;
+        }
+
+        // Receive server's existence of file
+        int * responsePtr = (int *) malloc(sizeof(int));
+        ret = readInt(socketfd, responsePtr);
+        if (!(*responsePtr)) {
+            cout << ">> File doesn't exists\n";
+            return 0;
+        }
+        cout << "server response : " << *responsePtr << endl;
+        free(responsePtr);
+
+        // Receive file size
+        int * upload_size = (int *) malloc(sizeof(int));
+        ret = readInt(socketfd, upload_size);
+        if (!ret) {
+            cerr << "Error upload filepath length\n";
+            return 0;
+        }
+        int remainedBlock = *upload_size;
+        free(upload_size);
+
+        // Create file to write in
+        ofstream wf(filepath, ios::out | ios::binary);
+        if(!wf) {
+            cout << "Cannot open file to write upload file!" << endl;
+            return 1;
+        }
+
+        // Read and decrypt every block files
+        while(remainedBlock>0){
+
+            // Receive everything for decryption
+            int * uploadBlockLen = (int *) malloc(sizeof(int));
+            ret = readInt(socketfd, uploadBlockLen);
+            if (!ret) {
+                cerr << "Error upload block length\n";
+                return 0;
+            }
+            unsigned char * iv = (unsigned char *) malloc(ivSize);
+            unsigned char * cyberBuffer = (unsigned char *) malloc(*uploadBlockLen);
+            unsigned char * plainBuffer = (unsigned char *) malloc(UPLOAD_BUFFER_SIZE);
+            if (!iv || !cyberBuffer || !plainBuffer) {
+                cout << "Error allocating buffers to decrypt file block\n";
+                return 0;
+            }
+            ret = read(socketfd, cyberBuffer, *uploadBlockLen);
+            if (!ret) {
+                cerr << "Error reading encrypted upload block\n";
+                return 0;
+            }
+            ret = read(socketfd, iv, ivSize);
+            if (!ret) {
+                cerr << "Error reading iv for upload block\n";
+                close(socketfd);
+                return 0;
+            }
+
+            // Decrypt block
+            ret = decryptSym(cyberBuffer, *uploadBlockLen, plainBuffer, iv, sessionKey);
+            if (!ret) {
+                cerr << "Error decrypting the upload block\n";
+                return 0;
+            }
+            free(uploadBlockLen);
+            int plaintextLen = ret;
+
+            // Write decrypted block in the file
+            for(int i = 0; i < plaintextLen; i++){
+                wf.write((char *) &plainBuffer[i], sizeof(char));
+            }
+
+            remainedBlock -= plaintextLen;
+        }
+        wf.close();
+
+        if(!wf.good()) {
+            cout << "Error occurred at writing time while saving uploaded file!" << endl;
+            return 1;
+        }
+
+        cout << ">> Files downloaded successfully\n";
+
         return 1;
     }
 

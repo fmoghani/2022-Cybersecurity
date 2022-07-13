@@ -126,8 +126,6 @@ public:
         }
         file.close();
 
-        CONNEXION_STATUS = 1;
-
         // Temporary key
         tempKey = (unsigned char *)"01234567890123450123456789012345";
     }
@@ -235,7 +233,7 @@ public:
             cerr << "Error reading enrypted key size\n";
             exit(1);
         }
-        int encryptedKeySize = (*sizeKey); // Divided by 8 because encrypted key size is sent in bits
+        int encryptedKeySize = (*sizeKey);
         free(sizeKey);
         unsigned char * tempEncryptedKey = (unsigned char *) malloc(encryptedKeySize);
         if (!tempEncryptedKey) {
@@ -309,20 +307,20 @@ public:
         free(tempIv);
 
         // TEST
-        string siv(iv, iv+ivLength);
-        string sencryptedSecret(encryptedSecret, encryptedSecret+encryptedSize);
-        string sencryptedKey(encryptedKey, encryptedKey+encryptedKeySize);
-        cout << "\nENVELOPE TEST\n";
-        cout << "iv :\n";
-        cout << siv << endl;
+        // string siv(iv, iv+ivLength);
+        // string sencryptedSecret(encryptedSecret, encryptedSecret+encryptedSize);
+        // string sencryptedKey(encryptedKey, encryptedKey+encryptedKeySize);
+        // cout << "\nENVELOPE TEST\n";
+        // cout << "iv :\n";
+        // cout << siv << endl;
         // BIO_dump_fp(stdout, (const char *) iv, ivSize);
-        cout << "encryptedSize = " << encryptedSize << " encrypted secret :\n";
-        cout << sencryptedSecret << endl;
+        // cout << "encryptedSize = " << encryptedSize << " encrypted secret :\n";
+        // cout << sencryptedSecret << endl;
         // BIO_dump_fp(stdout, (const char *) encryptedSecret, encryptedSize);
-        cout << "encryptedKeySize = " << encryptedKeySize << "encrypted key :\n";
-        cout << sencryptedKey << endl;
+        // cout << "encryptedKeySize = " << encryptedKeySize << "encrypted key :\n";
+        // cout << sencryptedKey << endl;
         // BIO_dump_fp(stdout, (const char *) encryptedKey, encryptedKeySize);
-        cout << "ENVELOPE TEST END\n\n";
+        // cout << "ENVELOPE TEST END\n\n";
 
         // Retreive user's prvkey
         string path = "user_infos/key.pem";
@@ -379,6 +377,7 @@ public:
         if (ret <= 0)
         {
             cerr << "Error during finalization for envelope decryption\n";
+            exit(1);
         }
         decryptedSize += bytesWritten;
 
@@ -443,12 +442,12 @@ public:
         }
 
         // TEST
-        cout << "\nTEST NONCE\n";
-        cout << "encryptedNonceSize = " << encryptedSize << " encryptedNonce :\n";
-        BIO_dump_fp(stdout, (const char *)encryptedNonce, encryptedSize);
-        cout << "iv Size = " << ivSize << " iv :\n";
-        BIO_dump_fp(stdout, (const char *)iv, ivSize);
-        cout << "TEST NONCE END\n\n";
+        // cout << "\nTEST NONCE\n";
+        // cout << "encryptedNonceSize = " << encryptedSize << " encryptedNonce :\n";
+        // BIO_dump_fp(stdout, (const char *)encryptedNonce, encryptedSize);
+        // cout << "iv Size = " << ivSize << " iv :\n";
+        // BIO_dump_fp(stdout, (const char *)iv, ivSize);
+        // cout << "TEST NONCE END\n\n";
 
         // Decrypt nonce using the shared session key
         unsigned char *nonce = (unsigned char *)malloc(encryptedSize);
@@ -457,7 +456,7 @@ public:
             cerr << "Error allocating buffer for decrypted nonce\n";
             exit(1);
         }
-        ret = decryptSym(encryptedNonce, encryptedSize, nonce, iv, tempKey);
+        ret = decryptSym(encryptedNonce, encryptedSize, nonce, iv, sessionKey);
         if (!ret)
         {
             cerr << "Error decrypting the nonce\n";
@@ -469,11 +468,13 @@ public:
         BIO_dump_fp(stdout, (const char *)nonce, nonceSize);
 
         // Send nonce to the server
-        // ret = send(socketfd, nonce, nonceSize, 0);
-        // if (ret <= 0) {
-        //     cerr << "Error sending nonce to the server\n";
-        //     exit(1);
-        // }
+        ret = send(socketfd, nonce, nonceSize, 0);
+        if (ret <= 0) {
+            cerr << "Error sending nonce to the server\n";
+            exit(1);
+        }
+
+        CONNEXION_STATUS = 1;
     }
 
     int uploadFile()
@@ -869,8 +870,8 @@ int main()
     user1.retreiveSessionKey();
     cout << "Session key received\n";
 
-    // user1.proveIdentity();
-    // cout << "Proof of identity sent\n";
+    user1.proveIdentity();
+    cout << "Proof of identity sent\n";
 
     user1.updateCommands();
 

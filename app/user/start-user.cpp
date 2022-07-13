@@ -1220,7 +1220,7 @@ int main()
     int ret;
     Client user1;
 
-    cout << "Starting client...\n";
+    cout << "Starting client, waiting for server to be available...\n";
     user1.connectClient();
     cout << "Client successfuly connected to the server\n";
 
@@ -1237,6 +1237,7 @@ int main()
     cout << "Proof of identity sent\n";
 
     user1.updateCommands();
+    cout << "Session started\n";
 
     while (user1.getConnexionStatus())
     {

@@ -306,22 +306,6 @@ public:
         memcpy(iv, tempIv, ivLength);
         free(tempIv);
 
-        // TEST
-        // string siv(iv, iv+ivLength);
-        // string sencryptedSecret(encryptedSecret, encryptedSecret+encryptedSize);
-        // string sencryptedKey(encryptedKey, encryptedKey+encryptedKeySize);
-        // cout << "\nENVELOPE TEST\n";
-        // cout << "iv :\n";
-        // cout << siv << endl;
-        // BIO_dump_fp(stdout, (const char *) iv, ivSize);
-        // cout << "encryptedSize = " << encryptedSize << " encrypted secret :\n";
-        // cout << sencryptedSecret << endl;
-        // BIO_dump_fp(stdout, (const char *) encryptedSecret, encryptedSize);
-        // cout << "encryptedKeySize = " << encryptedKeySize << "encrypted key :\n";
-        // cout << sencryptedKey << endl;
-        // BIO_dump_fp(stdout, (const char *) encryptedKey, encryptedKeySize);
-        // cout << "ENVELOPE TEST END\n\n";
-
         // Retreive user's prvkey
         string path = "user_infos/key.pem";
         FILE *keyFile = fopen(path.c_str(), "r");
@@ -381,13 +365,6 @@ public:
         }
         decryptedSize += bytesWritten;
 
-        // TEST
-        cout << "\nENVELOPE TEST\n";
-        cout << "sessionKey :\n";
-        // cout << sessionKey << "\"" << endl;
-        BIO_dump_fp(stdout, (const char *) sessionKey, sessionKeySize);
-        cout << "ENVELOPE TEST END\n\n";
-
         EVP_CIPHER_CTX_free(ctx);
         free(encryptedKey);
         free(iv);
@@ -441,14 +418,6 @@ public:
             exit(1);
         }
 
-        // TEST
-        // cout << "\nTEST NONCE\n";
-        // cout << "encryptedNonceSize = " << encryptedSize << " encryptedNonce :\n";
-        // BIO_dump_fp(stdout, (const char *)encryptedNonce, encryptedSize);
-        // cout << "iv Size = " << ivSize << " iv :\n";
-        // BIO_dump_fp(stdout, (const char *)iv, ivSize);
-        // cout << "TEST NONCE END\n\n";
-
         // Decrypt nonce using the shared session key
         unsigned char *nonce = (unsigned char *)malloc(encryptedSize);
         if (!nonce)
@@ -462,10 +431,6 @@ public:
             cerr << "Error decrypting the nonce\n";
             exit(1);
         }
-
-        // TEST
-        cout << "nonce :\n";
-        BIO_dump_fp(stdout, (const char *)nonce, nonceSize);
 
         // Send nonce to the server
         ret = send(socketfd, nonce, nonceSize, 0);
@@ -847,11 +812,6 @@ public:
         return 1;
     }
 
-    void test()
-    {
-
-        // Test the send and receive functions
-    }
 };
 
 int main()

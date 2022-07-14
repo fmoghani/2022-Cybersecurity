@@ -6,11 +6,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-<<<<<<< HEAD
-# Make data base, printed on Wed Jul 13 12:16:47 2022
-=======
-# Make data base, printed on Wed Jul 13 15:44:04 2022
->>>>>>> feri
+# Make data base, printed on Thu Jul 14 22:25:13 2022
 
 # Variables
 
@@ -53,11 +49,7 @@ VTE_VERSION = 6003
 # environment
 VSCODE_NLS_CONFIG = {"locale":"en-us","availableLanguages":{},"_languagePackSupport":true}
 # environment
-<<<<<<< HEAD
-JOURNAL_STREAM = 8:31683
-=======
-JOURNAL_STREAM = 8:30564
->>>>>>> feri
+JOURNAL_STREAM = 8:30400
 # makefile (from 'makefile', line 2)
 CFLAGS = -Wall -g
 # environment
@@ -83,15 +75,9 @@ MAKELEVEL := 0
 # environment
 XDG_DATA_DIRS = /usr/share/ubuntu:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop
 # environment
-<<<<<<< HEAD
-DBUS_SESSION_BUS_ADDRESS = unix:path=/run/user/1000/bus,guid=9b3f2daa5c173b27f864442062ce7305
+DBUS_SESSION_BUS_ADDRESS = unix:path=/run/user/1000/bus,guid=a45de1b6a84d3c71fa508fff62d07b50
 # environment
-MANAGERPID = 854
-=======
-DBUS_SESSION_BUS_ADDRESS = unix:path=/run/user/1000/bus,guid=59c7ff7df0cedc67d892886f62cebe6c
-# environment
-MANAGERPID = 818
->>>>>>> feri
+MANAGERPID = 857
 # environment
 LESSOPEN = | /usr/bin/lesspipe %s
 # environment
@@ -107,11 +93,7 @@ PATH = /home/djolopez/.local/bin:/opt/maven/bin:/usr/local/sbin:/usr/local/bin:/
 # environment
 GPG_AGENT_INFO = /run/user/1000/gnupg/S.gpg-agent:0:1
 # environment
-<<<<<<< HEAD
-SESSION_MANAGER = local/djolopez-VirtualBox:@/tmp/.ICE-unix/1433,unix/djolopez-VirtualBox:/tmp/.ICE-unix/1433
-=======
-SESSION_MANAGER = local/djolopez-VirtualBox:@/tmp/.ICE-unix/1296,unix/djolopez-VirtualBox:/tmp/.ICE-unix/1296
->>>>>>> feri
+SESSION_MANAGER = local/djolopez-VirtualBox:@/tmp/.ICE-unix/1317,unix/djolopez-VirtualBox:/tmp/.ICE-unix/1317
 # environment
 XDG_RUNTIME_DIR = /run/user/1000
 # environment
@@ -127,11 +109,7 @@ DISABLE_WAYLAND = 1
 # environment
 ELECTRON_RUN_AS_NODE = 1
 # environment
-<<<<<<< HEAD
-INVOCATION_ID = 880d48e092ba44d0ba6095ff26661c3f
-=======
-INVOCATION_ID = 34e70f21a8724ae6a7964ac1f6606c4b
->>>>>>> feri
+INVOCATION_ID = f8fbd318b9d64a32a3db54e121590e28
 # makefile (from 'makefile', line 3)
 LDFLAGS = -lcrypto -lstdc++fs
 # environment
@@ -155,11 +133,7 @@ PWD = /home/djolopez/Documents/INGE_S5_Pise/cybersecurity/project/2022-Cybersecu
 # default
 .LOADED := 
 # environment
-<<<<<<< HEAD
-SSH_AGENT_PID = 1243
-=======
-SSH_AGENT_PID = 1116
->>>>>>> feri
+SSH_AGENT_PID = 1118
 # environment
 ORIGINAL_XDG_CURRENT_DESKTOP = ubuntu:GNOME
 # environment
@@ -234,8 +208,6 @@ XDG_CURRENT_DESKTOP = Unity
 LC_TELEPHONE = fr_FR.UTF-8
 # default
 MAKE_COMMAND := make
-# environment
-OLDPWD = /home/djolopez/Documents/INGE_S5_Pise/cybersecurity/project/2022-Cybersecurity/app/server
 # default
 .VARIABLES := 
 # automatic
@@ -273,21 +245,13 @@ LC_ALL = C
 # environment
 DBUS_STARTER_BUS_TYPE = session
 # environment
-<<<<<<< HEAD
-GNOME_TERMINAL_SCREEN = /org/gnome/Terminal/screen/24c8daeb_cc96_4497_9544_450b641cad50
-=======
-GNOME_TERMINAL_SCREEN = /org/gnome/Terminal/screen/faacc438_d3c3_4550_9cbd_48d8c80feb26
->>>>>>> feri
+GNOME_TERMINAL_SCREEN = /org/gnome/Terminal/screen/e6d2d119_97de_46d0_8d10_3aac4111779f
 # automatic
 ^F = $(notdir $^)
 # makefile (from 'makefile', line 5)
 DEPS = ./utils.h
 # environment
-<<<<<<< HEAD
-GNOME_TERMINAL_SERVICE = :1.83
-=======
-GNOME_TERMINAL_SERVICE = :1.89
->>>>>>> feri
+GNOME_TERMINAL_SERVICE = :1.82
 # default
 SUFFIXES := 
 # environment
@@ -309,19 +273,12 @@ LANG = C
 # environment
 TERM = xterm-256color
 # environment
-<<<<<<< HEAD
-VSCODE_PID = 11552
- 
+VSCODE_PID = 2874
 # environment
-DBUS_STARTER_ADDRESS = unix:path=/run/user/1000/bus,guid=9b3f2daa5c173b27f864442062ce7305
-=======
-VSCODE_PID = 5642
+DBUS_STARTER_ADDRESS = unix:path=/run/user/1000/bus,guid=a45de1b6a84d3c71fa508fff62d07b50
  
-# environment
-DBUS_STARTER_ADDRESS = unix:path=/run/user/1000/bus,guid=59c7ff7df0cedc67d892886f62cebe6c
->>>>>>> feri
 # variable set hash-table stats:
-# Load=134/1024=13%, Rehash=0, Collisions=19/166=11%
+# Load=133/1024=13%, Rehash=0, Collisions=19/165=12%
 
 # Pattern-specific Variable Values
 
@@ -418,11 +375,7 @@ start-server: server/start-server.cpp
 # Not a target:
 server/start-server.cpp:
 #  Implicit rule search has been done.
-<<<<<<< HEAD
-#  Last modified 2022-07-13 12:16:16.347250345
-=======
-#  Last modified 2022-07-13 15:24:46.890462666
->>>>>>> feri
+#  Last modified 2022-07-13 16:25:08.833621208
 #  File has been updated.
 #  Successfully updated.
 
@@ -440,10 +393,6 @@ server/start-server.cpp:
 # strcache performance: lookups = 31 / hit rate = 38%
 # hash-table stats:
 # Load=19/8192=0%, Rehash=0, Collisions=1/31=3%
-<<<<<<< HEAD
-# Finished Make data base on Wed Jul 13 12:16:48 2022
-=======
-# Finished Make data base on Wed Jul 13 15:44:04 2022
->>>>>>> feri
+# Finished Make data base on Thu Jul 14 22:25:13 2022
 
  

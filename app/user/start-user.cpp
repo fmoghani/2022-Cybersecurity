@@ -1094,7 +1094,8 @@ public:
     {
 
         // Free key
-        // free(sessionKey);
+        bzero(sessionKey, sessionKeySize);
+        free(sessionKey);
 
         // Close connexion
         close(socketfd);

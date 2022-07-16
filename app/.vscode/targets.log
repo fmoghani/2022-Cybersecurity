@@ -6,7 +6,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Fri Jul 15 18:28:09 2022
+# Make data base, printed on Sat Jul 16 12:28:21 2022
 
 # Variables
 
@@ -49,7 +49,7 @@ VTE_VERSION = 6003
 # environment
 VSCODE_NLS_CONFIG = {"locale":"en-us","availableLanguages":{},"_languagePackSupport":true}
 # environment
-JOURNAL_STREAM = 8:30572
+JOURNAL_STREAM = 8:31868
 # makefile (from 'makefile', line 2)
 CFLAGS = -Wall -g
 # environment
@@ -75,9 +75,9 @@ MAKELEVEL := 0
 # environment
 XDG_DATA_DIRS = /usr/share/ubuntu:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop
 # environment
-DBUS_SESSION_BUS_ADDRESS = unix:path=/run/user/1000/bus,guid=3d8d027587d42e679505bbcc62d19504
+DBUS_SESSION_BUS_ADDRESS = unix:path=/run/user/1000/bus,guid=fbd6d88fb81c7e82559838f462d29225
 # environment
-MANAGERPID = 836
+MANAGERPID = 838
 # environment
 LESSOPEN = | /usr/bin/lesspipe %s
 # environment
@@ -93,7 +93,7 @@ PATH = /home/djolopez/.local/bin:/opt/maven/bin:/usr/local/sbin:/usr/local/bin:/
 # environment
 GPG_AGENT_INFO = /run/user/1000/gnupg/S.gpg-agent:0:1
 # environment
-SESSION_MANAGER = local/djolopez-VirtualBox:@/tmp/.ICE-unix/1324,unix/djolopez-VirtualBox:/tmp/.ICE-unix/1324
+SESSION_MANAGER = local/djolopez-VirtualBox:@/tmp/.ICE-unix/1250,unix/djolopez-VirtualBox:/tmp/.ICE-unix/1250
 # environment
 XDG_RUNTIME_DIR = /run/user/1000
 # environment
@@ -109,7 +109,7 @@ DISABLE_WAYLAND = 1
 # environment
 ELECTRON_RUN_AS_NODE = 1
 # environment
-INVOCATION_ID = 1d1064d47778437e8fcda377f15cbb23
+INVOCATION_ID = dd5abb264fc74ca5b8dd050a2a81191e
 # makefile (from 'makefile', line 3)
 LDFLAGS = -lcrypto -lstdc++fs
 # environment
@@ -133,7 +133,7 @@ PWD = /home/djolopez/Documents/INGE_S5_Pise/cybersecurity/project/2022-Cybersecu
 # default
 .LOADED := 
 # environment
-SSH_AGENT_PID = 1134
+SSH_AGENT_PID = 1100
 # environment
 ORIGINAL_XDG_CURRENT_DESKTOP = ubuntu:GNOME
 # environment
@@ -245,13 +245,13 @@ LC_ALL = C
 # environment
 DBUS_STARTER_BUS_TYPE = session
 # environment
-GNOME_TERMINAL_SCREEN = /org/gnome/Terminal/screen/b632b3f0_2375_4615_ad04_dbe345239b69
+GNOME_TERMINAL_SCREEN = /org/gnome/Terminal/screen/20055930_ab0a_421d_95b3_37761554bde3
 # automatic
 ^F = $(notdir $^)
 # makefile (from 'makefile', line 5)
 DEPS = ./utils.h
 # environment
-GNOME_TERMINAL_SERVICE = :1.84
+GNOME_TERMINAL_SERVICE = :1.89
 # default
 SUFFIXES := 
 # environment
@@ -273,9 +273,9 @@ LANG = C
 # environment
 TERM = xterm-256color
 # environment
-VSCODE_PID = 3139
+VSCODE_PID = 3396
 # environment
-DBUS_STARTER_ADDRESS = unix:path=/run/user/1000/bus,guid=3d8d027587d42e679505bbcc62d19504
+DBUS_STARTER_ADDRESS = unix:path=/run/user/1000/bus,guid=fbd6d88fb81c7e82559838f462d29225
  
 # variable set hash-table stats:
 # Load=133/1024=13%, Rehash=0, Collisions=19/165=12%
@@ -286,7 +286,7 @@ DBUS_STARTER_ADDRESS = unix:path=/run/user/1000/bus,guid=3d8d027587d42e679505bbc
 
 # Directories
 
-# . (device 2053, inode 1205064): 9 files, no impossibilities.
+# . (device 2053, inode 1196094): 9 files, no impossibilities.
 
 # 9 files, no impossibilities in 1 directories.
 
@@ -314,7 +314,7 @@ all: start-server start-user
 # Not a target:
 makefile:
 #  Implicit rule search has been done.
-#  Last modified 2022-07-13 09:47:58.688721308
+#  Last modified 2022-07-13 09:47:58.688721
 #  File has been updated.
 #  Successfully updated.
 
@@ -375,7 +375,7 @@ start-server: server/start-server.cpp
 # Not a target:
 server/start-server.cpp:
 #  Implicit rule search has been done.
-#  Last modified 2022-07-14 22:26:09.410658528
+#  Last modified 2022-07-16 05:32:58.140272
 #  File has been updated.
 #  Successfully updated.
 
@@ -393,6 +393,6 @@ server/start-server.cpp:
 # strcache performance: lookups = 31 / hit rate = 38%
 # hash-table stats:
 # Load=19/8192=0%, Rehash=0, Collisions=1/31=3%
-# Finished Make data base on Fri Jul 15 18:28:09 2022
+# Finished Make data base on Sat Jul 16 12:28:21 2022
 
  

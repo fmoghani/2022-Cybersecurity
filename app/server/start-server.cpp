@@ -46,6 +46,7 @@ class Server
 
     // Keys
     EVP_PKEY * servTempPubKey;
+    unsigned char * charTempPubKey;
     EVP_PKEY * servTempPrvKey;
     unsigned char *sessionKey;
     unsigned char * envelope;
@@ -244,11 +245,13 @@ public:
         servTempPrvKey = EVP_PKEY_new();
         EVP_PKEY_assign_RSA(servTempPrvKey, prvRsa);
 
+        // Put the public key inside a char
+        charTempPubKey = (unsigned char *) malloc(tempKeySize);
+        memcpy(charTempPubKey, servTempPubKey, tempKeySize);
+
         // TEST
         cout << "Pub key:\n";
         BIO_dump_fp(stdout, (const char *) servTempPubKey, 256);
-        cout << "Prv key:\n";
-        BIO_dump_fp(stdout, (const char *) servTempPrvKey, 256);
 
         // Free everything
         bzero(charServTempPubKey, pubSize);
@@ -292,8 +295,7 @@ public:
             return 0;
         }
         memcpy(concat, clientNonce, nonceSize);
-        unsigned char * buffer = (unsigned char *) servTempPubKey; 
-        memcpy(concat + nonceSize, buffer, tempKeySize);
+        memcpy(concat + nonceSize, charTempPubKey, tempKeySize);
         free(clientNonce);
 
         // Retreive server's private key
@@ -349,8 +351,6 @@ public:
             close(clientfd);
             return 0;
         }
-        bzero(buffer, tempKeySize);
-        free(buffer);
 
         // Create server's nonce
         serverNonce = (unsigned char *) malloc(nonceSize);
@@ -386,18 +386,10 @@ public:
             close(clientfd);
             return 0;
         }
-        unsigned char * buffer = (unsigned char *) servTempPubKey;
-        memcpy(concat, buffer, tempKeySize);
+        memcpy(concat, charTempPubKey, tempKeySize);
         memcpy(concat + tempKeySize, serverSig, serverSigSize);
         memcpy(concat + tempKeySize + serverSigSize, serverNonce, nonceSize);
         free(serverSig);
-
-        // TEST
-        EVP_PKEY * testkey = (EVP_PKEY *) buffer;
-        cout << "testkey:\n";
-        BIO_dump_fp(stdout, (const char *) testkey, tempKeySize);
-        cout << "concat:\n";
-        BIO_dump_fp(stdout, (const char *) concat, totalSize);
 
         // Send the message
         ret = sendInt(clientfd, totalSize);
@@ -413,7 +405,8 @@ public:
             return 0;
         }
 
-        EVP_PKEY_free(servTempPubKey);
+        // EVP_PKEY_free(servTempPubKey);
+        // cout << "after free\n";
 
         return 1;
     }
@@ -1205,6 +1198,30 @@ public:
         return 1;
     }
 
+    int test() {
+
+        int ret;
+
+        // Get size needed for buffer
+        int size = i2d_PublicKey(servTempPubKey, NULL);
+        unsigned char * keychar = (unsigned char *) malloc(size);
+        cout << "after size\n";
+
+        // Read keychar
+        i2d_PublicKey(servTempPubKey, &keychar);
+        cout << "after read char\n";
+
+        // Convert back into a key
+        EVP_PKEY * key = EVP_PKEY_new();
+        d2i_PublicKey(EVP_PKEY_RSA, &key, (const unsigned char **) &keychar, size);
+        cout << "after convert\n";
+
+        // TEST
+        cout << "converted key\n";
+        BIO_dump_fp(stdout, (const char *) key, tempKeySize);
+
+    }
+
 };
 
 int main()
@@ -1244,6 +1261,10 @@ int main()
             continue;
         }
         cout << "Proof of ID created\n";
+
+        // cout << "\nTEST\n";
+        // serv.test();
+        // cout << "TEST END\n\n";
 
         ret = serv.sendMessage2();
         if (!ret) {

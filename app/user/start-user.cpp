@@ -41,6 +41,7 @@ class Client
     // Keys
     unsigned char *sessionKey;
     EVP_PKEY * servTempPubKey;
+    unsigned char * charTempPubKey;
     unsigned char * envelope;
     int envelopeSize;
 
@@ -189,30 +190,28 @@ public:
             exit(1);
         }
 
-        cout << "concat:\n";
-        BIO_dump_fp(stdout, (const char *) concat, totalSize);
-
         // Retreive each part of message
-        unsigned char * charKey = (unsigned char *) malloc(tempKeySize);
+        EVP_PKEY * buffer = EVP_PKEY_new();
+        charTempPubKey = (unsigned char *) malloc(tempKeySize);
         serverSigSize = totalSize - tempKeySize - nonceSize;
         serverSig = (unsigned char *) malloc(serverSigSize);
         serverNonce = (unsigned char *) malloc(nonceSize);
-        if (!charKey || !serverSig || !serverNonce) {
+        if (!charTempPubKey || !serverSig || !serverNonce) {
             cerr << "Error allocating buffer for M2\n";
             exit(1);
         }
-        memcpy(charKey, concat, tempKeySize);
-        servTempPubKey = (EVP_PKEY *) charKey;
+        memcpy(buffer, concat, tempKeySize);
+        memcpy(charTempPubKey, buffer, tempKeySize);
+        servTempPubKey = buffer;
         memcpy(serverSig, concat + tempKeySize, serverSigSize);
         memcpy(serverNonce, concat + tempKeySize + serverSigSize, nonceSize);
         free(concat);
 
         // TEST
-        cout << "server nonce\n";
-        BIO_dump_fp(stdout, (const char *) serverNonce, nonceSize);
+        // cout << "server nonce\n";
+        // BIO_dump_fp(stdout, (const char *) serverNonce, nonceSize);
         cout << "pubkey\n";
         BIO_dump_fp(stdout, (const char *) servTempPubKey, tempKeySize);
-        free(charKey);
     }
 
     // Authenticate server
@@ -305,9 +304,7 @@ public:
             exit(1);
         }
         memcpy(concat, clientNonce, nonceSize);
-        unsigned char * buffer = (unsigned char *) servTempPubKey;
-        memcpy(concat + nonceSize, buffer, tempKeySize);
-        free(buffer);
+        memcpy(concat + nonceSize, charTempPubKey, tempKeySize);
         free(clientNonce);
 
         // Verify signature
@@ -341,8 +338,6 @@ public:
         EVP_MD_CTX_free(mdCtx);
         X509_free(serverCert);
         free(clientNonce);
-        bzero(buffer, tempKeySize);
-        free(buffer);
         free(serverSig);
     }
 
@@ -376,7 +371,7 @@ public:
         
         // Variables for encryption
         const EVP_CIPHER *cipher = EVP_aes_256_cbc();
-        int encryptedKeySize = EVP_PKEY_size(servTempPubKey);
+        int encryptedKeySize = tempKeySize;
         int ivLength = EVP_CIPHER_iv_length(cipher);
         int blockSizeEnvelope = EVP_CIPHER_block_size(cipher);
         int cipherSize = sessionKeySize + blockSizeEnvelope;
@@ -400,12 +395,14 @@ public:
             cerr << "Error creating context for session key encryption\n";
             exit(1);
         }
+        cout << "before init\n";
         ret = EVP_SealInit(ctx, cipher, &encryptedKey, &encryptedKeySize, iv, &servTempPubKey, 1);
         if (ret <= 0)
         {
             cerr << "Error during initialization of encrypted session key envelope\n";
             exit(1);
         }
+        cout << "before update\n";
         ret = EVP_SealUpdate(ctx, encryptedSecret, &bytesWritten, sessionKey, sessionKeySize);
         if (ret <= 0)
         {
@@ -413,6 +410,7 @@ public:
             exit(1);
         }
         encryptedSize += bytesWritten;
+        cout << "before final\n";
         ret = EVP_SealFinal(ctx, encryptedSecret + encryptedSize, &bytesWritten);
         if (ret <= 0)
         {
@@ -1179,7 +1177,10 @@ int main()
     cout << "Message 2 received\n";
 
     user1.authenticateServer();
-    cout << "Server authenticated, returning ID proof...\n";
+    cout << "Server authenticated\n";
+
+    user1.createSessionKey();
+    cout << "Session key created\n";
 
     user1.encryptKey();
     cout << "Session key encrypted\n";

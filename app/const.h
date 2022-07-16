@@ -7,6 +7,7 @@
 
 // Key constants
 #define sessionKeySize 32 // Size in bytes
+#define tempKeySize 256
 
 // Symmetric cipher constants
 #define blockSize 16

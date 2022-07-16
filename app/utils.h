@@ -20,6 +20,7 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 #include <cerrno>
+#include "const.h"
 
 using namespace std;
 using namespace std::experimental;
@@ -234,3 +235,72 @@ int existsFile(string filename, string username) {
 
     return 1;
 }
+
+// Generate a random and fresh nonce
+    int createNonce(unsigned char * buffer)
+    {
+
+        int ret;
+
+        // Generate a 16 bytes random number to ensure unpredictability
+        unsigned char *randomBuf = (unsigned char *)malloc(randBytesSize);
+        if (!randomBuf)
+        {
+            cerr << "Error allocating unsigned buffer for random bytes\n";
+            return 0;
+        }
+        RAND_poll();
+        ret = RAND_bytes(randomBuf, randBytesSize);
+        if (!ret)
+        {
+            cerr << "Error generating random bytes\n";
+            return 0;
+        }
+        char *random = (char *)malloc(randBytesSize);
+        if (!random)
+        {
+            cerr << "Error allocating buffer for random bytes *\n";
+            return 0;
+        }
+        memcpy(random, randomBuf, randBytesSize);
+        free(randomBuf);
+
+        // Generate a char timestamp to ensure uniqueness
+        char *now = (char *)malloc(timeBufferSize);
+        if (!now)
+        {
+            cerr << "Error allocating buffer for date and time\n";
+            return 0;
+        }
+        time_t currTime;
+        tm *currentTime;
+        time(&currTime);
+        currentTime = localtime(&currTime);
+        if (!currentTime)
+        {
+            cerr << "Error creating pointer containing current time\n";
+            return 0;
+        }
+        ret = strftime(now, timeBufferSize, "%Y%j%H%M%S", currentTime);
+        if (!ret)
+        {
+            cerr << "Error putting time in a char array\n";
+            return 0;
+        }
+
+        // Concatenate random number and timestamp
+        char *tempNonce = (char *)malloc(randBytesSize + timeBufferSize);
+        if (!tempNonce)
+        {
+            cerr << "Error allocating char buffer for nonce\n";
+            return 0;
+        }
+        memcpy(tempNonce, random, randBytesSize);
+        free(random);
+        strcat(tempNonce, now);
+        free(now);
+        memcpy(buffer, tempNonce, nonceSize);
+        free(tempNonce);
+
+        return 1;
+    }

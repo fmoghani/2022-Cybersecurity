@@ -42,10 +42,20 @@ class Server
 
     // Client infos
     string clientUsername;
-    unsigned char *nonce;
+    unsigned char *serverNonce;
 
     // Keys
+    EVP_PKEY * servTempPubKey;
+    EVP_PKEY * servTempPrvKey;
     unsigned char *sessionKey;
+    unsigned char * envelope;
+    int envelopeSize;
+
+    // Signatures
+    unsigned char * serverSig;
+    unsigned int serverSigSize;
+    unsigned char * clientSig;
+    unsigned int clientSigSize;
 
 public:
     // Get username
@@ -80,89 +90,6 @@ public:
         {
             return 0;
         }
-
-        return 1;
-    }
-
-    // Generate a random and fresh nonce
-    int createNonce()
-    {
-
-        int ret;
-
-        // Generate a 16 bytes random number to ensure unpredictability
-        unsigned char *randomBuf = (unsigned char *)malloc(randBytesSize);
-        if (!randomBuf)
-        {
-            cerr << "Error allocating unsigned buffer for random bytes\n";
-            close(clientfd);
-            return 0;
-        }
-        RAND_poll();
-        ret = RAND_bytes(randomBuf, randBytesSize);
-        if (!ret)
-        {
-            cerr << "Error generating random bytes\n";
-            close(clientfd);
-            return 0;
-        }
-        char *random = (char *)malloc(randBytesSize);
-        if (!random)
-        {
-            cerr << "Error allocating buffer for random bytes *\n";
-            close(clientfd);
-            return 0;
-        }
-        memcpy(random, randomBuf, randBytesSize);
-        free(randomBuf);
-
-        // Generate a char timestamp to ensure uniqueness
-        char *now = (char *)malloc(timeBufferSize);
-        if (!now)
-        {
-            cerr << "Error allocating buffer for date and time\n";
-            close(clientfd);
-            return 0;
-        }
-        time_t currTime;
-        tm *currentTime;
-        time(&currTime);
-        currentTime = localtime(&currTime);
-        if (!currentTime)
-        {
-            cerr << "Error creating pointer containing current time\n";
-            close(clientfd);
-            return 0;
-        }
-        ret = strftime(now, timeBufferSize, "%Y%j%H%M%S", currentTime);
-        if (!ret)
-        {
-            cerr << "Error putting time in a char array\n";
-            close(clientfd);
-            return 0;
-        }
-
-        // Concatenate random number and timestamp
-        char *tempNonce = (char *)malloc(randBytesSize + timeBufferSize);
-        if (!tempNonce)
-        {
-            cerr << "Error allocating char buffer for nonce\n";
-            close(clientfd);
-            return 0;
-        }
-        memcpy(tempNonce, random, randBytesSize);
-        free(random);
-        strcat(tempNonce, now);
-        free(now);
-        nonce = (unsigned char *)malloc(nonceSize);
-        if (!nonce)
-        {
-            cerr << "Error allocating buffer for nonce\n";
-            close(clientfd);
-            return 0;
-        }
-        memcpy(nonce, tempNonce, nonceSize);
-        free(tempNonce);
 
         return 1;
     }
@@ -259,23 +186,115 @@ public:
         return 1;
     }
 
-    int sendIdProof() {
+    int generateSessionKeyPair()
+    {
 
         int ret;
 
-        // Receive client's nonce
-        unsigned char * serverNonce = (unsigned char *) malloc(nonceSize);
-        if (!serverNonce) {
-            cerr << "Error allocating buffer for server nonce\n";
+        // Create the exponent
+        BIGNUM * bn =  BN_new();
+        ret = BN_set_word(bn, RSA_F4);
+        if (!ret) {
+            cerr << "Error creating exponent\n";
             close(clientfd);
             return 0;
         }
-        ret = read(clientfd, serverNonce, nonceSize);
+
+        // Create the RSA structure
+        RSA * rsa = RSA_new();
+        int rsaSize = 2048; // Size in bits
+        ret =  RSA_generate_key_ex(rsa, rsaSize, bn, NULL);
+        if (!ret) {
+            cerr << "Error generating rsa\n";
+            close(clientfd);
+            return 0;
+        }
+
+        // Create bios to store public and private keys
+        BIO * publicBio = BIO_new(BIO_s_mem());
+        PEM_write_bio_RSAPublicKey(publicBio, rsa);
+        BIO * privateBio = BIO_new(BIO_s_mem());
+        PEM_write_bio_RSAPrivateKey(privateBio, rsa, NULL, NULL, 0, NULL, NULL);
+
+        // Get the size from the bios and allocate buffers
+        int pubSize = BIO_pending(publicBio);
+        int privSize = BIO_pending(privateBio);
+        unsigned char * charServTempPubKey = (unsigned char *) malloc(pubSize + 1);
+        unsigned char * charServTempPrvKey = (unsigned char *) malloc(privSize + 1);
+
+        // Read bios into the buffers
+        BIO_read(publicBio, charServTempPubKey, pubSize);
+        BIO_read(privateBio, charServTempPrvKey, privSize);
+        // charServTempPubKey[pubSize] = '\0';
+        // charServTempPrvKey[privSize] = '\0';
+
+        // Create bios to convert unsigned char * keys to EVP_PKEYs
+        BIO * pubKeyBio = BIO_new_mem_buf(charServTempPubKey, pubSize);
+        BIO * prvKeyBio = BIO_new_mem_buf(charServTempPrvKey, privSize);
+
+        // Create rsa structure for pub and prv keys
+        RSA * pubRsa = NULL;
+        RSA * prvRsa = NULL;
+        pubRsa = PEM_read_bio_RSAPublicKey(pubKeyBio, &pubRsa, NULL, NULL);
+        prvRsa = PEM_read_bio_RSAPrivateKey(prvKeyBio, &prvRsa, NULL, NULL);
+
+        // Associate EVP_PKEYs
+        servTempPubKey = EVP_PKEY_new();
+        EVP_PKEY_assign_RSA(servTempPubKey, pubRsa);
+        servTempPrvKey = EVP_PKEY_new();
+        EVP_PKEY_assign_RSA(servTempPrvKey, prvRsa);
+
+        // TEST
+        cout << "Pub key:\n";
+        BIO_dump_fp(stdout, (const char *) servTempPubKey, 256);
+        cout << "Prv key:\n";
+        BIO_dump_fp(stdout, (const char *) servTempPrvKey, 256);
+
+        // Free everything
+        bzero(charServTempPubKey, pubSize);
+        free(charServTempPubKey);
+        bzero(charServTempPrvKey, privSize);
+        free(charServTempPrvKey);
+        BIO_free_all(publicBio);
+        BIO_free_all(privateBio);
+        BIO_free(pubKeyBio);
+        BIO_free(prvKeyBio);
+        BN_free(bn);
+        RSA_free(rsa);
+
+        return 1;
+    }
+
+    // This function concatenate client's serverNonce with temporary pub key signs it and send it
+    int createIdProof() {
+
+        int ret;
+
+        // Read the client nonce
+        unsigned char * clientNonce = (unsigned char *) malloc(nonceSize);
+        if (!clientNonce) {
+            cerr << "Error allocating buffer for client serverNonce\n";
+            close(clientfd);
+            return 0;
+        }
+        ret = read(clientfd, clientNonce, nonceSize);
         if (ret <= 0) {
-            cerr << "Error reading server nonce\n";
+            cerr << "Error reading client's serverNonce\n";
             close(clientfd);
             return 0;
         }
+
+        // Concatenate serverNonce and public key
+        unsigned char * concat = (unsigned char *) malloc(nonceSize + tempKeySize);
+        if (!concat) {
+            cerr << "Error allocating buffer for concat\n";
+            close(clientfd);
+            return 0;
+        }
+        memcpy(concat, clientNonce, nonceSize);
+        unsigned char * buffer = (unsigned char *) servTempPubKey; 
+        memcpy(concat + nonceSize, buffer, tempKeySize);
+        free(clientNonce);
 
         // Retreive server's private key
         string path = "server_infos/prvkey.pem";
@@ -297,14 +316,14 @@ public:
         }
 
         // Allocate buffer for signature
-        unsigned char * sig = (unsigned char *) malloc(EVP_PKEY_size(serverPrvKey));
-        if (!sig) {
-            cerr << "Error allocating buffer for server's signature\n";
+        serverSig = (unsigned char *) malloc(EVP_PKEY_size(serverPrvKey));
+        if (!serverSig) {
+            cerr << "Error allocating buffer for signature\n";
             close(clientfd);
             return 0;
         }
 
-        // Sign nonce using private key
+        // Sign the concatenated message
         const EVP_MD * md = EVP_sha256();
         EVP_MD_CTX * ctx = EVP_MD_CTX_new();
         if (!ctx) {
@@ -318,30 +337,31 @@ public:
             close(clientfd);
             return 0;
         }
-        ret = EVP_SignUpdate(ctx, serverNonce, nonceSize);
+        ret = EVP_SignUpdate(ctx, concat, nonceSize + tempKeySize);
         if (!ret) {
             cerr << "Error during update for signature\n";
             close(clientfd);
             return 0;
         }
-        unsigned int sigSize;
-        ret = EVP_SignFinal(ctx, sig, &sigSize, serverPrvKey);
+        ret = EVP_SignFinal(ctx, serverSig, &serverSigSize, serverPrvKey);
         if (!ret) {
             cerr << "Error during finalization for signature\n";
             close(clientfd);
             return 0;
         }
+        bzero(buffer, tempKeySize);
+        free(buffer);
 
-        // Send signature to client
-        ret = sendInt(clientfd, sigSize);
-        if (!ret) {
-            cerr << "Error sending signature size to client\n";
+        // Create server's nonce
+        serverNonce = (unsigned char *) malloc(nonceSize);
+        if (!serverNonce) {
+            cerr << "Error allocating buffer for server nonce\n";
             close(clientfd);
             return 0;
         }
-        ret = send(clientfd, sig, sigSize, 0);
-        if (ret <= 0) {
-            cerr << "Error sending signature to client\n";
+        ret = createNonce(serverNonce);
+        if (!ret) {
+            cerr << "Error creating server's nonce\n";
             close(clientfd);
             return 0;
         }
@@ -349,54 +369,201 @@ public:
         // Free everything
         EVP_MD_CTX_free(ctx);
         EVP_PKEY_free(serverPrvKey);
-        free(serverNonce);
-        free(sig);
+        free(concat);
 
         return 1;
     }
 
-    int generateSessionKey()
+    int sendMessage2() {
+
+        int ret;
+        int totalSize = tempKeySize + serverSigSize + nonceSize;
+
+        // Concatenate temp public key, server's signature and serer nonce
+        unsigned char * concat = (unsigned char *) malloc(totalSize);
+        if (!concat) {
+            cerr << "Error allocating buffer for message 2\n";
+            close(clientfd);
+            return 0;
+        }
+        unsigned char * buffer = (unsigned char *) servTempPubKey;
+        memcpy(concat, buffer, tempKeySize);
+        memcpy(concat + tempKeySize, serverSig, serverSigSize);
+        memcpy(concat + tempKeySize + serverSigSize, serverNonce, nonceSize);
+        free(serverSig);
+
+        // TEST
+        EVP_PKEY * testkey = (EVP_PKEY *) buffer;
+        cout << "testkey:\n";
+        BIO_dump_fp(stdout, (const char *) testkey, tempKeySize);
+        cout << "concat:\n";
+        BIO_dump_fp(stdout, (const char *) concat, totalSize);
+
+        // Send the message
+        ret = sendInt(clientfd, totalSize);
+        if (!ret) {
+            cerr << "Error sending message 2 size\n";
+            close(clientfd);
+            return 0;
+        }
+        ret = send(clientfd, concat, totalSize, 0);
+        if (ret <= 0) {
+            cerr << "Error sending message 2\n";
+            close(clientfd);
+            return 0;
+        }
+
+        EVP_PKEY_free(servTempPubKey);
+
+        return 1;
+    }
+
+    int receiveMessage3() {
+
+        int ret;
+
+        // Read message size
+        int * totalSizePtr = (int *) malloc(sizeof(int));
+        ret = readInt(clientfd, totalSizePtr);
+        if (!ret) {
+            cerr << "Error reading message 3 total size\n";
+            close(clientfd);
+            return 0;
+        }
+        int totalSize = *totalSizePtr;;;;
+        free(totalSizePtr);
+
+        // Read client sig size
+        int * sizePtr = (int *) malloc(sizeof(int));
+        ret = readInt(clientfd, sizePtr);
+        if (!ret) {
+            cerr << "Error reading client sig size\n";
+            close(clientfd);
+            return 0;
+        }
+        clientSigSize = *sizePtr;
+        free(sizePtr);
+
+        // Read concatenate message 3
+        unsigned char * concat = (unsigned char *) malloc(totalSize);
+        if (!concat) {
+            cerr << "Error allocating buffer for concatenate message 3\n";
+            close(clientfd);
+            return 0;
+        }
+        ret = read(clientfd, concat, totalSize);
+
+        // Separate the parts
+        envelopeSize = totalSize - clientSigSize;
+        envelope = (unsigned char *) malloc(envelopeSize);
+        clientSig = (unsigned char *) malloc(clientSigSize);
+        if (!envelope || !clientSig) {
+            cerr << "Error allocating buffer for message 3\n";
+            close(clientfd);
+            return 0;
+        }
+        memcpy(envelope, concat, envelopeSize);
+        memcpy(clientSig, concat + envelopeSize, clientSigSize);
+        free(concat);
+
+        return 1;
+    }
+
+    // Receive user's envelope and decrypt it to retreive session key
+    int retreiveSessionKey()
     {
 
         int ret;
 
-        // Create a random key for aes 256
-        const EVP_CIPHER *cipher = EVP_aes_256_cbc();
-        unsigned char *secret = (unsigned char *)malloc(EVP_CIPHER_key_length(cipher));
-        if (!secret)
-        {
-            cerr << "Symmetric session key could not be allocated\n";
-            close(clientfd);
-            return 0;
-        }
-        RAND_poll();
-        ret = RAND_bytes(secret, sessionKeySize);
-        if (!ret)
-        {
-            cerr << "Bytes for symmetric key could not be generated\n";
+        // Allocate buffers
+        int encryptedSize = tempKeySize + blockSize;
+        int encryptedKeySize = envelopeSize - encryptedSize - ivSize;
+        unsigned char * encryptedSecret = (unsigned char *) malloc(encryptedSize);
+        unsigned char * encryptedKey = (unsigned char *) malloc(encryptedKeySize);
+        unsigned char * iv = (unsigned char *) malloc(ivSize);
+        if (!encryptedSecret || !encryptedKey || !iv) {
+            cerr << "Error allocating buffer for envelope\n";
             close(clientfd);
             return 0;
         }
 
-        // Hash the secret to get session key
-        sessionKey = (unsigned char *)malloc(EVP_MD_size(EVP_sha256()));
-        ret = createHash(secret, sessionKeySize, sessionKey);
-        if (!ret)
-        {
-            cerr << "Error creating hash of the shared secret\n";
+        // Decompose envelope
+        memcpy(encryptedKey, envelope, encryptedKeySize);
+        memcpy(encryptedSecret, envelope + encryptedKeySize, encryptedSize);
+        memcpy(iv, envelope + encryptedKeySize + encryptedSize, ivSize);
+        free(envelope);
+
+        // Decrypt the envelope
+
+        // Useful variables
+        const EVP_CIPHER *cipher = EVP_aes_256_cbc();
+        int decryptedSize;
+
+        // Create buffer for session key
+        sessionKey = (unsigned char *) malloc(sessionKeySize);
+        if (!sessionKey) {
+            cerr << "Error allocating buffer for session key\n";
             close(clientfd);
             return 0;
         }
-        bzero(secret, EVP_CIPHER_key_length(cipher));
-        free(secret);
+
+        // Digital envelope
+        int bytesWritten;
+        EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
+        if (!ctx)
+        {
+            cerr << "Error creating context for envelope decryption\n";
+            close(clientfd);
+            return 0;
+        }
+        ret = EVP_OpenInit(ctx, cipher, encryptedKey, encryptedKeySize, iv, servTempPrvKey);
+        if (ret <= 0)
+        {
+            cerr << "Error during initialization for envelope decryption\n";
+            close(clientfd);
+            return 0;
+        }
+        ret = EVP_OpenUpdate(ctx, sessionKey, &bytesWritten, encryptedSecret, encryptedSize);
+        if (ret <= 0)
+        {
+            cerr << "Error during update for envelope decryption\n";
+            close(clientfd);
+            return 0;
+        }
+        decryptedSize = bytesWritten;
+        ret = EVP_OpenFinal(ctx, sessionKey + decryptedSize, &bytesWritten);
+        if (ret <= 0)
+        {
+            cerr << "Error during finalization for envelope decryption\n";
+            close(clientfd);
+            return 0;
+        }
+        decryptedSize += bytesWritten;
+
+        // Free some stuff
+        EVP_CIPHER_CTX_free(ctx);
+        free(encryptedKey);
+        free(iv);
+        free(encryptedSecret);
+        free(servTempPrvKey);
 
         return 1;
     }
 
-    // Create key and send a digital envelope to the client containing key
-    int shareKey() {
+    int authenticateClient() {
 
         int ret;
+
+        // Concatenates server's nonce and session key
+        unsigned char * concat = (unsigned char *) malloc(nonceSize + sessionKeySize);
+        if (!concat) {
+            cerr << "Error allocating buffer for concat\n";
+            close(clientfd);
+            return 0;
+        }
+        memcpy(concat, serverNonce, nonceSize);
+        memcpy(concat + nonceSize, sessionKey, sessionKeySize);
+        free(serverNonce);
 
         // Retreive user's pubkey to encrypt session key
         string path = "users_infos/" + clientUsername + "/pubkey.pem";
@@ -416,204 +583,43 @@ public:
             return 0;
         }
 
-        // Encrypt session key using client public key
-
-        // Variables for encryption
-        const EVP_CIPHER *cipher = EVP_aes_256_cbc();
-        int encryptedKeySize = EVP_PKEY_size(clientPubKey);
-        int ivLength = EVP_CIPHER_iv_length(cipher);
-        int blockSizeEnvelope = EVP_CIPHER_block_size(cipher);
-        int cipherSize = sessionKeySize + blockSizeEnvelope;
-        int encryptedSize = 0;
-
-        // Create buffers for encrypted session key, iv, encrypted key
-        unsigned char *iv = (unsigned char *)malloc(ivLength);
-        unsigned char *encryptedKey = (unsigned char *)malloc(encryptedKeySize);
-        unsigned char *encryptedSecret = (unsigned char *)malloc(cipherSize);
-        if (!iv || !encryptedKey || !encryptedSecret)
-        {
-            cout << "Error allocating buffers during nonce encryption\n";
+        // Verify signature
+        const EVP_MD * md = EVP_sha256();
+        EVP_MD_CTX * mdCtx = EVP_MD_CTX_new();
+        if (!mdCtx) {
+            cerr << "Error creating context for verifying sig\n";
             close(clientfd);
             return 0;
         }
-
-        // Digital envelope
-        int bytesWritten = 0;
-        EVP_CIPHER_CTX *ctx = EVP_CIPHER_CTX_new();
-        if (!ctx)
-        {
-            cerr << "Error creating context for nonce encryption\n";
+        ret = EVP_VerifyInit(mdCtx, md);
+        if (!ret) {
+            cerr << "Error during init for verifying sig\n";
             close(clientfd);
             return 0;
         }
-        ret = EVP_SealInit(ctx, cipher, &encryptedKey, &encryptedKeySize, iv, &clientPubKey, 1);
-        if (ret <= 0)
-        {
-            cerr << "Error during initialization of encrypted nonce envelope\n";
-            close(clientfd);
-            return 0;
-        }
-        ret = EVP_SealUpdate(ctx, encryptedSecret, &bytesWritten, sessionKey, sessionKeySize);
-        if (ret <= 0)
-        {
-            cerr << "Error during update of encrypted nonce envelope\n";
-            close(clientfd);
-            return 0;
-        }
-        encryptedSize += bytesWritten;
-        ret = EVP_SealFinal(ctx, encryptedSecret + encryptedSize, &bytesWritten);
-        if (ret <= 0)
-        {
-            cerr << "Error during finalization of encrypted nonce envelope\n";
-            close(clientfd);
-            return 0;
-        }
-        encryptedSize += bytesWritten;
-        EVP_CIPHER_CTX_free(ctx);
-
-        // Send the encrypted key
-        ret = sendInt(clientfd, encryptedKeySize);
-        if (!ret)
-        {
-            cerr << "Error sending encrypted key size\n";
-            close(clientfd);
-            return 0;
-        }
-        ret = send(clientfd, encryptedKey, encryptedKeySize, 0);
-        if (ret <= 0)
-        {
-            cerr << "Error sending encrypted key to " << clientUsername << "\n";
-            close(clientfd);
-            return 0;
-        }
-        free(encryptedKey);
-
-        // Send the encrypted session key
-        ret = sendInt(clientfd, encryptedSize);
-        if (!ret)
-        {
-            cerr << "Error sending encrcypted size\n";
-            close(clientfd);
-            return 0;
-        }
-        ret = send(clientfd, encryptedSecret, encryptedSize, 0);
-        if (ret <= 0)
-        {
-            cerr << "Error sending encrypted session key to " << clientUsername << "\n";
-            close(clientfd);
-        }
-        free(encryptedSecret);
-
-        // Send the iv
-        ret = sendInt(clientfd, ivLength);
-        if (!ret)
-        {
-            cerr << "Error sending iv size\n";
-            close(clientfd);
-            return 0;
-        }
-        ret = send(clientfd, iv, ivLength, 0);
-        if (!ret)
-        {
-            cerr << "Error sending iv\n";
-            close(clientfd);
-            return 0;
-        }
-        free(iv);
-
-        return 1;
-    }
-
-    int sendEncryptedNonce()
-    {
-
-        int ret;
-
-        // First create nonce
-        ret = createNonce();
-        if (!ret)
-        {
-            cerr << "Error creating nonce\n";
-            close(clientfd);
-            return 0;
-        }
-
-        // Encrypt nonce using symmetric key
-        int encryptedSize;
-        unsigned char *encryptedNonce = (unsigned char *)malloc(nonceSize + blockSize);
-        unsigned char *iv = (unsigned char *)malloc(ivSize);
-        if (!encryptedNonce || !iv)
-        {
-            cerr << "Error allocating buffers for encryptedNonce and iv\n";
-            close(clientfd);
-            return 0;
-        }
-
-        ret = encryptSym(nonce, nonceSize, encryptedNonce, iv, sessionKey);
-        if (!ret)
-        {
-            cerr << "Error encrypting the nonce\n";
-            close(clientfd);
-            return 0;
-        }
-        encryptedSize = ret;
-
-        // Send encrypted nonce
-        ret = sendInt(clientfd, encryptedSize);
-        if (!ret)
-        {
-            cerr << "Error sending encrypted size for nonce to client\n";
-            close(clientfd);
-            return 0;
-        }
-        ret = send(clientfd, encryptedNonce, encryptedSize, 0);
-        if (ret <= 0)
-        {
-            cerr << "Error sending encrypted nonce to client\n";
-            close(clientfd);
-            return 0;
-        }
-
-        // Send iv
-        ret = send(clientfd, iv, ivSize, 0);
-        if (ret <= 0)
-        {
-            cerr << "Error sending iv for nonce decryption to client\n";
-            close(clientfd);
-            return 0;
-        }
-
-        return 1;
-    }
-
-    int authenticateClient() {
-
-        int ret;
-
-        // Receive client's nonce
-        unsigned char * clientResponse = (unsigned char *) malloc(nonceSize);
-        if (!clientResponse) {
-            cerr << "Error allocating buffer for client response\n";
-            close(clientfd);
-            return 0;
-        }
-        ret = read(clientfd, clientResponse, nonceSize);
+        ret = EVP_VerifyUpdate(mdCtx, concat, nonceSize + sessionKeySize);
         if (ret <= 0) {
-            cerr << "Error reading client's nonce\n";
+            cerr << "Error during update for verifying sig\n";
+            close(clientfd);
+            return 0;
+        }
+        ret = EVP_VerifyFinal(mdCtx, clientSig, clientSigSize, clientPubKey);
+        if (!ret) {
+            cerr << "User could not be authenticated\n";
+            close(clientfd);
+            return 0;
+        }
+        if (ret < 0) {
+            cerr << "Error during finalization for verifying sig\n";
             close(clientfd);
             return 0;
         }
 
-        // Compare nonce and client response
-        ret = memcmp(nonce, clientResponse, nonceSize);
-        if (ret) {
-            cerr << "Client could not be authenticated\n";
-            close(clientfd);
-            return 0;
-        }
-        free(nonce);
-        free(clientResponse);
-
+        // Free stuff
+        EVP_MD_CTX_free(mdCtx);
+        free(serverNonce);
+        EVP_PKEY_free(clientPubKey);
+        
         CONNEXION_STATUS = 1;
 
         return 1;
@@ -1221,38 +1227,44 @@ int main()
             cerr << "Error accepting client connection, communication stopped\n\n";
             continue;
         }
-        cout << "Client " << serv.getClientUsername() << " connected, for challenge\n";
+        cout << "Client " << serv.getClientUsername() << " connected, creating temporary RSA key pair\n";
 
-        ret = serv.sendIdProof();
+        ret = serv.generateSessionKeyPair();
+        if (!ret)
+        {
+            cerr << "Error generating temporary RSA key pair, communication stopped\n\n";
+            continue;
+        }
+        cout << "Temporary RSA key pair generated\n";
+
+        cout << "Creating ID proof\n";
+        ret = serv.createIdProof();
         if (!ret) {
-            cerr << "Error sending identification proof to the client, communication stopped\n";
+            cerr << "Error creating ID proof, communication stopped\n";
             continue;
         }
-        cout << "Proof of ID sent to the client\n";
+        cout << "Proof of ID created\n";
 
-        ret = serv.generateSessionKey();
-        if (!ret)
-        {
-            cerr << "Error generating session key, communication stopped\n\n";
+        ret = serv.sendMessage2();
+        if (!ret) {
+            cerr << "Error sending ID proof\n";
             continue;
         }
-        cout << "Session symmetric key generated\n";
+        cout << "ID proof sent\n";
+        
+        ret = serv.receiveMessage3();
+        if (!ret) {
+            cerr << "Error receiving message 3\n";
+            continue;
+        }
+        cout << "Message 3 received\n";
 
-        ret = serv.shareKey();
-        if (!ret)
-        {
-            cerr << "Error sharing key to the client, communication stopped\n\n";
+        ret = serv.retreiveSessionKey();
+        if (!ret) {
+            cerr << "Error retreiving session key from client's envelope\n";
             continue;
         }
-        cout << "Session symmetric key sent to client\n";
-
-        ret = serv.sendEncryptedNonce();
-        if (!ret)
-        {
-            cerr << "Error sending encrypted nonce to the client, communication stopped\n\n";
-            continue;
-        }
-        cout << "Encrypted nonce sent, waiting for client's proof of identity\n";
+        cout << "Session key retreived\n";
 
         ret = serv.authenticateClient();
         if (!ret) {
@@ -1263,7 +1275,6 @@ int main()
 
         while (serv.getConnexionStatus())
         {
-
             cout << "\nWaiting for user input\n";
             serv.getCommand();
         }

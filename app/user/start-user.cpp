@@ -168,6 +168,14 @@ public:
 
         int ret;
 
+        // Receive temp pub key
+        servTempPubKey = EVP_PKEY_new();
+        ret = read(socketfd, servTempPubKey, tempKeySize);
+        if (ret <= 0) {
+            cerr << "Error reading temp pub key\n";
+            exit(1);
+        }
+
         // Receive size of M2
         int * sizePtr = (int *) malloc(sizeof(int));
         ret = readInt(socketfd, sizePtr);
@@ -202,7 +210,7 @@ public:
         }
         memcpy(buffer, concat, tempKeySize);
         memcpy(charTempPubKey, buffer, tempKeySize);
-        servTempPubKey = buffer;
+        // servTempPubKey = buffer;
         memcpy(serverSig, concat + tempKeySize, serverSigSize);
         memcpy(serverNonce, concat + tempKeySize + serverSigSize, nonceSize);
         free(concat);
@@ -212,6 +220,7 @@ public:
         // BIO_dump_fp(stdout, (const char *) serverNonce, nonceSize);
         cout << "pubkey\n";
         BIO_dump_fp(stdout, (const char *) servTempPubKey, tempKeySize);
+        cout << "pubkey size: " << EVP_PKEY_size(servTempPubKey) << endl;
     }
 
     // Authenticate server

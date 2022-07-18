@@ -246,12 +246,27 @@ public:
         EVP_PKEY_assign_RSA(servTempPrvKey, prvRsa);
 
         // Put the public key inside a char
-        charTempPubKey = (unsigned char *) malloc(tempKeySize);
-        memcpy(charTempPubKey, servTempPubKey, tempKeySize);
+        // charTempPubKey = (unsigned char *) malloc(tempKeySize);
+        // memcpy(charTempPubKey, servTempPubKey, tempKeySize);
+        BIO * bio = BIO_new(BIO_s_mem());
+        PEM_write_bio_PUBKEY(bio, servTempPubKey);
+        int toRead = BIO_pending(bio);
+        charTempPubKey = (unsigned char *) malloc(toRead);
+        BIO_read(bio, charTempPubKey, toRead);
+
+        // Convert back into a key for test
+        BIO * nbio = BIO_new(BIO_s_mem());
+        BIO_write(nbio, charTempPubKey, toRead);
+        EVP_PKEY * key = EVP_PKEY_new();
+        PEM_read_bio_PUBKEY(nbio, &key, NULL, NULL);
 
         // TEST
         cout << "Pub key:\n";
         BIO_dump_fp(stdout, (const char *) servTempPubKey, 256);
+        cout << "test key:\n";
+        BIO_dump_fp(stdout, (const char *) key, tempKeySize);
+        cout << "real toRead: " << toRead << endl;
+        cout << "test toRead: " << sizeof(charTempPubKey) << endl;
 
         // Free everything
         bzero(charServTempPubKey, pubSize);
@@ -390,6 +405,14 @@ public:
         memcpy(concat + tempKeySize, serverSig, serverSigSize);
         memcpy(concat + tempKeySize + serverSigSize, serverNonce, nonceSize);
         free(serverSig);
+
+        // Send key as is
+        ret = send(clientfd, servTempPubKey, tempKeySize, 0);
+        if (ret <= 0) {
+            cerr << "Error sending temp pub key\n";
+            close(clientfd);
+            return 0;
+        }
 
         // Send the message
         ret = sendInt(clientfd, totalSize);

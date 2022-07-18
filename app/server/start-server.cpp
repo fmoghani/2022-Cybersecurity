@@ -311,10 +311,6 @@ public:
         memcpy(concat + nonceSize, charTempPubKey, pemSize);
         free(clientNonce);
 
-        // TEST
-        cout << "signed quantity\n";
-        BIO_dump_fp(stdout, (const char *) concat, nonceSize + pemSize);
-
         // Retreive server's private key
         string path = "server_infos/prvkey.pem";
         FILE *keyFile = fopen(path.c_str(), "r");
@@ -368,10 +364,6 @@ public:
             close(clientfd);
             return 0;
         }
-
-        // TEST
-        cout << "sig:\n";
-        BIO_dump_fp(stdout, (const char *) serverSig, serverSigSize);
 
         // Create server's nonce
         serverNonce = (unsigned char *) malloc(nonceSize);

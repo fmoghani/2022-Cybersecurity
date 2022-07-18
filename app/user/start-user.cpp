@@ -191,7 +191,14 @@ public:
         FILE * pemFile = fopen("temppubkey.pem", "w + r");
         fwrite(charTempPubKey, 1, pemSize, pemFile);
         servTempPubKey = PEM_read_PUBKEY(pemFile, NULL, NULL, NULL);
+        if (!servTempPubKey) {
+            cerr << "Error reading temp pub key from pem file\n";
+            exit(1);
+        }
         fclose(pemFile);
+
+        // TEST
+        cout << "key size: " << EVP_PKEY_size(servTempPubKey) << endl;
 
         // Receive size of M2
         int * sizePtr = (int *) malloc(sizeof(int));
@@ -217,7 +224,6 @@ public:
 
         // Retreive each part of message
         serverSigSize = totalSize - nonceSize;
-        cout << "sig size: " <<  serverSigSize << endl;
         serverSig = (unsigned char *) malloc(serverSigSize);
         serverNonce = (unsigned char *) malloc(nonceSize);
         if (!serverSig || !serverNonce) {
@@ -322,7 +328,7 @@ public:
         fclose(pemFile);
 
         // Remove file
-        remove("temppubkey.pem");
+        // remove("temppubkey.pem");
 
         // Concat nonce and server's pub key
         unsigned char * concat = (unsigned char *) malloc(nonceSize + pemSize);
@@ -425,7 +431,7 @@ public:
         int encryptedKeySize = EVP_PKEY_size(servTempPubKey);
         int ivLength = EVP_CIPHER_iv_length(cipher);
         int blockSizeEnvelope = EVP_CIPHER_block_size(cipher);
-        int cipherSize = sessionKeySize + blockSizeEnvelope;
+        int cipherSize = 2*sessionKeySize + blockSizeEnvelope;
         int encryptedSize = 0;
 
         // Create buffers for encrypted session key, iv, encrypted key
@@ -437,6 +443,12 @@ public:
             cout << "Error allocating buffers during session key encryption\n";
             exit(1);
         }
+
+        // TEST
+        EVP_PKEY_set_type(servTempPubKey, EVP_PKEY_RSA);
+        cout << "key type: " << EVP_PKEY_id(servTempPubKey) << endl;
+
+        // Create buffer for ciphertext
 
         // Digital envelope
         int bytesWritten = 0;
@@ -454,7 +466,7 @@ public:
             exit(1);
         }
         cout << "before update\n";
-        ret = EVP_SealUpdate(ctx, encryptedSecret, &bytesWritten, sessionKey, sessionKeySize);
+        ret = EVP_SealUpdate(ctx, encryptedSecret, &bytesWritten, sessionHash, 2*sessionKeySize);
         if (ret <= 0)
         {
             cerr << "Error during update of encrypted session key envelope\n";

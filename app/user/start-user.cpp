@@ -40,16 +40,19 @@ class Client
 
     // Keys
     unsigned char *sessionKey;
+    unsigned char *authKey;
     EVP_PKEY * servTempPubKey;
     unsigned char * charTempPubKey;
     unsigned char * envelope;
     int envelopeSize;
+    int pemSize;
 
     // Signatures
     unsigned char * serverSig;
     int serverSigSize;
     unsigned char * clientSig;
     unsigned int clientSigSize;
+    unsigned char * sessionHash;
 
     // Available commands
     vector<string> commands = {"upload", "download", "delete", "list", "rename", "logout"};
@@ -168,13 +171,27 @@ public:
 
         int ret;
 
-        // Receive temp pub key
-        servTempPubKey = EVP_PKEY_new();
-        ret = read(socketfd, servTempPubKey, tempKeySize);
-        if (ret <= 0) {
-            cerr << "Error reading temp pub key\n";
+        // Receive pem file for pub key
+        int * pemSizePtr = (int *) malloc(sizeof(int));
+        ret = readInt(socketfd, pemSizePtr);
+        if (!ret) {
+            cerr << "Error reading pem size\n";
             exit(1);
         }
+        pemSize = *pemSizePtr;
+        free(pemSizePtr);
+        charTempPubKey = (unsigned char *) malloc(pemSize);
+        ret = read(socketfd, charTempPubKey, pemSize);
+        if (ret <= 0) {
+            cerr << "Error reading pem file\n";
+            exit(1);
+        }
+
+        // Convert pem file into key
+        FILE * pemFile = fopen("temppubkey.pem", "w + r");
+        fwrite(charTempPubKey, 1, pemSize, pemFile);
+        servTempPubKey = PEM_read_PUBKEY(pemFile, NULL, NULL, NULL);
+        fclose(pemFile);
 
         // Receive size of M2
         int * sizePtr = (int *) malloc(sizeof(int));
@@ -199,28 +216,17 @@ public:
         }
 
         // Retreive each part of message
-        EVP_PKEY * buffer = EVP_PKEY_new();
-        charTempPubKey = (unsigned char *) malloc(tempKeySize);
-        serverSigSize = totalSize - tempKeySize - nonceSize;
+        serverSigSize = totalSize - nonceSize;
+        cout << "sig size: " <<  serverSigSize << endl;
         serverSig = (unsigned char *) malloc(serverSigSize);
         serverNonce = (unsigned char *) malloc(nonceSize);
-        if (!charTempPubKey || !serverSig || !serverNonce) {
+        if (!serverSig || !serverNonce) {
             cerr << "Error allocating buffer for M2\n";
             exit(1);
         }
-        memcpy(buffer, concat, tempKeySize);
-        memcpy(charTempPubKey, buffer, tempKeySize);
-        // servTempPubKey = buffer;
-        memcpy(serverSig, concat + tempKeySize, serverSigSize);
-        memcpy(serverNonce, concat + tempKeySize + serverSigSize, nonceSize);
+        memcpy(serverSig, concat, serverSigSize);
+        memcpy(serverNonce, concat + serverSigSize, nonceSize);
         free(concat);
-
-        // TEST
-        // cout << "server nonce\n";
-        // BIO_dump_fp(stdout, (const char *) serverNonce, nonceSize);
-        cout << "pubkey\n";
-        BIO_dump_fp(stdout, (const char *) servTempPubKey, tempKeySize);
-        cout << "pubkey size: " << EVP_PKEY_size(servTempPubKey) << endl;
     }
 
     // Authenticate server
@@ -306,14 +312,26 @@ public:
         X509_STORE_CTX_free(ctx);
         X509_STORE_free(store);
 
+        // Read pem file to get public key as a char
+        FILE * pemFile = fopen("../server/temppubkey.pem", "r");
+        fseek(pemFile, 0, SEEK_END);
+        pemSize = ftell(pemFile);
+        fseek(pemFile, 0, SEEK_SET);
+        charTempPubKey = (unsigned char *) malloc(pemSize);
+        fread(charTempPubKey, 1, pemSize, pemFile);
+        fclose(pemFile);
+
+        // Remove file
+        remove("temppubkey.pem");
+
         // Concat nonce and server's pub key
-        unsigned char * concat = (unsigned char *) malloc(nonceSize + tempKeySize);
+        unsigned char * concat = (unsigned char *) malloc(nonceSize + pemSize);
         if (!concat) {
             cerr << "Error allocating buffer for concat\n";
             exit(1);
         }
         memcpy(concat, clientNonce, nonceSize);
-        memcpy(concat + nonceSize, charTempPubKey, tempKeySize);
+        memcpy(concat + nonceSize, charTempPubKey, pemSize);
         free(clientNonce);
 
         // Verify signature
@@ -328,7 +346,7 @@ public:
             cerr << "Error during init for verifying sig\n";
             exit(1);
         }
-        ret = EVP_VerifyUpdate(mdCtx, concat, nonceSize + tempKeySize);
+        ret = EVP_VerifyUpdate(mdCtx, concat, nonceSize + pemSize);
         if (ret <= 0) {
             cerr << "Error during update for verifying sig\n";
             exit(1);
@@ -350,28 +368,52 @@ public:
         free(serverSig);
     }
 
-    // Generate a 256 bits session key
+    // Generate a 256 bits session key and a 256 bits authentication key
     void createSessionKey() {
 
         int ret;
 
-        // Allocate buffer for key
+        // Allocate buffer for random bytes
+        unsigned char * buffer = (unsigned char *) malloc(2*sessionKeySize);
+        if (!buffer) {
+            cerr << "Error allocating buffer for random bytes\n";
+            exit(1);
+        }
+
+        // Generate bytes
+        RAND_poll();
+        ret = RAND_bytes(buffer, 2*sessionKeySize);
+        if (ret <= 0) {
+            cerr << "Error creating random bytes\n";
+            exit(1);
+        }
+
+        // Hash the bytes
+        sessionHash = (unsigned char *) malloc(2*sessionKeySize);
+        ret = createHash512(buffer, 2*sessionKeySize, sessionHash);
+        if (!ret) {
+            cerr << "Error creating hash of random bytes\n";
+            exit(1);
+        }
+
+        // Retreive session key
         sessionKey = (unsigned char *) malloc(sessionKeySize);
         if (!sessionKey) {
             cerr << "Error allocating buffer for session key\n";
             exit(1);
         }
+        memcpy(sessionKey, sessionHash, sessionKeySize);
 
-        // Generate session key using a SPRNG
-        RAND_poll();
-        ret = RAND_bytes(sessionKey, sessionKeySize);
-        if (ret <= 0) {
-            cerr << "Error creating session key\n";
+        // Retreive auth key
+        authKey = (unsigned char *) malloc(sessionKeySize);
+        if (!sessionKey) {
+            cerr << "Error allocating buffer for auth key\n";
             exit(1);
         }
+        memcpy(authKey, sessionHash + sessionKeySize, sessionKeySize);
     }
 
-    // Seal the session key inside the envelope and send it to the server
+    // Seal the session hash inside the envelope and send it to the server
     void encryptKey() {
 
         int ret;
@@ -380,7 +422,7 @@ public:
         
         // Variables for encryption
         const EVP_CIPHER *cipher = EVP_aes_256_cbc();
-        int encryptedKeySize = tempKeySize;
+        int encryptedKeySize = EVP_PKEY_size(servTempPubKey);
         int ivLength = EVP_CIPHER_iv_length(cipher);
         int blockSizeEnvelope = EVP_CIPHER_block_size(cipher);
         int cipherSize = sessionKeySize + blockSizeEnvelope;

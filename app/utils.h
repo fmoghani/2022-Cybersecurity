@@ -87,7 +87,7 @@ int readInt(int socketfd, int * n) {
     return 1;
 }
 
-int createHash(unsigned char * inBuffer, size_t inBufferLen, unsigned char * digest) {
+int createHash256(unsigned char * inBuffer, size_t inBufferLen, unsigned char * digest) {
 
     int ret;
 
@@ -103,6 +103,43 @@ int createHash(unsigned char * inBuffer, size_t inBufferLen, unsigned char * dig
 
     // Init, update and finalize digest
     ret = EVP_DigestInit(ctx, EVP_sha256());
+    if (ret <= 0) {
+        cerr << "Error initializing digest\n";
+        return 0;
+    }
+    ret = EVP_DigestUpdate(ctx, inBuffer, inBufferLen);
+    if (ret <= 0) {
+        cerr << "Error updating digest\n";
+        return 0;
+    }
+    ret = EVP_DigestFinal(ctx, digest, &digestLen);
+    if (ret <= 0) {
+        cerr << "Error finalizing digest\n";
+        return 0;
+    }
+
+    // Free everything
+    EVP_MD_CTX_free(ctx);
+
+    return digestLen;
+}
+
+int createHash512(unsigned char * inBuffer, size_t inBufferLen, unsigned char * digest) {
+
+    int ret;
+
+    // Create params for the digest
+    unsigned int digestLen;
+
+    // Init context
+    EVP_MD_CTX * ctx = EVP_MD_CTX_new();
+    if (!ctx) {
+        cerr << "Error creating context for digest\n";
+        return 0;
+    }
+
+    // Init, update and finalize digest
+    ret = EVP_DigestInit(ctx, EVP_sha512());
     if (ret <= 0) {
         cerr << "Error initializing digest\n";
         return 0;

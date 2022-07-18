@@ -51,6 +51,7 @@ class Server
     unsigned char *sessionKey;
     unsigned char * envelope;
     int envelopeSize;
+    int pemSize;
 
     // Signatures
     unsigned char * serverSig;
@@ -245,28 +246,15 @@ public:
         servTempPrvKey = EVP_PKEY_new();
         EVP_PKEY_assign_RSA(servTempPrvKey, prvRsa);
 
-        // Put the public key inside a char
-        // charTempPubKey = (unsigned char *) malloc(tempKeySize);
-        // memcpy(charTempPubKey, servTempPubKey, tempKeySize);
-        BIO * bio = BIO_new(BIO_s_mem());
-        PEM_write_bio_PUBKEY(bio, servTempPubKey);
-        int toRead = BIO_pending(bio);
-        charTempPubKey = (unsigned char *) malloc(toRead);
-        BIO_read(bio, charTempPubKey, toRead);
-
-        // Convert back into a key for test
-        BIO * nbio = BIO_new(BIO_s_mem());
-        BIO_write(nbio, charTempPubKey, toRead);
-        EVP_PKEY * key = EVP_PKEY_new();
-        PEM_read_bio_PUBKEY(nbio, &key, NULL, NULL);
-
-        // TEST
-        cout << "Pub key:\n";
-        BIO_dump_fp(stdout, (const char *) servTempPubKey, 256);
-        cout << "test key:\n";
-        BIO_dump_fp(stdout, (const char *) key, tempKeySize);
-        cout << "real toRead: " << toRead << endl;
-        cout << "test toRead: " << sizeof(charTempPubKey) << endl;
+        // Put the public key inside a pem file
+        FILE * pemFile = fopen("temppubkey.pem", "w");
+        ret = PEM_write_PUBKEY(pemFile, servTempPubKey);
+        if (!ret) {
+            cerr << "Error writing pem file\n";
+            close(clientfd);
+            return 0;
+        }
+        fclose(pemFile);
 
         // Free everything
         bzero(charServTempPubKey, pubSize);
@@ -302,16 +290,30 @@ public:
             return 0;
         }
 
+        // Read pem file to get public key as a char
+        FILE * pemFile = fopen("temppubkey.pem", "r");
+        fseek(pemFile, 0, SEEK_END);
+        pemSize = ftell(pemFile);
+        fseek(pemFile, 0, SEEK_SET);
+        charTempPubKey = (unsigned char *) malloc(pemSize);
+        fread(charTempPubKey, 1, pemSize, pemFile);
+        fclose(pemFile);
+
         // Concatenate serverNonce and public key
-        unsigned char * concat = (unsigned char *) malloc(nonceSize + tempKeySize);
+        cout << "before concat\n";
+        unsigned char * concat = (unsigned char *) malloc(nonceSize + pemSize);
         if (!concat) {
             cerr << "Error allocating buffer for concat\n";
             close(clientfd);
             return 0;
         }
         memcpy(concat, clientNonce, nonceSize);
-        memcpy(concat + nonceSize, charTempPubKey, tempKeySize);
+        memcpy(concat + nonceSize, charTempPubKey, pemSize);
         free(clientNonce);
+
+        // TEST
+        cout << "signed quantity\n";
+        BIO_dump_fp(stdout, (const char *) concat, nonceSize + pemSize);
 
         // Retreive server's private key
         string path = "server_infos/prvkey.pem";
@@ -354,7 +356,7 @@ public:
             close(clientfd);
             return 0;
         }
-        ret = EVP_SignUpdate(ctx, concat, nonceSize + tempKeySize);
+        ret = EVP_SignUpdate(ctx, concat, nonceSize + pemSize);
         if (!ret) {
             cerr << "Error during update for signature\n";
             close(clientfd);
@@ -366,6 +368,10 @@ public:
             close(clientfd);
             return 0;
         }
+
+        // TEST
+        cout << "sig:\n";
+        BIO_dump_fp(stdout, (const char *) serverSig, serverSigSize);
 
         // Create server's nonce
         serverNonce = (unsigned char *) malloc(nonceSize);
@@ -392,24 +398,29 @@ public:
     int sendMessage2() {
 
         int ret;
-        int totalSize = tempKeySize + serverSigSize + nonceSize;
+        int totalSize = serverSigSize + nonceSize;
 
-        // Concatenate temp public key, server's signature and serer nonce
+        // Concatenate temp public key, server's signature and server nonce
         unsigned char * concat = (unsigned char *) malloc(totalSize);
         if (!concat) {
             cerr << "Error allocating buffer for message 2\n";
             close(clientfd);
             return 0;
         }
-        memcpy(concat, charTempPubKey, tempKeySize);
-        memcpy(concat + tempKeySize, serverSig, serverSigSize);
-        memcpy(concat + tempKeySize + serverSigSize, serverNonce, nonceSize);
+        memcpy(concat, serverSig, serverSigSize);
+        memcpy(concat + serverSigSize, serverNonce, nonceSize);
         free(serverSig);
 
-        // Send key as is
-        ret = send(clientfd, servTempPubKey, tempKeySize, 0);
-        if (ret <= 0) {
-            cerr << "Error sending temp pub key\n";
+        // Send pem file
+        ret = sendInt(clientfd, pemSize);
+        if (!ret) {
+            cerr << "Error sending pem file size\n";
+            close(clientfd);
+            return 0;
+        }
+        ret = send(clientfd, charTempPubKey, pemSize, 0);
+        if (!ret) {
+            cerr << "Error sending pem file\n";
             close(clientfd);
             return 0;
         }

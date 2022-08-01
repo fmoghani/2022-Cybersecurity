@@ -171,6 +171,32 @@ public:
 
         int ret;
 
+        // Receive bio
+        int * bioLenPtr = (int *) malloc(sizeof(int));
+        ret = readInt(socketfd, bioLenPtr);
+        if (!ret) {
+            cerr << "Error reading bio size\n";
+            exit(1);
+        }
+        int bioLen = *bioLenPtr;
+        free(bioLenPtr);
+        unsigned char * bioContent = (unsigned char *) malloc(bioLen);
+        ret = read(socketfd, bioContent, bioLen);
+        if (ret <= 0) {
+            cerr << "Error reading bio content\n";
+            exit(1);
+        }
+
+        // Read key from bio
+        BIO * keyBio = BIO_new(BIO_s_mem());
+        BIO_write(keyBio, bioContent, bioLen);
+        servTempPubKey = PEM_read_bio_PUBKEY(keyBio, NULL, NULL, NULL);
+        if (!servTempPubKey) {
+            cerr << "Error reading temp pub key from bio\n";
+            exit(1);
+        }
+        free(keyBio);
+
         // Receive pem file for pub key
         int * pemSizePtr = (int *) malloc(sizeof(int));
         ret = readInt(socketfd, pemSizePtr);
@@ -188,17 +214,17 @@ public:
         }
 
         // Convert pem file into key
-        FILE * pemFile = fopen("temppubkey.pem", "w + r");
-        fwrite(charTempPubKey, 1, pemSize, pemFile);
-        servTempPubKey = PEM_read_PUBKEY(pemFile, NULL, NULL, NULL);
-        if (!servTempPubKey) {
-            cerr << "Error reading temp pub key from pem file\n";
-            exit(1);
-        }
-        fclose(pemFile);
+        // FILE * pemFile = fopen("temppubkey.pem", "w + r");
+        // fwrite(charTempPubKey, 1, pemSize, pemFile);
+        // servTempPubKey = PEM_read_PUBKEY(pemFile, NULL, NULL, NULL);
+        // if (!servTempPubKey) {
+        //     cerr << "Error reading temp pub key from pem file\n";
+        //     exit(1);
+        // }
+        // fclose(pemFile);
 
         // TEST
-        cout << "key size: " << EVP_PKEY_size(servTempPubKey) << endl;
+        // cout << "key size: " << EVP_PKEY_size(servTempPubKey) << endl;
 
         // Receive size of M2
         int * sizePtr = (int *) malloc(sizeof(int));

@@ -52,6 +52,7 @@ class Server
     unsigned char * envelope;
     int envelopeSize;
     int pemSize;
+    BIO * keyBio;
 
     // Signatures
     unsigned char * serverSig;
@@ -256,6 +257,10 @@ public:
         }
         fclose(pemFile);
 
+        // Put the public key inside a bio
+        keyBio = BIO_new(BIO_s_mem());
+        PEM_write_bio_PUBKEY(keyBio, servTempPubKey);
+
         // Free everything
         bzero(charServTempPubKey, pubSize);
         free(charServTempPubKey);
@@ -291,24 +296,39 @@ public:
         }
 
         // Read pem file to get public key as a char
-        FILE * pemFile = fopen("temppubkey.pem", "r");
-        fseek(pemFile, 0, SEEK_END);
-        pemSize = ftell(pemFile);
-        fseek(pemFile, 0, SEEK_SET);
-        charTempPubKey = (unsigned char *) malloc(pemSize);
-        fread(charTempPubKey, 1, pemSize, pemFile);
-        fclose(pemFile);
+        // FILE * pemFile = fopen("temppubkey.pem", "r");
+        // fseek(pemFile, 0, SEEK_END);
+        // pemSize = ftell(pemFile);
+        // fseek(pemFile, 0, SEEK_SET);
+        // charTempPubKey = (unsigned char *) malloc(pemSize);
+        // fread(charTempPubKey, 1, pemSize, pemFile);
+        // fclose(pemFile);
+
+        // Read bio to get public key as a char
+        int bioLen = BIO_pending(keyBio);
+        charTempPubKey = (unsigned char *) malloc(bioLen);
+        if (!charTempPubKey) {
+            cerr << "Error allocating buffer for char pub key\n";
+            close(clientfd);
+            return 0;
+        }
+        ret = BIO_read(keyBio, charTempPubKey, bioLen);
+        if (ret <= 0) {
+            cerr << "Error reading content from bio\n";
+            close(clientfd);
+            return 0;
+        }
 
         // Concatenate serverNonce and public key
         cout << "before concat\n";
-        unsigned char * concat = (unsigned char *) malloc(nonceSize + pemSize);
+        unsigned char * concat = (unsigned char *) malloc(nonceSize + bioLen);
         if (!concat) {
             cerr << "Error allocating buffer for concat\n";
             close(clientfd);
             return 0;
         }
         memcpy(concat, clientNonce, nonceSize);
-        memcpy(concat + nonceSize, charTempPubKey, pemSize);
+        memcpy(concat + nonceSize, charTempPubKey, bioLen);
         free(clientNonce);
 
         // Retreive server's private key
@@ -392,7 +412,7 @@ public:
         int ret;
         int totalSize = serverSigSize + nonceSize;
 
-        // Concatenate temp public key, server's signature and server nonce
+        // Concatenate server's signature and server nonce
         unsigned char * concat = (unsigned char *) malloc(totalSize);
         if (!concat) {
             cerr << "Error allocating buffer for message 2\n";
@@ -402,6 +422,29 @@ public:
         memcpy(concat, serverSig, serverSigSize);
         memcpy(concat + serverSigSize, serverNonce, nonceSize);
         free(serverSig);
+
+        // Send content of the bio
+        int bioLen = BIO_pending(keyBio);
+        unsigned char * bioContent = (unsigned char *) malloc(bioLen);
+        if (!bioContent) {
+            cerr << "Error allocating buffer for bio content\n";
+            close(clientfd);
+            return 0;
+        }
+        BIO_read(keyBio, bioContent, bioLen);
+        ret = sendInt(clientfd, bioLen);
+        if (!ret) {
+            cerr << "Error sending bio size\n";
+            close(clientfd);
+            return 0;
+        }
+        ret = send(clientfd, bioContent, bioLen, 0);
+        if (ret <= 0) {
+            cerr << "Error sending bio content\n";
+            close(clientfd);
+            return 0;
+        }
+        free(keyBio);
 
         // Send pem file
         ret = sendInt(clientfd, pemSize);

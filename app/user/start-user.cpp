@@ -199,35 +199,6 @@ public:
         }
         free(keyBio);
 
-        // Receive pem file for pub key
-        // int * pemSizePtr = (int *) malloc(sizeof(int));
-        // ret = readInt(socketfd, pemSizePtr);
-        // if (!ret) {
-        //     cerr << "Error reading pem size\n";
-        //     exit(1);
-        // }
-        // pemSize = *pemSizePtr;
-        // free(pemSizePtr);
-        // charTempPubKey = (unsigned char *) malloc(pemSize);
-        // ret = read(socketfd, charTempPubKey, pemSize);
-        // if (ret <= 0) {
-        //     cerr << "Error reading pem file\n";
-        //     exit(1);
-        // }
-
-        // Convert pem file into key
-        // FILE * pemFile = fopen("temppubkey.pem", "w + r");
-        // fwrite(charTempPubKey, 1, pemSize, pemFile);
-        // servTempPubKey = PEM_read_PUBKEY(pemFile, NULL, NULL, NULL);
-        // if (!servTempPubKey) {
-        //     cerr << "Error reading temp pub key from pem file\n";
-        //     exit(1);
-        // }
-        // fclose(pemFile);
-
-        // TEST
-        // cout << "key size: " << EVP_PKEY_size(servTempPubKey) << endl;
-
         // Receive size of M2
         int * sizePtr = (int *) malloc(sizeof(int));
         ret = readInt(socketfd, sizePtr);
@@ -345,18 +316,6 @@ public:
         }
         X509_STORE_CTX_free(ctx);
         X509_STORE_free(store);
-
-        // Read pem file to get public key as a char
-        // FILE * pemFile = fopen("../server/temppubkey.pem", "r");
-        // fseek(pemFile, 0, SEEK_END);
-        // pemSize = ftell(pemFile);
-        // fseek(pemFile, 0, SEEK_SET);
-        // charTempPubKey = (unsigned char *) malloc(pemSize);
-        // fread(charTempPubKey, 1, pemSize, pemFile);
-        // fclose(pemFile);
-
-        // Remove file
-        // remove("temppubkey.pem");
 
         // Concat nonce and server's pub key
         unsigned char * concat = (unsigned char *) malloc(nonceSize + keyBioLen);

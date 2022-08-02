@@ -248,16 +248,6 @@ public:
         servTempPrvKey = EVP_PKEY_new();
         EVP_PKEY_assign_RSA(servTempPrvKey, prvRsa);
 
-        // Put the public key inside a pem file
-        FILE * pemFile = fopen("temppubkey.pem", "w");
-        ret = PEM_write_PUBKEY(pemFile, servTempPubKey);
-        if (!ret) {
-            cerr << "Error writing pem file\n";
-            close(clientfd);
-            return 0;
-        }
-        fclose(pemFile);
-
         // Put the public key inside a bio
         keyBio = BIO_new(BIO_s_mem());
         PEM_write_bio_PUBKEY(keyBio, servTempPubKey);
@@ -295,15 +285,6 @@ public:
             close(clientfd);
             return 0;
         }
-
-        // Read pem file to get public key as a char
-        // FILE * pemFile = fopen("temppubkey.pem", "r");
-        // fseek(pemFile, 0, SEEK_END);
-        // pemSize = ftell(pemFile);
-        // fseek(pemFile, 0, SEEK_SET);
-        // charTempPubKey = (unsigned char *) malloc(pemSize);
-        // fread(charTempPubKey, 1, pemSize, pemFile);
-        // fclose(pemFile);
 
         // Read bio to get public key as a char
         keyBioLen = BIO_pending(keyBio);
@@ -437,20 +418,6 @@ public:
             return 0;
         }
         free(keyBio);
-
-        // Send pem file
-        // ret = sendInt(clientfd, pemSize);
-        // if (!ret) {
-        //     cerr << "Error sending pem file size\n";
-        //     close(clientfd);
-        //     return 0;
-        // }
-        // ret = send(clientfd, charTempPubKey, pemSize, 0);
-        // if (ret <= 0) {
-        //     cerr << "Error sending pem file\n";
-        //     close(clientfd);
-        //     return 0;
-        // }
 
         // Send the message
         ret = sendInt(clientfd, totalSize);

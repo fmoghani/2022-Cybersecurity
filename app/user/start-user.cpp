@@ -46,6 +46,7 @@ class Client
     unsigned char * envelope;
     int envelopeSize;
     int pemSize;
+    int keyBioLen;
 
     // Signatures
     unsigned char * serverSig;
@@ -172,16 +173,17 @@ public:
         int ret;
 
         // Receive bio
-        int * bioLenPtr = (int *) malloc(sizeof(int));
-        ret = readInt(socketfd, bioLenPtr);
+        int * keyBioLenPtr = (int *) malloc(sizeof(int));
+        ret = readInt(socketfd, keyBioLenPtr);
         if (!ret) {
             cerr << "Error reading bio size\n";
             exit(1);
         }
-        int bioLen = *bioLenPtr;
-        free(bioLenPtr);
-        unsigned char * bioContent = (unsigned char *) malloc(bioLen);
-        ret = read(socketfd, bioContent, bioLen);
+        keyBioLen = *keyBioLenPtr;
+        free(keyBioLenPtr);
+
+        charTempPubKey = (unsigned char *) malloc(keyBioLen);
+        ret = read(socketfd, charTempPubKey, keyBioLen);
         if (ret <= 0) {
             cerr << "Error reading bio content\n";
             exit(1);
@@ -189,7 +191,7 @@ public:
 
         // Read key from bio
         BIO * keyBio = BIO_new(BIO_s_mem());
-        BIO_write(keyBio, bioContent, bioLen);
+        BIO_write(keyBio, charTempPubKey, keyBioLen);
         servTempPubKey = PEM_read_bio_PUBKEY(keyBio, NULL, NULL, NULL);
         if (!servTempPubKey) {
             cerr << "Error reading temp pub key from bio\n";
@@ -198,20 +200,20 @@ public:
         free(keyBio);
 
         // Receive pem file for pub key
-        int * pemSizePtr = (int *) malloc(sizeof(int));
-        ret = readInt(socketfd, pemSizePtr);
-        if (!ret) {
-            cerr << "Error reading pem size\n";
-            exit(1);
-        }
-        pemSize = *pemSizePtr;
-        free(pemSizePtr);
-        charTempPubKey = (unsigned char *) malloc(pemSize);
-        ret = read(socketfd, charTempPubKey, pemSize);
-        if (ret <= 0) {
-            cerr << "Error reading pem file\n";
-            exit(1);
-        }
+        // int * pemSizePtr = (int *) malloc(sizeof(int));
+        // ret = readInt(socketfd, pemSizePtr);
+        // if (!ret) {
+        //     cerr << "Error reading pem size\n";
+        //     exit(1);
+        // }
+        // pemSize = *pemSizePtr;
+        // free(pemSizePtr);
+        // charTempPubKey = (unsigned char *) malloc(pemSize);
+        // ret = read(socketfd, charTempPubKey, pemSize);
+        // if (ret <= 0) {
+        //     cerr << "Error reading pem file\n";
+        //     exit(1);
+        // }
 
         // Convert pem file into key
         // FILE * pemFile = fopen("temppubkey.pem", "w + r");
@@ -345,25 +347,25 @@ public:
         X509_STORE_free(store);
 
         // Read pem file to get public key as a char
-        FILE * pemFile = fopen("../server/temppubkey.pem", "r");
-        fseek(pemFile, 0, SEEK_END);
-        pemSize = ftell(pemFile);
-        fseek(pemFile, 0, SEEK_SET);
-        charTempPubKey = (unsigned char *) malloc(pemSize);
-        fread(charTempPubKey, 1, pemSize, pemFile);
-        fclose(pemFile);
+        // FILE * pemFile = fopen("../server/temppubkey.pem", "r");
+        // fseek(pemFile, 0, SEEK_END);
+        // pemSize = ftell(pemFile);
+        // fseek(pemFile, 0, SEEK_SET);
+        // charTempPubKey = (unsigned char *) malloc(pemSize);
+        // fread(charTempPubKey, 1, pemSize, pemFile);
+        // fclose(pemFile);
 
         // Remove file
         // remove("temppubkey.pem");
 
         // Concat nonce and server's pub key
-        unsigned char * concat = (unsigned char *) malloc(nonceSize + pemSize);
+        unsigned char * concat = (unsigned char *) malloc(nonceSize + keyBioLen);
         if (!concat) {
             cerr << "Error allocating buffer for concat\n";
             exit(1);
         }
         memcpy(concat, clientNonce, nonceSize);
-        memcpy(concat + nonceSize, charTempPubKey, pemSize);
+        memcpy(concat + nonceSize, charTempPubKey, keyBioLen);
         free(clientNonce);
 
         // Verify signature
@@ -378,7 +380,7 @@ public:
             cerr << "Error during init for verifying sig\n";
             exit(1);
         }
-        ret = EVP_VerifyUpdate(mdCtx, concat, nonceSize + pemSize);
+        ret = EVP_VerifyUpdate(mdCtx, concat, nonceSize + keyBioLen);
         if (ret <= 0) {
             cerr << "Error during update for verifying sig\n";
             exit(1);

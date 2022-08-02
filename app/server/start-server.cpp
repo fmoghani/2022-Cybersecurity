@@ -53,6 +53,7 @@ class Server
     int envelopeSize;
     int pemSize;
     BIO * keyBio;
+    int keyBioLen;
 
     // Signatures
     unsigned char * serverSig;
@@ -305,14 +306,14 @@ public:
         // fclose(pemFile);
 
         // Read bio to get public key as a char
-        int bioLen = BIO_pending(keyBio);
-        charTempPubKey = (unsigned char *) malloc(bioLen);
+        keyBioLen = BIO_pending(keyBio);
+        charTempPubKey = (unsigned char *) malloc(keyBioLen);
         if (!charTempPubKey) {
             cerr << "Error allocating buffer for char pub key\n";
             close(clientfd);
             return 0;
         }
-        ret = BIO_read(keyBio, charTempPubKey, bioLen);
+        ret = BIO_read(keyBio, charTempPubKey, keyBioLen);
         if (ret <= 0) {
             cerr << "Error reading content from bio\n";
             close(clientfd);
@@ -320,15 +321,14 @@ public:
         }
 
         // Concatenate serverNonce and public key
-        cout << "before concat\n";
-        unsigned char * concat = (unsigned char *) malloc(nonceSize + bioLen);
+        unsigned char * concat = (unsigned char *) malloc(nonceSize + keyBioLen);
         if (!concat) {
             cerr << "Error allocating buffer for concat\n";
             close(clientfd);
             return 0;
         }
         memcpy(concat, clientNonce, nonceSize);
-        memcpy(concat + nonceSize, charTempPubKey, bioLen);
+        memcpy(concat + nonceSize, charTempPubKey, keyBioLen);
         free(clientNonce);
 
         // Retreive server's private key
@@ -372,7 +372,7 @@ public:
             close(clientfd);
             return 0;
         }
-        ret = EVP_SignUpdate(ctx, concat, nonceSize + pemSize);
+        ret = EVP_SignUpdate(ctx, concat, nonceSize + keyBioLen);
         if (!ret) {
             cerr << "Error during update for signature\n";
             close(clientfd);
@@ -424,21 +424,13 @@ public:
         free(serverSig);
 
         // Send content of the bio
-        int bioLen = BIO_pending(keyBio);
-        unsigned char * bioContent = (unsigned char *) malloc(bioLen);
-        if (!bioContent) {
-            cerr << "Error allocating buffer for bio content\n";
-            close(clientfd);
-            return 0;
-        }
-        BIO_read(keyBio, bioContent, bioLen);
-        ret = sendInt(clientfd, bioLen);
+        ret = sendInt(clientfd, keyBioLen);
         if (!ret) {
-            cerr << "Error sending bio size\n";
+            cerr << "Error sending bio len\n";
             close(clientfd);
             return 0;
         }
-        ret = send(clientfd, bioContent, bioLen, 0);
+        ret = send(clientfd, charTempPubKey, keyBioLen, 0);
         if (ret <= 0) {
             cerr << "Error sending bio content\n";
             close(clientfd);
@@ -447,18 +439,18 @@ public:
         free(keyBio);
 
         // Send pem file
-        ret = sendInt(clientfd, pemSize);
-        if (!ret) {
-            cerr << "Error sending pem file size\n";
-            close(clientfd);
-            return 0;
-        }
-        ret = send(clientfd, charTempPubKey, pemSize, 0);
-        if (!ret) {
-            cerr << "Error sending pem file\n";
-            close(clientfd);
-            return 0;
-        }
+        // ret = sendInt(clientfd, pemSize);
+        // if (!ret) {
+        //     cerr << "Error sending pem file size\n";
+        //     close(clientfd);
+        //     return 0;
+        // }
+        // ret = send(clientfd, charTempPubKey, pemSize, 0);
+        // if (ret <= 0) {
+        //     cerr << "Error sending pem file\n";
+        //     close(clientfd);
+        //     return 0;
+        // }
 
         // Send the message
         ret = sendInt(clientfd, totalSize);
@@ -1288,6 +1280,8 @@ public:
         // TEST
         cout << "converted key\n";
         BIO_dump_fp(stdout, (const char *) key, tempKeySize);
+
+        return 0;
 
     }
 

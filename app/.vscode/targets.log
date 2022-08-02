@@ -6,7 +6,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Mon Aug  1 16:31:45 2022
+# Make data base, printed on Tue Aug  2 12:56:02 2022
 
 # Variables
 
@@ -49,7 +49,7 @@ VTE_VERSION = 6003
 # environment
 VSCODE_NLS_CONFIG = {"locale":"en-us","availableLanguages":{},"_languagePackSupport":true}
 # environment
-JOURNAL_STREAM = 8:32014
+JOURNAL_STREAM = 8:32023
 # makefile (from 'makefile', line 2)
 CFLAGS = -Wall -g
 # environment
@@ -75,9 +75,9 @@ MAKELEVEL := 0
 # environment
 XDG_DATA_DIRS = /usr/share/ubuntu:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop
 # environment
-DBUS_SESSION_BUS_ADDRESS = unix:path=/run/user/1000/bus,guid=cc06fcabc53ed13ed3d751e862e7e300
+DBUS_SESSION_BUS_ADDRESS = unix:path=/run/user/1000/bus,guid=40aa48da80b08cf705c1592a62e90276
 # environment
-MANAGERPID = 818
+MANAGERPID = 829
 # environment
 LESSOPEN = | /usr/bin/lesspipe %s
 # environment
@@ -93,7 +93,7 @@ PATH = /home/djolopez/.local/bin:/opt/maven/bin:/usr/local/sbin:/usr/local/bin:/
 # environment
 GPG_AGENT_INFO = /run/user/1000/gnupg/S.gpg-agent:0:1
 # environment
-SESSION_MANAGER = local/djolopez-VirtualBox:@/tmp/.ICE-unix/1307,unix/djolopez-VirtualBox:/tmp/.ICE-unix/1307
+SESSION_MANAGER = local/djolopez-VirtualBox:@/tmp/.ICE-unix/1298,unix/djolopez-VirtualBox:/tmp/.ICE-unix/1298
 # environment
 XDG_RUNTIME_DIR = /run/user/1000
 # environment
@@ -109,7 +109,7 @@ DISABLE_WAYLAND = 1
 # environment
 ELECTRON_RUN_AS_NODE = 1
 # environment
-INVOCATION_ID = 6f1842de128c4fbf84b929127d2f319d
+INVOCATION_ID = ebce4b05bae745d48eff0e907a100e26
 # makefile (from 'makefile', line 3)
 LDFLAGS = -lcrypto -lstdc++fs
 # environment
@@ -133,7 +133,7 @@ PWD = /home/djolopez/Documents/INGE_S5_Pise/cybersecurity/project/2022-Cybersecu
 # default
 .LOADED := 
 # environment
-SSH_AGENT_PID = 1134
+SSH_AGENT_PID = 1137
 # environment
 ORIGINAL_XDG_CURRENT_DESKTOP = ubuntu:GNOME
 # environment
@@ -245,13 +245,13 @@ LC_ALL = C
 # environment
 DBUS_STARTER_BUS_TYPE = session
 # environment
-GNOME_TERMINAL_SCREEN = /org/gnome/Terminal/screen/f1acaeee_c185_44ec_8e0e_1a8aa7aec0fa
+GNOME_TERMINAL_SCREEN = /org/gnome/Terminal/screen/15950090_c568_4866_a479_7515c53c9938
 # automatic
 ^F = $(notdir $^)
 # makefile (from 'makefile', line 5)
 DEPS = ./utils.h
 # environment
-GNOME_TERMINAL_SERVICE = :1.91
+GNOME_TERMINAL_SERVICE = :1.79
 # default
 SUFFIXES := 
 # environment
@@ -273,9 +273,9 @@ LANG = C
 # environment
 TERM = xterm-256color
 # environment
-VSCODE_PID = 2344
+VSCODE_PID = 2358
 # environment
-DBUS_STARTER_ADDRESS = unix:path=/run/user/1000/bus,guid=cc06fcabc53ed13ed3d751e862e7e300
+DBUS_STARTER_ADDRESS = unix:path=/run/user/1000/bus,guid=40aa48da80b08cf705c1592a62e90276
  
 # variable set hash-table stats:
 # Load=133/1024=13%, Rehash=0, Collisions=19/165=12%
@@ -375,7 +375,7 @@ start-server: server/start-server.cpp
 # Not a target:
 server/start-server.cpp:
 #  Implicit rule search has been done.
-#  Last modified 2022-07-18 18:31:27.18873542
+#  Last modified 2022-08-02 12:50:16.197496294
 #  File has been updated.
 #  Successfully updated.
 
@@ -393,6 +393,6 @@ server/start-server.cpp:
 # strcache performance: lookups = 31 / hit rate = 38%
 # hash-table stats:
 # Load=19/8192=0%, Rehash=0, Collisions=1/31=3%
-# Finished Make data base on Mon Aug  1 16:31:45 2022
+# Finished Make data base on Tue Aug  2 12:56:02 2022
 
  

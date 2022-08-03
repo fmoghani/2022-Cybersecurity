@@ -301,7 +301,7 @@ public:
             return 0;
         }
 
-        // Concatenate serverNonce and public key
+        // Concatenate clientNonce and public key
         unsigned char * concat = (unsigned char *) malloc(nonceSize + keyBioLen);
         if (!concat) {
             cerr << "Error allocating buffer for concat\n";
@@ -384,6 +384,7 @@ public:
         EVP_MD_CTX_free(ctx);
         EVP_PKEY_free(serverPrvKey);
         free(concat);
+        BIO_free(keyBio);
 
         return 1;
     }
@@ -417,7 +418,6 @@ public:
             close(clientfd);
             return 0;
         }
-        free(keyBio);
 
         // Send the message
         ret = sendInt(clientfd, totalSize);

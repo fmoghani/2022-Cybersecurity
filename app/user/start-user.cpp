@@ -231,6 +231,8 @@ public:
         }
         memcpy(serverSig, concat, serverSigSize);
         memcpy(serverNonce, concat + serverSigSize, nonceSize);
+
+        // Free stuff
         free(concat);
     }
 
@@ -359,6 +361,7 @@ public:
         X509_free(serverCert);
         free(clientNonce);
         free(serverSig);
+        free(concat);
     }
 
     // Generate a 256 bits session key and a 256 bits authentication key
@@ -431,10 +434,6 @@ public:
             exit(1);
         }
 
-        // TEST
-        EVP_PKEY_set_type(servTempPubKey, EVP_PKEY_RSA);
-        cout << "key type: " << EVP_PKEY_id(servTempPubKey) << endl;
-
         // Create buffer for ciphertext
 
         // Digital envelope
@@ -445,14 +444,12 @@ public:
             cerr << "Error creating context for session key encryption\n";
             exit(1);
         }
-        cout << "before init\n";
         ret = EVP_SealInit(ctx, cipher, &encryptedKey, &encryptedKeySize, iv, &servTempPubKey, 1);
         if (ret <= 0)
         {
             cerr << "Error during initialization of encrypted session key envelope\n";
             exit(1);
         }
-        cout << "before update\n";
         ret = EVP_SealUpdate(ctx, encryptedSecret, &bytesWritten, sessionHash, 2*sessionKeySize);
         if (ret <= 0)
         {
@@ -460,7 +457,6 @@ public:
             exit(1);
         }
         encryptedSize += bytesWritten;
-        cout << "before final\n";
         ret = EVP_SealFinal(ctx, encryptedSecret + encryptedSize, &bytesWritten);
         if (ret <= 0)
         {
@@ -491,6 +487,7 @@ public:
 
         // Free stuff
         EVP_PKEY_free(servTempPubKey);
+        free(charTempPubKey);
     }
 
     // Computes signature of session key concatenated with server's nonce
@@ -498,18 +495,19 @@ public:
 
         int ret;
 
-        // Concatenates server's nonce and session key
-        unsigned char * concat = (unsigned char *) malloc(nonceSize + tempKeySize);
+        // Concatenates server's nonce and session hash
+        unsigned char * concat = (unsigned char *) malloc(nonceSize + 2*sessionKeySize);
         if (!concat) {
             cerr << "Error allocating buffer for concat\n";
             exit(1);
         }
         memcpy(concat, serverNonce, nonceSize);
-        memcpy(concat + nonceSize, sessionKey, sessionKeySize);
+        memcpy(concat + nonceSize, sessionHash, 2*sessionKeySize);
         free(serverNonce);
 
         // Retreive user's private key
         string path = "user_infos/key.pem";
+        cout << "after path\n";
         FILE *keyFile = fopen(path.c_str(), "r");
         if (!keyFile)
         {
@@ -517,13 +515,17 @@ public:
             exit(1);
         }
         const char *password = "password";
+        cout << "before client prvkey reading\n";
         EVP_PKEY *clientPrvKey = PEM_read_PrivateKey(keyFile, NULL, NULL, (void *)password);
+        cout << "before close keyfile\n";
         fclose(keyFile);
+        cout << "after close keyfile\n";
         if (!clientPrvKey)
         {
             cerr << "Error cannot read client private key from pem file\n";
             exit(1);
         }
+        cout << "after prv key\n";
 
         // Create buffer for signature
         clientSig = (unsigned char *) malloc(EVP_PKEY_size(clientPrvKey));
@@ -544,16 +546,19 @@ public:
             cerr << "Error during initialization for signature\n";
             exit(1);
         }
+        cout << "after init\n";
         ret = EVP_SignUpdate(ctx, concat, nonceSize + sessionKeySize);
         if (!ret) {
             cerr << "Error during update for signature\n";
             exit(1);
         }
+        cout << "after update\n";
         ret = EVP_SignFinal(ctx, clientSig, &clientSigSize, clientPrvKey);
         if (!ret) {
             cerr << "Error during finalization for signature\n";
             exit(1);
         }
+        cout << "after final\n";
     }
 
     void sendMessage3() {

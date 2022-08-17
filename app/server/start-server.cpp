@@ -49,6 +49,8 @@ class Server
     unsigned char * charTempPubKey;
     EVP_PKEY * servTempPrvKey;
     unsigned char *sessionKey;
+    unsigned char * authKey;
+    unsigned char * sessionHash;
     unsigned char * envelope;
     int envelopeSize;
     int pemSize;
@@ -169,7 +171,7 @@ public:
             close(clientfd);
             return 0;
         }
-        unsigned char *buffer = (unsigned char *)malloc(*usernameLen);
+        unsigned char *buffer = (unsigned char *)malloc(*usernameLen + 1);
         if (!buffer)
         {
             cerr << "Error allocating buffer for username\n";
@@ -183,7 +185,10 @@ public:
             close(clientfd);
             return 0;
         }
-        clientUsername = std::string(reinterpret_cast<char *>(buffer));
+
+        // Convert to string
+        string strBuffer(buffer, buffer + *usernameLen / sizeof buffer[0]);
+        clientUsername = strBuffer;
         free(usernameLen);
         free(buffer);
 
@@ -451,7 +456,7 @@ public:
             close(clientfd);
             return 0;
         }
-        int totalSize = *totalSizePtr;;;;
+        int totalSize = *totalSizePtr;
         free(totalSizePtr);
 
         // Read client sig size
@@ -497,7 +502,7 @@ public:
         int ret;
 
         // Allocate buffers
-        int encryptedSize = tempKeySize + blockSize;
+        int encryptedSize = 80;
         int encryptedKeySize = envelopeSize - encryptedSize - ivSize;
         unsigned char * encryptedSecret = (unsigned char *) malloc(encryptedSize);
         unsigned char * encryptedKey = (unsigned char *) malloc(encryptedKeySize);
@@ -521,8 +526,8 @@ public:
         int decryptedSize;
 
         // Create buffer for session key
-        sessionKey = (unsigned char *) malloc(sessionKeySize);
-        if (!sessionKey) {
+        sessionHash = (unsigned char *) malloc(2*sessionKeySize);
+        if (!sessionHash) {
             cerr << "Error allocating buffer for session key\n";
             close(clientfd);
             return 0;
@@ -544,7 +549,7 @@ public:
             close(clientfd);
             return 0;
         }
-        ret = EVP_OpenUpdate(ctx, sessionKey, &bytesWritten, encryptedSecret, encryptedSize);
+        ret = EVP_OpenUpdate(ctx, sessionHash, &bytesWritten, encryptedSecret, encryptedSize);
         if (ret <= 0)
         {
             cerr << "Error during update for envelope decryption\n";
@@ -552,7 +557,7 @@ public:
             return 0;
         }
         decryptedSize = bytesWritten;
-        ret = EVP_OpenFinal(ctx, sessionKey + decryptedSize, &bytesWritten);
+        ret = EVP_OpenFinal(ctx, sessionHash + decryptedSize, &bytesWritten);
         if (ret <= 0)
         {
             cerr << "Error during finalization for envelope decryption\n";
@@ -560,6 +565,17 @@ public:
             return 0;
         }
         decryptedSize += bytesWritten;
+
+        // Separate session key and authetication key
+        sessionKey = (unsigned char *) malloc(sessionKeySize);
+        authKey = (unsigned char *) malloc(sessionKeySize);
+        if(!sessionKey || !authKey) {
+            cerr << "Error allocating buffers for session key and auth key\n";
+            close(clientfd);
+            return 0;
+        }
+        memcpy(sessionKey, sessionHash, sessionKeySize);
+        memcpy(authKey, sessionHash + sessionKeySize, sessionKeySize);
 
         // Free some stuff
         EVP_CIPHER_CTX_free(ctx);
@@ -576,17 +592,17 @@ public:
         int ret;
 
         // Concatenates server's nonce and session key
-        unsigned char * concat = (unsigned char *) malloc(nonceSize + sessionKeySize);
+        unsigned char * concat = (unsigned char *) malloc(nonceSize + 2*sessionKeySize);
         if (!concat) {
             cerr << "Error allocating buffer for concat\n";
             close(clientfd);
             return 0;
         }
         memcpy(concat, serverNonce, nonceSize);
-        memcpy(concat + nonceSize, sessionKey, sessionKeySize);
+        memcpy(concat + nonceSize, sessionHash, 2*sessionKeySize);
         free(serverNonce);
 
-        // Retreive user's pubkey to encrypt session key
+        // Retreive user's pubkey to verify signature
         string path = "users_infos/" + clientUsername + "/pubkey.pem";
         FILE *keyFile = fopen(path.c_str(), "r");
         if (!keyFile)
@@ -1287,7 +1303,7 @@ int main()
         cout << "Creating ID proof\n";
         ret = serv.createIdProof();
         if (!ret) {
-            cerr << "Error creating ID proof, communication stopped\n";
+            cerr << "Error creating ID proof, communication stopped\n\n";
             continue;
         }
         cout << "Proof of ID created\n";
@@ -1298,21 +1314,21 @@ int main()
 
         ret = serv.sendMessage2();
         if (!ret) {
-            cerr << "Error sending ID proof\n";
+            cerr << "Error sending ID proof\n\n";
             continue;
         }
         cout << "ID proof sent\n";
         
         ret = serv.receiveMessage3();
         if (!ret) {
-            cerr << "Error receiving message 3\n";
+            cerr << "Error receiving message 3\n\n";
             continue;
         }
         cout << "Message 3 received\n";
 
         ret = serv.retreiveSessionKey();
         if (!ret) {
-            cerr << "Error retreiving session key from client's envelope\n";
+            cerr << "Error retreiving session key from client's envelope\n\n";
             continue;
         }
         cout << "Session key retreived\n";

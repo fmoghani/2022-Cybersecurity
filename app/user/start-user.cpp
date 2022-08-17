@@ -173,7 +173,9 @@ public:
         int ret;
 
         // Receive bio
+        cout << "before bio len pointer\n";
         int * keyBioLenPtr = (int *) malloc(sizeof(int));
+        cout << "before reading\n";
         ret = readInt(socketfd, keyBioLenPtr);
         if (!ret) {
             cerr << "Error reading bio size\n";
@@ -182,6 +184,7 @@ public:
         keyBioLen = *keyBioLenPtr;
         free(keyBioLenPtr);
 
+        cout << "before allocating char pub key\n";
         charTempPubKey = (unsigned char *) malloc(keyBioLen);
         ret = read(socketfd, charTempPubKey, keyBioLen);
         if (ret <= 0) {
@@ -192,6 +195,7 @@ public:
         // Read key from bio
         BIO * keyBio = BIO_new(BIO_s_mem());
         BIO_write(keyBio, charTempPubKey, keyBioLen);
+        cout << "before reading pubkey from bio\n";
         servTempPubKey = PEM_read_bio_PUBKEY(keyBio, NULL, NULL, NULL);
         if (!servTempPubKey) {
             cerr << "Error reading temp pub key from bio\n";
@@ -327,7 +331,6 @@ public:
         }
         memcpy(concat, clientNonce, nonceSize);
         memcpy(concat + nonceSize, charTempPubKey, keyBioLen);
-        free(clientNonce);
 
         // Verify signature
         const EVP_MD * md = EVP_sha256();
@@ -402,7 +405,7 @@ public:
 
         // Retreive auth key
         authKey = (unsigned char *) malloc(sessionKeySize);
-        if (!sessionKey) {
+        if (!authKey) {
             cerr << "Error allocating buffer for auth key\n";
             exit(1);
         }
@@ -547,7 +550,7 @@ public:
             exit(1);
         }
         cout << "after init\n";
-        ret = EVP_SignUpdate(ctx, concat, nonceSize + sessionKeySize);
+        ret = EVP_SignUpdate(ctx, concat, nonceSize + 2*sessionKeySize);
         if (!ret) {
             cerr << "Error during update for signature\n";
             exit(1);
@@ -1096,6 +1099,8 @@ public:
         // Free key
         bzero(sessionKey, sessionKeySize);
         free(sessionKey);
+        bzero(authKey, sessionKeySize);
+        free(authKey);
 
         // Close connexion
         close(socketfd);

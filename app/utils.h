@@ -274,7 +274,7 @@ int existsFile(string filename, string username) {
 }
 
 // Generate a random and fresh nonce
-    int createNonce(unsigned char * buffer)
+int createNonce(unsigned char * buffer)
     {
 
         int ret;
@@ -332,6 +332,7 @@ int existsFile(string filename, string username) {
             cerr << "Error allocating char buffer for nonce\n";
             return 0;
         }
+        bzero(tempNonce, randBytesSize + timeBufferSize);
         memcpy(tempNonce, random, randBytesSize);
         free(random);
         strcat(tempNonce, now);

@@ -1,6 +1,6 @@
 CC = g++
 CFLAGS = -Wall -g
-LDFLAGS = -lcrypto -lstdc++fs -lmcheck
+LDFLAGS = -lcrypto -lstdc++fs # -lmcheck
 OPT = -ggdb3
 TARGET = user server
 DEPS = ./utils.h

@@ -13,7 +13,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
  
 
  
-# Make data base, printed on Wed Aug 17 11:54:50 2022
+# Make data base, printed on Thu Aug 18 15:22:38 2022
  
 
 # Variables
@@ -98,7 +98,7 @@ VSCODE_NLS_CONFIG = {"locale":"en-us","availableLanguages":{},"_languagePackSupp
  
 # environment
  
-JOURNAL_STREAM = 8:31805
+JOURNAL_STREAM = 8:30522
  
 # makefile (from 'makefile', line 2)
  
@@ -137,15 +137,20 @@ JAVA_HOME = /usr/lib/jvm/default-java
 IM_CONFIG_PHASE = 1
  
 # environment
+ 
 USERNAME = djolopez
+ 
 # environment
+ 
 MAKELEVEL := 0
+ 
 # environment
+ 
 XDG_DATA_DIRS = /usr/share/ubuntu:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop
 # environment
-DBUS_SESSION_BUS_ADDRESS = unix:path=/run/user/1000/bus,guid=6d906dbef5e75d08fbeec97b62fcb8ff
+DBUS_SESSION_BUS_ADDRESS = unix:path=/run/user/1000/bus,guid=f47173c9f1a0913fc93c92e562fe38b3
 # environment
-MANAGERPID = 820
+MANAGERPID = 810
 # environment
 LESSOPEN = | /usr/bin/lesspipe %s
 # environment
@@ -161,7 +166,7 @@ PATH = /home/djolopez/.local/bin:/opt/maven/bin:/usr/local/sbin:/usr/local/bin:/
 # environment
 GPG_AGENT_INFO = /run/user/1000/gnupg/S.gpg-agent:0:1
 # environment
-SESSION_MANAGER = local/djolopez-VirtualBox:@/tmp/.ICE-unix/1307,unix/djolopez-VirtualBox:/tmp/.ICE-unix/1307
+SESSION_MANAGER = local/djolopez-VirtualBox:@/tmp/.ICE-unix/1252,unix/djolopez-VirtualBox:/tmp/.ICE-unix/1252
 # environment
 XDG_RUNTIME_DIR = /run/user/1000
 # environment
@@ -177,9 +182,9 @@ DISABLE_WAYLAND = 1
 # environment
 ELECTRON_RUN_AS_NODE = 1
 # environment
-INVOCATION_ID = c1a33dd1c3ee48039caa0b38069addac
+INVOCATION_ID = 649e143c14834cab8ed15e6b6b049c79
 # makefile (from 'makefile', line 3)
-LDFLAGS = -lcrypto -lstdc++fs -lmcheck
+LDFLAGS = -lcrypto -lstdc++fs 
 # environment
 GDK_PIXBUF_MODULEDIR = /snap/code/104/usr/lib/x86_64-linux-gnu/gdk-pixbuf-2.0/2.10.0/loaders
 # default
@@ -203,7 +208,7 @@ PWD = /home/djolopez/Documents/INGE_S5_Pise/cybersecurity/project/2022-Cybersecu
 # default
 .LOADED := 
 # environment
-SSH_AGENT_PID = 1114
+SSH_AGENT_PID = 1095
 # environment
 ORIGINAL_XDG_CURRENT_DESKTOP = ubuntu:GNOME
 # environment
@@ -315,13 +320,13 @@ LC_ALL = C
 # environment
 DBUS_STARTER_BUS_TYPE = session
 # environment
-GNOME_TERMINAL_SCREEN = /org/gnome/Terminal/screen/6446513e_0f56_4829_8b98_d571b69aa3c2
+GNOME_TERMINAL_SCREEN = /org/gnome/Terminal/screen/f46b9a91_4911_4462_88c8_08e1f7493a21
 # automatic
 ^F = $(notdir $^)
 # makefile (from 'makefile', line 6)
 DEPS = ./utils.h
 # environment
-GNOME_TERMINAL_SERVICE = :1.88
+GNOME_TERMINAL_SERVICE = :1.87
 # default
 SUFFIXES := 
 # environment
@@ -343,9 +348,9 @@ LANG = C
 # environment
 TERM = xterm-256color
 # environment
-VSCODE_PID = 2659
+VSCODE_PID = 3494
 # environment
-DBUS_STARTER_ADDRESS = unix:path=/run/user/1000/bus,guid=6d906dbef5e75d08fbeec97b62fcb8ff
+DBUS_STARTER_ADDRESS = unix:path=/run/user/1000/bus,guid=f47173c9f1a0913fc93c92e562fe38b3
 # variable set hash-table stats:
 # Load=134/1024=13%, Rehash=0, Collisions=19/166=11%
 
@@ -383,7 +388,7 @@ all: start-server start-user
 # Not a target:
 makefile:
 #  Implicit rule search has been done.
-#  Last modified 2022-08-17 11:52:45.70607093
+#  Last modified 2022-08-18 15:20:14.257486643
 #  File has been updated.
 #  Successfully updated.
 
@@ -413,15 +418,18 @@ clean:
 #  recipe to execute (from 'makefile', line 17):
 	rm server/start-server
 	rm user/start-user
- 
 
 start-server: server/start-server.cpp
 #  Implicit rule search has not been done.
 #  Implicit/static pattern stem: ''
 #  File does not exist.
+ 
 #  File has been updated.
+ 
 #  Needs to be updated (-q is set).
+ 
 # automatic
+ 
 # @ := start-server
 # automatic
 # % := 
@@ -445,7 +453,7 @@ start-server: server/start-server.cpp
 # Not a target:
 server/start-server.cpp:
 #  Implicit rule search has been done.
-#  Last modified 2022-08-12 12:46:54.994551672
+#  Last modified 2022-08-18 15:19:24.449908838
 #  File has been updated.
 #  Successfully updated.
 
@@ -463,6 +471,6 @@ server/start-server.cpp:
 # strcache performance: lookups = 31 / hit rate = 38%
 # hash-table stats:
 # Load=19/8192=0%, Rehash=0, Collisions=1/31=3%
-# Finished Make data base on Wed Aug 17 11:54:50 2022
+# Finished Make data base on Thu Aug 18 15:22:38 2022
 
  

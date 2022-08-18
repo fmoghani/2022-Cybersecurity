@@ -634,7 +634,7 @@ public:
             close(clientfd);
             return 0;
         }
-        ret = EVP_VerifyUpdate(mdCtx, concat, nonceSize + sessionKeySize);
+        ret = EVP_VerifyUpdate(mdCtx, concat, nonceSize + 2*sessionKeySize);
         if (ret <= 0) {
             cerr << "Error during update for verifying sig\n";
             close(clientfd);
@@ -654,7 +654,6 @@ public:
 
         // Free stuff
         EVP_MD_CTX_free(mdCtx);
-        free(serverNonce);
         EVP_PKEY_free(clientPubKey);
         
         CONNEXION_STATUS = 1;

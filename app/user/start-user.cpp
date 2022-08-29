@@ -416,6 +416,9 @@ public:
             exit(1);
         }
         memcpy(authKey, sessionHash + sessionKeySize, sessionKeySize);
+
+        // Free things
+        free(buffer);
     }
 
     // Seal the session hash inside the envelope and send it to the server
@@ -568,6 +571,10 @@ public:
             exit(1);
         }
         cout << "after final\n";
+
+        // Free things
+        free(concat);
+        free(sessionHash);
     }
 
     void sendMessage3() {
@@ -604,6 +611,7 @@ public:
 
         // Free
         free(clientSig);
+        free(concat);
 
         CONNEXION_STATUS = 1;
     }
@@ -658,14 +666,13 @@ public:
         int encryptedSize = ret;
 
         // Hash and concatenate
-        counter ++;
         int totalSize = encryptedSize + sessionKeySize;
         unsigned char * concat = (unsigned char *) malloc(totalSize);
         if (!concat) {
             cerr << "Error allocating buffer for concat\n";
             return 0;
         }
-        cout << "before hash and concat\n";
+        counter ++;
         ret = hashAndConcat(concat, encryptedFilepath, encryptedSize, authKey, counter);
         if (!ret) {
             cerr << "Error hashing and concatenating\n";
@@ -679,6 +686,7 @@ public:
             cerr << "Error sending encrypted size for upload filepath to server\n";
             return 0;
         }
+        cout << "before send concat\n";
         ret = send(socketfd, concat, totalSize, 0);
         if (ret <= 0) {
             cerr << "Error sending encrypted upload filepath to server\n";
@@ -723,13 +731,13 @@ public:
             int encryptedSizeBlock = ret;
 
             // Concat and hash
-            counter ++;
             int totalSizeBlock = encryptedSizeBlock + sessionKeySize;
             unsigned char * concatBlock = (unsigned char *) malloc(totalSize);
             if (!concat) {
                 cerr << "Error allocating buffer for concat\n";
                 return 0;
             }
+            counter ++;
             ret = hashAndConcat(concatBlock, cyperBuffer, encryptedSizeBlock, authKey, counter);
             if (!ret) {
                 cerr << "Error hashing and concatenating\n";
@@ -737,7 +745,7 @@ public:
             }
 
             // Send encrypted block
-            ret = sendInt(socketfd, encryptedSize);
+            ret = sendInt(socketfd, encryptedSizeBlock);
             if (!ret) {
                 cerr << "Error sending upload buffer size to server\n";
                 return 0;
@@ -747,7 +755,7 @@ public:
                 cerr << "Error sending encrypted upload buffer to server\n";
                 return 0;
             }
-            ret = send(socketfd, iv, ivSize, 0);
+            ret = send(socketfd, ivBlock, ivSize, 0);
             if (ret <= 0) {
                 cerr << "Error sending upload buffer iv to server\n";
                 return 0;

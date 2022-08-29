@@ -6,7 +6,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Mon Aug 29 10:49:30 2022
+# Make data base, printed on Mon Aug 29 16:15:27 2022
 
 # Variables
 
@@ -75,6 +75,7 @@ MAKELEVEL := 0
 # environment
 XDG_DATA_DIRS = /usr/share/ubuntu:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop
 # environment
+ 
 DBUS_SESSION_BUS_ADDRESS = unix:path=/run/user/1000/bus,guid=6905bdb50d4b245f2cac5a6d630c7d3e
 # environment
 MANAGERPID = 820
@@ -315,7 +316,7 @@ all: start-server start-user
 # Not a target:
 makefile:
 #  Implicit rule search has been done.
-#  Last modified 2022-08-18 15:20:14.257486643
+#  Last modified 2022-08-29 16:14:50.10401917
 #  File has been updated.
 #  Successfully updated.
 
@@ -352,9 +353,9 @@ start-server: server/start-server.cpp
 #  File does not exist.
 #  File has been updated.
 #  Needs to be updated (-q is set).
+ 
 # automatic
 # @ := start-server
- 
 # automatic
 # % := 
 # automatic
@@ -377,7 +378,7 @@ start-server: server/start-server.cpp
 # Not a target:
 server/start-server.cpp:
 #  Implicit rule search has been done.
-#  Last modified 2022-08-22 17:07:10.402058286
+#  Last modified 2022-08-29 16:13:55.247335746
 #  File has been updated.
 #  Successfully updated.
 
@@ -395,6 +396,6 @@ server/start-server.cpp:
 # strcache performance: lookups = 31 / hit rate = 38%
 # hash-table stats:
 # Load=19/8192=0%, Rehash=0, Collisions=1/31=3%
-# Finished Make data base on Mon Aug 29 10:49:30 2022
+# Finished Make data base on Mon Aug 29 16:15:27 2022
 
  

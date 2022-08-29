@@ -17,4 +17,4 @@ clean:
 	rm server/start-server
 	rm user/start-user
 
-# valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --verbose --log-file=valgrind-out.txt ./executable exampleParam1
+# valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --verbose --log-file=valgrind-out.txt --exit-on-first-error=yes --error-exitcode=1 ./executable exampleParam1

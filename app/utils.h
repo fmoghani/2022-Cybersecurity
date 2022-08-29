@@ -343,6 +343,7 @@ int createNonce(unsigned char * buffer)
         return 1;
     }
 
+// Create the digest of auth key, counter and ciphertext and concatenate the digest with the ciphertext
 int hashAndConcat(unsigned char * concat, unsigned char * ciphertext, int encryptedSize, unsigned char * authKey, int counter) {
 
     int ret;
@@ -353,8 +354,8 @@ int hashAndConcat(unsigned char * concat, unsigned char * ciphertext, int encryp
     // Create the digest of auth key, counter and ciphertext
     unsigned char * toDigest = (unsigned char *) malloc(totalSize);
     unsigned char * digest = (unsigned char *) malloc(sessionKeySize);
-    if (!concat || !digest) {
-        cerr << "Error allocating buffers for concat or digest\n";
+    if (!toDigest || !digest) {
+        cerr << "Error allocating buffers for toDigest or digest\n";
         return 0;
     }
     memcpy(toDigest, authKey, sessionKeySize);

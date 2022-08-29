@@ -531,7 +531,7 @@ public:
         int decryptedSize;
 
         // Create buffer for session hash
-        sessionHash = (unsigned char *) malloc(2*sessionKeySize);
+        sessionHash = (unsigned char *) malloc(encryptedSize);
         if (!sessionHash) {
             cerr << "Error allocating buffer for session key\n";
             close(clientfd);
@@ -554,6 +554,7 @@ public:
             close(clientfd);
             return 0;
         }
+        cout << "encrypted size: " << encryptedSize << endl;
         ret = EVP_OpenUpdate(ctx, sessionHash, &bytesWritten, encryptedSecret, encryptedSize);
         if (ret <= 0)
         {
@@ -588,7 +589,7 @@ public:
         free(iv);
         free(encryptedSecret);
         free(servTempPrvKey);
-        free(sessionHash);
+        // free(sessionHash);
 
         return 1;
     }
@@ -617,6 +618,7 @@ public:
             close(clientfd);
             return 0;
         }
+        cout << "before key\n";
         EVP_PKEY * clientPubKey = PEM_read_PUBKEY(keyFile, NULL, NULL, NULL);
         fclose(keyFile);
         if (!clientPubKey)
@@ -627,6 +629,7 @@ public:
         }
 
         // Verify signature
+        cout << "before sig\n";
         const EVP_MD * md = EVP_sha256();
         EVP_MD_CTX * mdCtx = EVP_MD_CTX_new();
         if (!mdCtx) {
@@ -778,14 +781,9 @@ public:
 
             // Receive data
             int * uploadBlockLen = (int *) malloc(sizeof(int));
-            ret = readInt(clientfd, uploadBlockLen);
+            ret = readInt(clientfd, uploadBlockLen); // encrypted size
             if (!ret) {
                 cerr << "Error upload block length\n";
-                return 0;
-            }
-            unsigned char * ivBlock = (unsigned char *) malloc(ivSize);
-            if (!ivBlock) {
-                cerr << "Error allocating buffers for file block decryption\n";
                 return 0;
             }
             int totalSizeBlock = *uploadBlockLen + sessionKeySize;
@@ -794,13 +792,18 @@ public:
                 cerr << "Error allocating buffer for concat block\n";
                 return 0;
             }
-            ret = read(clientfd, concatBlock, totalSizeBlock);
+            ret = read(clientfd, concatBlock, totalSizeBlock); // block with concatenated digest and ciphertext
             if (!ret) {
                 cerr << "Error reading encrypted upload block\n";
                 close(clientfd);
                 return 0;
             }
-            ret = read(clientfd, ivBlock, ivSize);
+            unsigned char * ivBlock = (unsigned char *) malloc(ivSize);
+            if (!ivBlock) {
+                cerr << "Error allocating buffers for file block decryption\n";
+                return 0;
+            }
+            ret = read(clientfd, ivBlock, ivSize); // iv used for encryption
             if (!ret) {
                 cerr << "Error reading iv for upload block\n";
                 close(clientfd);
@@ -818,8 +821,8 @@ public:
             memcpy(cyberBuffer, concatBlock + sessionKeySize, *uploadBlockLen);
 
             // Decrypt data
-            unsigned char * plainBuffer = (unsigned char *) malloc(UPLOAD_BUFFER_SIZE);
-            ret = decryptSym(cyberBuffer, *uploadBlockLen, plainBuffer, iv, sessionKey);
+            unsigned char * plainBuffer = (unsigned char *) malloc(*uploadBlockLen);
+            ret = decryptSym(cyberBuffer, *uploadBlockLen, plainBuffer, ivBlock, sessionKey);
             if (!ret) {
                 cerr << "Error decrypting the upload block\n";
                 return 0;
@@ -1320,6 +1323,10 @@ public:
             ret = logout();
             return ret;
             break;
+        }
+        default: {
+            cout << "Command number does not exists\n";
+            return 0;
         }
         }
 

@@ -342,3 +342,40 @@ int createNonce(unsigned char * buffer)
 
         return 1;
     }
+
+int hashAndConcat(unsigned char * concat, unsigned char * ciphertext, int encryptedSize, unsigned char * authKey, int counter) {
+
+    int ret;
+
+    string strCounter = to_string(counter);
+    int totalSize = sessionKeySize + strCounter.size() + 1 + encryptedSize;
+
+    // Create the digest of auth key, counter and ciphertext
+    unsigned char * toDigest = (unsigned char *) malloc(totalSize);
+    unsigned char * digest = (unsigned char *) malloc(sessionKeySize);
+    if (!concat || !digest) {
+        cerr << "Error allocating buffers for concat or digest\n";
+        return 0;
+    }
+    memcpy(toDigest, authKey, sessionKeySize);
+    char * charCounter = new char[strCounter.length() + 1];
+    strcpy(charCounter, strCounter.c_str());
+    memcpy(toDigest + sessionKeySize, charCounter, strCounter.size());
+    memcpy(toDigest + sessionKeySize + strCounter.length() + 1, ciphertext, encryptedSize);
+    ret = createHash256(toDigest, totalSize, digest);
+    if (!ret) {
+        cerr << "Error creating hash of concat\n";
+        return 0;
+    }
+
+    // Concatenate digest and ciphertext
+    memcpy(concat, digest, sessionKeySize);
+    memcpy(concat + sessionKeySize, ciphertext, encryptedSize);
+
+    // Free
+    free(toDigest);
+    free(digest);
+    delete[] charCounter;
+
+    return 1;
+}

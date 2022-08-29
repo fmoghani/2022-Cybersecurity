@@ -63,6 +63,9 @@ class Server
     unsigned char * clientSig;
     unsigned int clientSigSize;
 
+    // Session
+    int counter;
+
 public:
     // Get username
     string getClientUsername()
@@ -191,6 +194,8 @@ public:
         clientUsername = strBuffer;
         free(usernameLen);
         free(buffer);
+
+        counter = 0;
 
         return 1;
     }
@@ -438,8 +443,8 @@ public:
             return 0;
         }
 
-        // EVP_PKEY_free(servTempPubKey);
-        // cout << "after free\n";
+        // Free things
+        free(concat);
 
         return 1;
     }
@@ -525,7 +530,7 @@ public:
         const EVP_CIPHER *cipher = EVP_aes_256_cbc();
         int decryptedSize;
 
-        // Create buffer for session key
+        // Create buffer for session hash
         sessionHash = (unsigned char *) malloc(2*sessionKeySize);
         if (!sessionHash) {
             cerr << "Error allocating buffer for session key\n";
@@ -583,6 +588,7 @@ public:
         free(iv);
         free(encryptedSecret);
         free(servTempPrvKey);
+        free(sessionHash);
 
         return 1;
     }
@@ -653,8 +659,12 @@ public:
         }
 
         // Free stuff
+        cout << "before ctx\n";
         EVP_MD_CTX_free(mdCtx);
+        cout << "before pubkey\n";
         EVP_PKEY_free(clientPubKey);
+        free(concat);
+        free(clientSig);
         
         CONNEXION_STATUS = 1;
 
@@ -674,21 +684,18 @@ public:
             cout << "Error allocating buffers to receive encrypted filename\n";
             return 0;
         }
-        if (!filepathEncLen) {
-            cerr << "Error allocating buffer for upload filepath length\n";
-            return 0;
-        }
         ret = readInt(clientfd, filepathEncLen);
         if (!ret) {
             cerr << "Error upload filepath length\n";
             return 0;
         }
-        unsigned char * filepathEnc = (unsigned char *) malloc(*filepathEncLen);
-        if (!filepathEnc) {
-            cerr << "Error allocating buffer for upload filepath\n";
+        int totalSize = sessionKeySize + *filepathEncLen;
+        unsigned char * concat = (unsigned char *) malloc(totalSize);
+        if (!concat) {
+            cerr << "Error allocating buffer for concat\n";
             return 0;
         }
-        ret = read(clientfd, filepathEnc, *filepathEncLen);
+        ret = read(clientfd, concat, totalSize);
         if (!ret) {
             cerr << "Error reading upload filepath\n";
             return 0;
@@ -698,6 +705,16 @@ public:
             cerr << "Error reading iv for upload filepath\n";
             return 0;
         }
+
+        // Retreive digest and ciphertext
+        unsigned char * filepathEnc = (unsigned char *) malloc(*filepathEncLen);
+        unsigned char * digest = (unsigned char *) malloc(sessionKeySize);
+        if (!filepathEnc || !digest) {
+            cerr << "Error allocating buffer for upload filepath\n";
+            return 0;
+        }
+        memcpy(digest, concat, sessionKeySize);
+        memcpy(filepathEnc, concat + sessionKeySize, *filepathEncLen);
 
         // Decrypt filename
         unsigned char * decryptedFilepath = (unsigned char *) malloc(*filepathEncLen);
@@ -710,7 +727,31 @@ public:
         string spath = "users_infos/" + clientUsername + "/files/" + filepath;
         filesystem::path path(spath);
 
+        // Compute digest
+        counter ++;
+        unsigned char * concatCheck = (unsigned char *) malloc(totalSize);
+        if (!concatCheck) {
+            cerr << "Error allocating buffer for concat\n";
+            return 0;
+        }
+        ret = hashAndConcat(concatCheck, filepathEnc, *filepathEncLen, authKey, counter);
+        if (!ret) {
+            cerr << "Error hashing and concatenating\n";
+            return 0;
+        }
+
+        // Compare it with actual digest
+        ret = memcmp(digest, concatCheck, sessionKeySize);
+        if (ret) {
+            cerr << "Message not authenticated\n";
+            return 0;
+        }
+
         // Free things
+        free(iv);
+        free(concatCheck);
+        free(concat);
+        free(digest);
         free(filepathEncLen);
         free(filepathEnc);
         free(decryptedFilepath);
@@ -742,39 +783,83 @@ public:
                 cerr << "Error upload block length\n";
                 return 0;
             }
-            unsigned char * iv = (unsigned char *) malloc(ivSize);
-            unsigned char * cyberBuffer = (unsigned char *) malloc(*uploadBlockLen);
-            unsigned char * plainBuffer = (unsigned char *) malloc(UPLOAD_BUFFER_SIZE);
-            if (!iv || !cyberBuffer || !plainBuffer) {
+            unsigned char * ivBlock = (unsigned char *) malloc(ivSize);
+            if (!ivBlock) {
                 cerr << "Error allocating buffers for file block decryption\n";
                 return 0;
             }
-            ret = read(clientfd, cyberBuffer, *uploadBlockLen);
+            int totalSizeBlock = *uploadBlockLen + sessionKeySize;
+            unsigned char * concatBlock = (unsigned char *) malloc(totalSizeBlock);
+            if (!concatBlock) {
+                cerr << "Error allocating buffer for concat block\n";
+                return 0;
+            }
+            ret = read(clientfd, concatBlock, totalSizeBlock);
             if (!ret) {
                 cerr << "Error reading encrypted upload block\n";
                 close(clientfd);
                 return 0;
             }
-            ret = read(clientfd, iv, ivSize);
+            ret = read(clientfd, ivBlock, ivSize);
             if (!ret) {
                 cerr << "Error reading iv for upload block\n";
                 close(clientfd);
                 return 0;
             }
 
+            // Retreive digest and cyphertext
+            unsigned char * cyberBuffer = (unsigned char *) malloc(*uploadBlockLen);
+            unsigned char * digestBlock = (unsigned char *) malloc(sessionKeySize);
+            if (!cyberBuffer || !digest) {
+                cerr << "Error allocating buffers for cyphertext and digest\n";
+                return 0;
+            }
+            memcpy(digestBlock, concatBlock, sessionKeySize);
+            memcpy(cyberBuffer, concatBlock + sessionKeySize, *uploadBlockLen);
+
             // Decrypt data
+            unsigned char * plainBuffer = (unsigned char *) malloc(UPLOAD_BUFFER_SIZE);
             ret = decryptSym(cyberBuffer, *uploadBlockLen, plainBuffer, iv, sessionKey);
             if (!ret) {
                 cerr << "Error decrypting the upload block\n";
                 return 0;
             }
-            int plaintextLen = ret; 
+            int plaintextLen = ret;
+
+            // Compute hash
+            counter ++;
+            unsigned char * concatBlockCheck = (unsigned char *) malloc(totalSizeBlock);
+            if (!concatBlockCheck) {
+                cerr << "Error allocating buffer for concat check\n";
+                return 0;
+            }
+            ret = hashAndConcat(concatBlockCheck, cyberBuffer, *uploadBlockLen, authKey, counter);
+            if (!ret) {
+                cerr << "Error hashing and concatenating\n";
+                return 0;
+            }
+
+            // Compare with actual digest
+            ret = memcmp(digest, concatBlockCheck, sessionKeySize);
+            if (ret) {
+                cerr << "Message could not be authenticated\n";
+                return 0;
+            }
 
             // Write decrypted content into the file on user's filesystem
             for(int i = 0; i < plaintextLen; i++){
                 wf.write((char *) &plainBuffer[i], sizeof(char));
             }
             remainedBlock -= plaintextLen;
+
+            // Free things
+            free (uploadBlockLen);
+            free(ivBlock);
+            free(cyberBuffer);
+            free(digestBlock);
+            free(concatBlock);
+            free(plainBuffer);
+            free(concatBlockCheck);
         }
         wf.close();
 

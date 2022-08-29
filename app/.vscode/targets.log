@@ -1,156 +1,83 @@
 make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # GNU Make 4.2.1
- 
 # Built for x86_64-pc-linux-gnu
- 
 # Copyright (C) 1988-2016 Free Software Foundation, Inc.
- 
 # License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
- 
 # This is free software: you are free to change and redistribute it.
- 
 # There is NO WARRANTY, to the extent permitted by law.
- 
 
- 
-# Make data base, printed on Thu Aug 18 15:22:38 2022
- 
+# Make data base, printed on Mon Aug 29 10:49:30 2022
 
 # Variables
- 
 
- 
 # 'override' directive
- 
 GNUMAKEFLAGS := 
- 
 # automatic
- 
 <D = $(patsubst %/,%,$(dir $<))
- 
 # automatic
- 
 ?F = $(notdir $?)
- 
 # environment
- 
 DESKTOP_SESSION = ubuntu
- 
 # default
- 
 .SHELLFLAGS := -c
- 
 # environment
- 
 XDG_SESSION_CLASS = user
- 
 # environment
- 
 SNAP_COMMON = /var/snap/code/common
- 
 # environment
- 
 XDG_SESSION_TYPE = x11
- 
 # makefile (from 'makefile', line 5)
- 
 TARGET = user server
- 
 # automatic
- 
 ?D = $(patsubst %/,%,$(dir $?))
- 
 # automatic
- 
 @D = $(patsubst %/,%,$(dir $@))
- 
 # environment
- 
 XAUTHORITY = /run/user/1000/gdm/Xauthority
- 
 # environment
- 
 GDMSESSION = ubuntu
- 
 # environment
- 
 XMODIFIERS = @im=ibus
- 
 # makefile
- 
 CURDIR := /home/djolopez/Documents/INGE_S5_Pise/cybersecurity/project/2022-Cybersecurity/app
- 
 # makefile
- 
 SHELL = /bin/sh
- 
 # environment
- 
-SNAP_DATA = /var/snap/code/104
- 
+SNAP_DATA = /var/snap/code/105
 # environment
- 
 VTE_VERSION = 6003
- 
 # environment
- 
 VSCODE_NLS_CONFIG = {"locale":"en-us","availableLanguages":{},"_languagePackSupport":true}
- 
 # environment
- 
-JOURNAL_STREAM = 8:30522
- 
+JOURNAL_STREAM = 8:31183
 # makefile (from 'makefile', line 2)
- 
 CFLAGS = -Wall -g
- 
 # environment
- 
 XDG_CONFIG_DIRS = /etc/xdg/xdg-ubuntu:/etc/xdg
- 
 # environment
- 
 SNAP_INSTANCE_NAME = code
- 
 # environment
- 
 SNAP_ARCH = amd64
- 
 # environment
- 
 MAVEN_HOME = /opt/maven
- 
 # makefile (from 'makefile', line 1)
- 
 MAKEFILE_LIST :=  makefile
- 
 # environment
- 
 JAVA_HOME = /usr/lib/jvm/default-java
- 
 # automatic
- 
 @F = $(notdir $@)
- 
 # environment
- 
 IM_CONFIG_PHASE = 1
- 
 # environment
- 
 USERNAME = djolopez
- 
 # environment
- 
 MAKELEVEL := 0
- 
 # environment
- 
 XDG_DATA_DIRS = /usr/share/ubuntu:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop
 # environment
-DBUS_SESSION_BUS_ADDRESS = unix:path=/run/user/1000/bus,guid=f47173c9f1a0913fc93c92e562fe38b3
+DBUS_SESSION_BUS_ADDRESS = unix:path=/run/user/1000/bus,guid=6905bdb50d4b245f2cac5a6d630c7d3e
 # environment
-MANAGERPID = 810
+MANAGERPID = 820
 # environment
 LESSOPEN = | /usr/bin/lesspipe %s
 # environment
@@ -158,7 +85,7 @@ LC_NAME = fr_FR.UTF-8
 # environment
 VSCODE_CWD = /home/djolopez/Documents/INGE_S5_Pise/cybersecurity/project/2022-Cybersecurity/app
 # environment
-GSETTINGS_SCHEMA_DIR = /snap/code/104/usr/share/glib-2.0/schemas
+GSETTINGS_SCHEMA_DIR = /snap/code/105/usr/share/glib-2.0/schemas
 # default
 MAKE_HOST := x86_64-pc-linux-gnu
 # environment
@@ -166,15 +93,15 @@ PATH = /home/djolopez/.local/bin:/opt/maven/bin:/usr/local/sbin:/usr/local/bin:/
 # environment
 GPG_AGENT_INFO = /run/user/1000/gnupg/S.gpg-agent:0:1
 # environment
-SESSION_MANAGER = local/djolopez-VirtualBox:@/tmp/.ICE-unix/1252,unix/djolopez-VirtualBox:/tmp/.ICE-unix/1252
+SESSION_MANAGER = local/djolopez-VirtualBox:@/tmp/.ICE-unix/1289,unix/djolopez-VirtualBox:/tmp/.ICE-unix/1289
 # environment
 XDG_RUNTIME_DIR = /run/user/1000
 # environment
 GDK_PIXBUF_MODULE_FILE = /home/djolopez/snap/code/common/.cache/gdk-pixbuf-loaders.cache
 # environment
-SNAP = /snap/code/104
+SNAP = /snap/code/105
 # environment
-SNAP_VERSION = 6d9b74a7
+SNAP_VERSION = e4503b30
 # environment
 XDG_MENU_PREFIX = gnome-
 # environment
@@ -182,11 +109,11 @@ DISABLE_WAYLAND = 1
 # environment
 ELECTRON_RUN_AS_NODE = 1
 # environment
-INVOCATION_ID = 649e143c14834cab8ed15e6b6b049c79
+INVOCATION_ID = 33f0911a9edf4a56a38c5b3d338d564e
 # makefile (from 'makefile', line 3)
 LDFLAGS = -lcrypto -lstdc++fs 
 # environment
-GDK_PIXBUF_MODULEDIR = /snap/code/104/usr/lib/x86_64-linux-gnu/gdk-pixbuf-2.0/2.10.0/loaders
+GDK_PIXBUF_MODULEDIR = /snap/code/105/usr/lib/x86_64-linux-gnu/gdk-pixbuf-2.0/2.10.0/loaders
 # default
 .FEATURES := target-specific order-only second-expansion else-if shortest-stem undefine oneshell archives jobserver output-sync check-symlink load
 # environment
@@ -208,7 +135,7 @@ PWD = /home/djolopez/Documents/INGE_S5_Pise/cybersecurity/project/2022-Cybersecu
 # default
 .LOADED := 
 # environment
-SSH_AGENT_PID = 1095
+SSH_AGENT_PID = 1097
 # environment
 ORIGINAL_XDG_CURRENT_DESKTOP = ubuntu:GNOME
 # environment
@@ -222,7 +149,7 @@ LESSCLOSE = /usr/bin/lesspipe %s %s
 # environment
 VSCODE_CLI = 1
 # environment
-VSCODE_CODE_CACHE_PATH = /home/djolopez/.config/Code/CachedData/6d9b74a70ca9c7733b29f0456fd8195364076dda
+VSCODE_CODE_CACHE_PATH = /home/djolopez/.config/Code/CachedData/e4503b30fc78200f846c62cf8091b76ff5547662
 # environment
 LOGNAME = djolopez
 # environment
@@ -258,7 +185,7 @@ MAKECMDGOALS := all
 # environment
 QT_IM_MODULE = ibus
 # environment
-SNAP_USER_DATA = /home/djolopez/snap/code/104
+SNAP_USER_DATA = /home/djolopez/snap/code/105
 # environment
 SHLVL = 0
 # makefile (from 'makefile', line 1)
@@ -270,7 +197,7 @@ MAKE_VERSION := 4.2.1
 # environment
 USER = djolopez
 # environment
-SNAP_REVISION = 104
+SNAP_REVISION = 105
 # environment
 LC_MONETARY = fr_FR.UTF-8
 # makefile
@@ -288,7 +215,7 @@ MAKE_COMMAND := make
 # automatic
 *F = $(notdir $*)
 # environment
-VSCODE_IPC_HOOK = /run/user/1000/vscode-0941bf64-1.70.1-main.sock
+VSCODE_IPC_HOOK = /run/user/1000/vscode-0941bf64-1.70.2-main.sock
 # makefile
 MAKEFLAGS = pqrR
 # environment
@@ -320,7 +247,7 @@ LC_ALL = C
 # environment
 DBUS_STARTER_BUS_TYPE = session
 # environment
-GNOME_TERMINAL_SCREEN = /org/gnome/Terminal/screen/f46b9a91_4911_4462_88c8_08e1f7493a21
+GNOME_TERMINAL_SCREEN = /org/gnome/Terminal/screen/2b501ae5_bc7b_4441_aa71_0d66b1069a9f
 # automatic
 ^F = $(notdir $^)
 # makefile (from 'makefile', line 6)
@@ -348,9 +275,9 @@ LANG = C
 # environment
 TERM = xterm-256color
 # environment
-VSCODE_PID = 3494
+VSCODE_PID = 2498
 # environment
-DBUS_STARTER_ADDRESS = unix:path=/run/user/1000/bus,guid=f47173c9f1a0913fc93c92e562fe38b3
+DBUS_STARTER_ADDRESS = unix:path=/run/user/1000/bus,guid=6905bdb50d4b245f2cac5a6d630c7d3e
 # variable set hash-table stats:
 # Load=134/1024=13%, Rehash=0, Collisions=19/166=11%
 
@@ -423,14 +350,11 @@ start-server: server/start-server.cpp
 #  Implicit rule search has not been done.
 #  Implicit/static pattern stem: ''
 #  File does not exist.
- 
 #  File has been updated.
- 
 #  Needs to be updated (-q is set).
- 
 # automatic
- 
 # @ := start-server
+ 
 # automatic
 # % := 
 # automatic
@@ -453,7 +377,7 @@ start-server: server/start-server.cpp
 # Not a target:
 server/start-server.cpp:
 #  Implicit rule search has been done.
-#  Last modified 2022-08-18 15:19:24.449908838
+#  Last modified 2022-08-22 17:07:10.402058286
 #  File has been updated.
 #  Successfully updated.
 
@@ -471,6 +395,6 @@ server/start-server.cpp:
 # strcache performance: lookups = 31 / hit rate = 38%
 # hash-table stats:
 # Load=19/8192=0%, Rehash=0, Collisions=1/31=3%
-# Finished Make data base on Thu Aug 18 15:22:38 2022
+# Finished Make data base on Mon Aug 29 10:49:30 2022
 
  

@@ -853,10 +853,14 @@ public:
 
         // Check existence of the file and send the response to the client
         ret = existsFile(filepath, clientUsername);
+        if (!ret) {
+            cout << "File does not exists\n";
+            return 0;
+        }
         int exists = ret;
         ret = sendInt(clientfd, exists);
         if (!ret) {
-            cout << "File does not exists\n";
+            cout << "Error sending response to the client\n";
             return 0;
         }
 

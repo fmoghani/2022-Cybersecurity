@@ -715,7 +715,6 @@ public:
             }
 
             free(concatBlock);
-            free(plainBuffer);
             free(cyperBuffer);
             free(ivBlock);
         }
@@ -876,7 +875,7 @@ public:
 
         if(!wf.good()) {
             cout << "Error occurred at writing time while saving uploaded file!" << endl;
-            return 1;
+            return 0;
         }
 
         // Free things

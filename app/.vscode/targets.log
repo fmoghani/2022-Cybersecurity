@@ -6,7 +6,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Mon Aug 29 16:15:27 2022
+# Make data base, printed on Tue Aug 30 12:16:02 2022
 
 # Variables
 
@@ -21,6 +21,7 @@ DESKTOP_SESSION = ubuntu
 # default
 .SHELLFLAGS := -c
 # environment
+ 
 XDG_SESSION_CLASS = user
 # environment
 SNAP_COMMON = /var/snap/code/common
@@ -49,7 +50,7 @@ VTE_VERSION = 6003
 # environment
 VSCODE_NLS_CONFIG = {"locale":"en-us","availableLanguages":{},"_languagePackSupport":true}
 # environment
-JOURNAL_STREAM = 8:31183
+JOURNAL_STREAM = 8:30628
 # makefile (from 'makefile', line 2)
 CFLAGS = -Wall -g
 # environment
@@ -75,10 +76,9 @@ MAKELEVEL := 0
 # environment
 XDG_DATA_DIRS = /usr/share/ubuntu:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop
 # environment
- 
-DBUS_SESSION_BUS_ADDRESS = unix:path=/run/user/1000/bus,guid=6905bdb50d4b245f2cac5a6d630c7d3e
+DBUS_SESSION_BUS_ADDRESS = unix:path=/run/user/1000/bus,guid=63314951d6bee35ea9087f0e630de309
 # environment
-MANAGERPID = 820
+MANAGERPID = 830
 # environment
 LESSOPEN = | /usr/bin/lesspipe %s
 # environment
@@ -94,7 +94,7 @@ PATH = /home/djolopez/.local/bin:/opt/maven/bin:/usr/local/sbin:/usr/local/bin:/
 # environment
 GPG_AGENT_INFO = /run/user/1000/gnupg/S.gpg-agent:0:1
 # environment
-SESSION_MANAGER = local/djolopez-VirtualBox:@/tmp/.ICE-unix/1289,unix/djolopez-VirtualBox:/tmp/.ICE-unix/1289
+SESSION_MANAGER = local/djolopez-VirtualBox:@/tmp/.ICE-unix/1295,unix/djolopez-VirtualBox:/tmp/.ICE-unix/1295
 # environment
 XDG_RUNTIME_DIR = /run/user/1000
 # environment
@@ -110,7 +110,7 @@ DISABLE_WAYLAND = 1
 # environment
 ELECTRON_RUN_AS_NODE = 1
 # environment
-INVOCATION_ID = 33f0911a9edf4a56a38c5b3d338d564e
+INVOCATION_ID = f264943afbf54d54acd73e3fe5bb4111
 # makefile (from 'makefile', line 3)
 LDFLAGS = -lcrypto -lstdc++fs 
 # environment
@@ -131,12 +131,13 @@ DISPLAY = :0
 OPT = -ggdb3
 # environment
 SNAP_INSTANCE_KEY = 
+ 
 # environment
 PWD = /home/djolopez/Documents/INGE_S5_Pise/cybersecurity/project/2022-Cybersecurity/app
 # default
 .LOADED := 
 # environment
-SSH_AGENT_PID = 1097
+SSH_AGENT_PID = 1101
 # environment
 ORIGINAL_XDG_CURRENT_DESKTOP = ubuntu:GNOME
 # environment
@@ -154,7 +155,7 @@ VSCODE_CODE_CACHE_PATH = /home/djolopez/.config/Code/CachedData/e4503b30fc78200f
 # environment
 LOGNAME = djolopez
 # environment
-APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL = true
+APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL = 1
 # environment
 SNAP_LIBRARY_PATH = /var/lib/snapd/lib/gl:/var/lib/snapd/lib/gl32:/var/lib/snapd/void
 # environment
@@ -175,6 +176,7 @@ GNOME_DESKTOP_SESSION_ID = this-is-deprecated
 ^D = $(patsubst %/,%,$(dir $^))
 # environment
 LC_TIME = fr_FR.UTF-8
+ 
 # environment
 SNAP_REAL_HOME = /home/djolopez
 # environment
@@ -248,13 +250,13 @@ LC_ALL = C
 # environment
 DBUS_STARTER_BUS_TYPE = session
 # environment
-GNOME_TERMINAL_SCREEN = /org/gnome/Terminal/screen/2b501ae5_bc7b_4441_aa71_0d66b1069a9f
+GNOME_TERMINAL_SCREEN = /org/gnome/Terminal/screen/85acbd58_1393_4d02_aa20_c6c1c2595a37
 # automatic
 ^F = $(notdir $^)
 # makefile (from 'makefile', line 6)
 DEPS = ./utils.h
 # environment
-GNOME_TERMINAL_SERVICE = :1.87
+GNOME_TERMINAL_SERVICE = :1.85
 # default
 SUFFIXES := 
 # environment
@@ -268,6 +270,7 @@ WINDOWPATH = 2
 # environment
 LC_IDENTIFICATION = fr_FR.UTF-8
 # default
+ 
 .RECIPEPREFIX := 
 # environment
 LC_ADDRESS = fr_FR.UTF-8
@@ -276,9 +279,9 @@ LANG = C
 # environment
 TERM = xterm-256color
 # environment
-VSCODE_PID = 2498
+VSCODE_PID = 2714
 # environment
-DBUS_STARTER_ADDRESS = unix:path=/run/user/1000/bus,guid=6905bdb50d4b245f2cac5a6d630c7d3e
+DBUS_STARTER_ADDRESS = unix:path=/run/user/1000/bus,guid=63314951d6bee35ea9087f0e630de309
 # variable set hash-table stats:
 # Load=134/1024=13%, Rehash=0, Collisions=19/166=11%
 
@@ -353,7 +356,6 @@ start-server: server/start-server.cpp
 #  File does not exist.
 #  File has been updated.
 #  Needs to be updated (-q is set).
- 
 # automatic
 # @ := start-server
 # automatic
@@ -378,7 +380,8 @@ start-server: server/start-server.cpp
 # Not a target:
 server/start-server.cpp:
 #  Implicit rule search has been done.
-#  Last modified 2022-08-29 16:13:55.247335746
+ 
+#  Last modified 2022-08-30 12:16:00.111415904
 #  File has been updated.
 #  Successfully updated.
 
@@ -396,6 +399,6 @@ server/start-server.cpp:
 # strcache performance: lookups = 31 / hit rate = 38%
 # hash-table stats:
 # Load=19/8192=0%, Rehash=0, Collisions=1/31=3%
-# Finished Make data base on Mon Aug 29 16:15:27 2022
+# Finished Make data base on Tue Aug 30 12:16:02 2022
 
  

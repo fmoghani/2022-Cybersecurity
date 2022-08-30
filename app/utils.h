@@ -380,3 +380,81 @@ int hashAndConcat(unsigned char * concat, unsigned char * ciphertext, int encryp
 
     return 1;
 }
+
+// Send an encrypted message
+int sendEncrypted(int cipherSize, unsigned char *iv, unsigned char * concat, int socketfd) {
+
+    int ret;
+
+    ret = sendInt(socketfd, cipherSize);
+    if (!ret)
+    {
+        return 0;
+    }
+    ret = send(socketfd, iv, ivSize, 0);
+    if (!ret)
+    {
+        return 0;
+    }
+    ret = send(socketfd, concat, cipherSize + sessionKeySize, 0);
+    if (!ret)
+    {
+        return 0;
+    }
+
+    return 1;
+}
+
+// Receive an encrypted message and separate digest from ciphertext
+int receiveEncrypted(int cipherSize, unsigned char * iv, unsigned char * concat, unsigned char * ciphertext, unsigned char * digest, int socketfd) {
+
+    int ret;
+
+    // Receive everything
+    ret = read(socketfd, iv, ivSize);
+    if (!ret) {
+        return 0;
+    }
+    // ret = readInt(socketfd, cipherSizePtr);
+    // if (!ret) {
+    //     return 0;
+    // }
+    ret = read(socketfd, concat, cipherSize + sessionKeySize);
+    if (!ret) {
+        return 0;
+    }
+
+    // Separate ciphertext and digest
+    memcpy(digest, concat, sessionKeySize);
+    memcpy(ciphertext, concat + sessionKeySize, cipherSize);
+
+    return 1;
+}
+
+// Decrypt the message and check its authenticity
+int checkAuthenticity(int cipherSize, unsigned char * ciphertext, unsigned char * digest, unsigned char * authKey, int counter) {
+
+    int ret;
+
+    // Compute the digest
+    int totalSize = cipherSize + sessionKeySize;
+    unsigned char * concatCheck = (unsigned char *) malloc(totalSize);
+    if (!concatCheck) {
+        cerr << "Error allocating buffer for concat\n";
+        return 0;
+    }
+    ret = hashAndConcat(concatCheck, ciphertext, cipherSize, authKey, counter);
+    if (!ret) {
+        cerr << "Error hashing and concatenating\n";
+        return 0;
+    }
+
+    // Compare digest with actual digest
+    ret = memcmp(digest, concatCheck, sessionKeySize);
+    if (ret) {
+        cerr << "Message not authenticated\n";
+        return 0;
+    }
+
+    return 1;
+}

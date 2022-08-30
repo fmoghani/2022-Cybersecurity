@@ -78,31 +78,6 @@ public:
         return CONNEXION_STATUS;
     }
 
-    // Send an encrypted value
-    int sendEncrypted(unsigned char *ciphertext, int cipherSize, unsigned char *iv)
-    {
-
-        int ret;
-
-        ret = send(clientfd, iv, ivSize, 0);
-        if (!ret)
-        {
-            return 0;
-        }
-        ret = sendInt(clientfd, cipherSize);
-        if (!ret)
-        {
-            return 0;
-        }
-        ret = send(clientfd, ciphertext, cipherSize, 0);
-        if (!ret)
-        {
-            return 0;
-        }
-
-        return 1;
-    }
-
     // Creates a socket and makes it listen
     void startSocket()
     {
@@ -678,12 +653,11 @@ public:
         
         int ret;
 
-        cout << "Client "<< clientUsername << " upload request\n";
+        cout << "Client "<< clientUsername << " requested an upload\n";
 
-        // Read File Path
+        // Receive encrypted filepath size
         int * filepathEncLen = (int *) malloc(sizeof(int));
-        unsigned char * iv = (unsigned char *) malloc(ivSize);
-        if (!filepathEncLen || !iv) {
+        if (!filepathEncLen) {
             cout << "Error allocating buffers to receive encrypted filename\n";
             return 0;
         }
@@ -692,32 +666,30 @@ public:
             cerr << "Error upload filepath length\n";
             return 0;
         }
+
+        // Read File Path
         int totalSize = sessionKeySize + *filepathEncLen;
         unsigned char * concat = (unsigned char *) malloc(totalSize);
-        if (!concat) {
-            cerr << "Error allocating buffer for concat\n";
+        unsigned char * iv = (unsigned char *) malloc(ivSize);
+        unsigned char * filepathEnc = (unsigned char *) malloc(*filepathEncLen);
+        unsigned char * digest = (unsigned char *) malloc(sessionKeySize);
+        if (!concat || !iv || !filepathEnc || !digest) {
+            cerr << "Error allocating buffers for receiving encrypted filepath\n";
             return 0;
         }
-        ret = read(clientfd, concat, totalSize);
+        ret = receiveEncrypted(*filepathEncLen, iv, concat, filepathEnc, digest, clientfd);
         if (!ret) {
-            cerr << "Error reading upload filepath\n";
-            return 0;
-        }
-        ret = read(clientfd, iv, ivSize);
-        if (!ret) {
-            cerr << "Error reading iv for upload filepath\n";
+            cout << "Error receiving encrypted filepath\n";
             return 0;
         }
 
-        // Retreive digest and ciphertext
-        unsigned char * filepathEnc = (unsigned char *) malloc(*filepathEncLen);
-        unsigned char * digest = (unsigned char *) malloc(sessionKeySize);
-        if (!filepathEnc || !digest) {
-            cerr << "Error allocating buffer for upload filepath\n";
+        // Check authenticity of the message
+        counter ++;
+        ret = checkAuthenticity(*filepathEncLen, filepathEnc, digest, authKey, counter);
+        if (!ret) {
+            cout << "Error encrypted filepath message not authenticated\n";
             return 0;
         }
-        memcpy(digest, concat, sessionKeySize);
-        memcpy(filepathEnc, concat + sessionKeySize, *filepathEncLen);
 
         // Decrypt filename
         unsigned char * decryptedFilepath = (unsigned char *) malloc(*filepathEncLen);
@@ -730,29 +702,8 @@ public:
         string spath = "users_infos/" + clientUsername + "/files/" + filepath;
         filesystem::path path(spath);
 
-        // Compute digest
-        counter ++;
-        unsigned char * concatCheck = (unsigned char *) malloc(totalSize);
-        if (!concatCheck) {
-            cerr << "Error allocating buffer for concat\n";
-            return 0;
-        }
-        ret = hashAndConcat(concatCheck, filepathEnc, *filepathEncLen, authKey, counter);
-        if (!ret) {
-            cerr << "Error hashing and concatenating\n";
-            return 0;
-        }
-
-        // Compare it with actual digest
-        ret = memcmp(digest, concatCheck, sessionKeySize);
-        if (ret) {
-            cerr << "Message not authenticated\n";
-            return 0;
-        }
-
         // Free things
         free(iv);
-        free(concatCheck);
         free(concat);
         free(digest);
         free(filepathEncLen);
@@ -779,46 +730,41 @@ public:
         // Read file content
         while(remainedBlock>0){
 
-            // Receive data
+            // Receive upload block size
             int * uploadBlockLen = (int *) malloc(sizeof(int));
+            if (!uploadBlockLen) {
+                cout << "Error allocating buffer for upload block len pointer\n";
+                return 0;
+            }
             ret = readInt(clientfd, uploadBlockLen); // encrypted size
             if (!ret) {
                 cerr << "Error upload block length\n";
                 return 0;
             }
+
+            // Receive encrypted upload block
             int totalSizeBlock = *uploadBlockLen + sessionKeySize;
             unsigned char * concatBlock = (unsigned char *) malloc(totalSizeBlock);
-            if (!concatBlock) {
-                cerr << "Error allocating buffer for concat block\n";
-                return 0;
-            }
-            ret = read(clientfd, concatBlock, totalSizeBlock); // block with concatenated digest and ciphertext
-            if (!ret) {
-                cerr << "Error reading encrypted upload block\n";
-                close(clientfd);
-                return 0;
-            }
             unsigned char * ivBlock = (unsigned char *) malloc(ivSize);
-            if (!ivBlock) {
-                cerr << "Error allocating buffers for file block decryption\n";
+            unsigned char * digestBlock = (unsigned char *) malloc(sessionKeySize);
+            unsigned char * cyberBuffer = (unsigned char *) malloc(*uploadBlockLen);
+            if (!concatBlock || !ivBlock || !digestBlock || !cyberBuffer) {
+                cerr << "Error allocating buffer for receiving encrypted upload block\n";
                 return 0;
             }
-            ret = read(clientfd, ivBlock, ivSize); // iv used for encryption
+            ret = receiveEncrypted(*uploadBlockLen, ivBlock, concatBlock, cyberBuffer, digestBlock, clientfd);
             if (!ret) {
-                cerr << "Error reading iv for upload block\n";
-                close(clientfd);
+                cout << "Error receiving encrypted upload block\n";
                 return 0;
             }
 
-            // Retreive digest and cyphertext
-            unsigned char * cyberBuffer = (unsigned char *) malloc(*uploadBlockLen);
-            unsigned char * digestBlock = (unsigned char *) malloc(sessionKeySize);
-            if (!cyberBuffer || !digest) {
-                cerr << "Error allocating buffers for cyphertext and digest\n";
+            // Check authenticity
+            counter ++;
+            ret = checkAuthenticity(*uploadBlockLen, cyberBuffer, digestBlock, authKey, counter);
+            if (!ret) {
+                cout << "Error encrypted upload block message could not be authenticated\n";
                 return 0;
             }
-            memcpy(digestBlock, concatBlock, sessionKeySize);
-            memcpy(cyberBuffer, concatBlock + sessionKeySize, *uploadBlockLen);
 
             // Decrypt data
             unsigned char * plainBuffer = (unsigned char *) malloc(*uploadBlockLen);
@@ -828,26 +774,6 @@ public:
                 return 0;
             }
             int plaintextLen = ret;
-
-            // Compute hash
-            counter ++;
-            unsigned char * concatBlockCheck = (unsigned char *) malloc(totalSizeBlock);
-            if (!concatBlockCheck) {
-                cerr << "Error allocating buffer for concat check\n";
-                return 0;
-            }
-            ret = hashAndConcat(concatBlockCheck, cyberBuffer, *uploadBlockLen, authKey, counter);
-            if (!ret) {
-                cerr << "Error hashing and concatenating\n";
-                return 0;
-            }
-
-            // Compare with actual digest
-            ret = memcmp(digest, concatBlockCheck, sessionKeySize);
-            if (ret) {
-                cerr << "Message could not be authenticated\n";
-                return 0;
-            }
 
             // Write decrypted content into the file on user's filesystem
             for(int i = 0; i < plaintextLen; i++){
@@ -862,7 +788,6 @@ public:
             free(digestBlock);
             free(concatBlock);
             free(plainBuffer);
-            free(concatBlockCheck);
         }
         wf.close();
 
@@ -878,17 +803,12 @@ public:
 
     int downloadFile() {
 
-        int ret;
+        cout << "Client "<< clientUsername << " requested a download\n";
 
-        cout << "Client "<< clientUsername << " download request\n";
+        int ret;
         
-        //Read File Path
+        // Read Filepath length
         int * filepathEncLen = (int *) malloc(sizeof(int));
-        unsigned char * iv = (unsigned char *) malloc(ivSize);
-        if (!filepathEncLen || !iv) {
-            cerr << "Error allocating buffers for enrypted filename\n";
-            return 0;
-        }
         if (!filepathEncLen) {
             cerr << "Error allocating buffer for upload filepath length\n";
             return 0;
@@ -898,19 +818,27 @@ public:
             cerr << "Error upload filepath length\n";
             return 0;
         }
+
+        // Receive encrypted filepath
         unsigned char * filepathEnc = (unsigned char *) malloc(*filepathEncLen);
-        if (!filepathEnc) {
-            cerr << "Error allocating buffer for upload filepath\n";
+        unsigned char * iv = (unsigned char *) malloc(ivSize);
+        unsigned char * concat = (unsigned char *) malloc(*filepathEncLen + sessionKeySize);
+        unsigned char * digest = (unsigned char *) malloc(sessionKeySize);
+        if (!filepathEnc || !iv || !concat || !digest) {
+            cerr << "Error allocating buffer for download filepath\n";
             return 0;
         }
-        ret = read(clientfd, filepathEnc, *filepathEncLen);
+        ret = receiveEncrypted(*filepathEncLen, iv, concat, filepathEnc, digest, clientfd);
         if (!ret) {
-            cerr << "Error reading upload filepath\n";
+            cout << "Error receiving encrypted filepath\n";
             return 0;
         }
-        ret = read(clientfd, iv, ivSize);
+
+        // Check authenticity
+        counter ++;
+        ret = checkAuthenticity(*filepathEncLen, filepathEnc, digest, authKey, counter);
         if (!ret) {
-            cerr << "Error reading iv for upload filepath\n";
+            cout << "Error encrypted filepath message not authenticated\n";
             return 0;
         }
 
@@ -918,7 +846,7 @@ public:
         unsigned char * decryptedFilepath = (unsigned char *) malloc(*filepathEncLen);
         ret = decryptSym(filepathEnc, *filepathEncLen, decryptedFilepath, iv, sessionKey);
         if (!ret) {
-            cerr << "Error decrypting the upload filepath\n";
+            cerr << "Error decrypting the download filepath\n";
             return 0;
         }
         string filepath(decryptedFilepath, decryptedFilepath + ret);
@@ -932,14 +860,15 @@ public:
             return 0;
         }
 
-        cout << "Requested file: " << filepath << "\n";
-
         // Get complete path to the file
         string sfullPath = "users_info/" + clientUsername + "/files" + filepath;
         fs::path fullPath(sfullPath);
 
+        // Free things
         free(filepathEncLen);
         free(iv);
+        free(concat);
+        free(digest);
         free(filepathEnc);
         free(decryptedFilepath);
 
@@ -951,7 +880,7 @@ public:
         int upload_size = infile.tellg();
         ret = sendInt(clientfd, upload_size);
         if (!ret) {
-            cerr << "Error sending upload filesize to client\n";
+            cerr << "Error sending download filesize to client\n";
             return 0;
         }
 
@@ -968,34 +897,43 @@ public:
             
             // Encrypt the block
             unsigned char * cyperBuffer = (unsigned char *) malloc(readlength + blockSize);
-            unsigned char * iv = (unsigned char *) malloc(ivSize);
-            if (!cyperBuffer || !iv) {
+            unsigned char * ivBlock = (unsigned char *) malloc(ivSize);
+            if (!cyperBuffer || !ivBlock) {
                 cerr << "Error allocating buffer for encrypting file block\n";
                 return 0;
             }
-            int ret = encryptSym((unsigned char *)plainBuffer, readlength, cyperBuffer, iv, sessionKey);
+            int ret = encryptSym((unsigned char *)plainBuffer, readlength, cyperBuffer, ivBlock, sessionKey);
             if (!ret) {
                 cerr << "Error encrypting the upload block\n";
                 return 0;
             }
             int encryptedSize = ret;
 
-            // Send encrypted block
-            ret = sendInt(clientfd, encryptedSize);
+            // Hash and concatenate
+            int totalSize = encryptedSize + sessionKeySize;
+            unsigned char * concatBlock = (unsigned char *) malloc(totalSize);
+            if (!concatBlock) {
+                cerr << "Error allocating buffer for concat block\n";
+                return 0;
+            }
+            counter ++;
+            ret = hashAndConcat(concatBlock, cyperBuffer, encryptedSize, authKey, counter);
             if (!ret) {
-                cerr << "Error sending upload buffer size to server\n";
+                cout << "Error hashing and concatenating\n";
                 return 0;
             }
-            ret = send(clientfd, cyperBuffer, encryptedSize, 0);
-            if (ret <= 0) {
-                cerr << "Error sending encrypted upload buffer to server\n";
+
+            // Send encrypted block
+            ret = sendEncrypted(encryptedSize, ivBlock, concatBlock, clientfd);
+            if (!ret) {
+                cout << "Error sending encrypted block\n";
                 return 0;
             }
-            ret = send(clientfd, iv, ivSize, 0);
-            if (ret <= 0) {
-                cerr << "Error sending upload buffer iv to server\n";
-                return 0;
-            }
+
+            // Free things
+            free(ivBlock);
+            free(concatBlock);
+            free(cyperBuffer);
         }
         infile.close();
         
@@ -1006,16 +944,12 @@ public:
 
     int deleteFile()
     {
+
+        cout << "Client "<< clientUsername << " requested a delete\n";
+
         int ret;
 
-        // Receive filename
-        unsigned char *iv = (unsigned char *)malloc(ivSize);
-        ret = read(clientfd, iv, ivSize);
-        if (!ret)
-        {
-            cout << "Error reading iv\n";
-            return 0;
-        }
+        // Receive encrypted filename size
         int *encryptedSizePtr = (int *)malloc(sizeof(int));
         if (!encryptedSizePtr)
         {
@@ -1030,8 +964,29 @@ public:
         }
         int encryptedSize = *encryptedSizePtr;
         free(encryptedSizePtr);
+
+        // Receive encrypted filename
+        unsigned char *iv = (unsigned char *)malloc(ivSize);
+        unsigned char * concat = (unsigned char *) malloc(encryptedSize + sessionKeySize);
         unsigned char *encryptedFilename = (unsigned char *)malloc(encryptedSize);
-        ret = read(clientfd, encryptedFilename, encryptedSize);
+        unsigned char * digest = (unsigned char *) malloc(sessionKeySize);
+        if (!iv || !concat || !encryptedFilename || !digest) {
+            cout << "Error reading encrypted filename\n";
+            return 0;
+        }
+        ret = receiveEncrypted(encryptedSize, iv, concat, encryptedFilename, digest, clientfd);
+        if (!ret) {
+            cout << "Error receiving encrypted filename\n";
+            return 0;
+        }
+
+        // Check authenticity of the message
+        counter ++;
+        ret = checkAuthenticity(encryptedSize, encryptedFilename, digest, authKey, counter);
+        if (!ret) {
+            cerr << "Filename message not authenticated\n";
+            return 0;
+        }
 
         // Decrypt new filename
         unsigned char *buggedFilename = (unsigned char *)malloc(encryptedSize);
@@ -1069,6 +1024,8 @@ public:
 
         // Free Buffers
         free(iv);
+        free(concat);
+        free(digest);
         free(filename);
         free(encryptedFilename);
 
@@ -1112,18 +1069,36 @@ public:
             copy(filename.begin(), filename.end(), charFilename);
             ret = encryptSym(charFilename, filename.size(), encryptedFilename, iv, sessionKey);
             if (!ret) {
-                cout << ">> Error during encryption\n";
+                cout << "Error during encryption\n";
                 return 0;
             }
             free(charFilename);
             encryptedSize = ret;
 
-            // Send the encrypted filename to the server
-            ret = sendEncrypted(encryptedFilename, encryptedSize, iv);
+            // Hash and concatenate
+            unsigned char * concat = (unsigned char *) malloc(encryptedSize + sessionKeySize);
+            if (!concat) {
+                cout << "Error allocating buffer for concat\n";
+                return 0;
+            }
+            counter ++;
+            ret = hashAndConcat(concat, encryptedFilename, encryptedSize, authKey, counter);
+            if (!ret) {
+                cout << "Error hashing and concatenating\n";
+                return 0;
+            }
+
+            // Send the encrypted filename
+            ret = sendEncrypted(encryptedSize, iv, concat, clientfd);
             if (!ret) {
                 cout << "Error sending encrypted filename\n";
                 return 0;
             }
+
+            // Free things
+            free(iv);
+            free(concat);
+            free(encryptedFilename);
         }
 
         cout << "--- FILES LISTED ---\n";
@@ -1134,16 +1109,11 @@ public:
     int renameFile()
     {
 
+        cout << "Client "<< clientUsername << " requested a rename\n";
+
         int ret;
 
-        // Receive filename
-        unsigned char *iv = (unsigned char *)malloc(ivSize);
-        ret = read(clientfd, iv, ivSize);
-        if (!ret)
-        {
-            cout << "Error reading iv\n";
-            return 0;
-        }
+        // Receive encrypted filename size
         int *encryptedSizePtr = (int *)malloc(sizeof(int));
         if (!encryptedSizePtr)
         {
@@ -1158,10 +1128,30 @@ public:
         }
         int encryptedSize = *encryptedSizePtr;
         free(encryptedSizePtr);
-        unsigned char *encryptedFilename = (unsigned char *)malloc(encryptedSize);
-        ret = read(clientfd, encryptedFilename, encryptedSize);
 
-        // Decrypt new filename
+        // Receive encrypted filename
+        unsigned char *iv = (unsigned char *)malloc(ivSize);
+        unsigned char * concat = (unsigned char *) malloc(encryptedSize + sessionKeySize);
+        unsigned char *encryptedFilename = (unsigned char *)malloc(encryptedSize);
+        unsigned char * digest = (unsigned char *) malloc(sessionKeySize);
+        if (!iv || !concat || !encryptedFilename || !digest) {
+            cerr << "Error allocating buffers for receiving encrypted filename\n";
+        }
+        ret = receiveEncrypted(encryptedSize, iv, concat, encryptedFilename, digest, clientfd);
+        if (!ret) {
+            cerr << "Error receiving encrypted filename\n";
+            return 0;
+        }
+
+        // Check authenticity of the message
+        counter ++;
+        ret = checkAuthenticity(encryptedSize, encryptedFilename, digest, authKey, counter);
+        if (!ret) {
+            cerr << "Filename message not authenticated\n";
+            return 0;
+        }
+
+        // Decrypt filename
         unsigned char *buggedFilename = (unsigned char *)malloc(encryptedSize);
         int decryptedSize;
         decryptedSize = decryptSym(encryptedFilename, encryptedSize, buggedFilename, iv, sessionKey);
@@ -1189,14 +1179,7 @@ public:
             return 1; // If the file does not exists we get out of the function without doing anything
         }
 
-        // Receive new encrypted filename
-        unsigned char *ivNew = (unsigned char *)malloc(ivSize);
-        ret = read(clientfd, ivNew, ivSize);
-        if (!ret)
-        {
-            cout << "Error reading ivNew\n";
-            return 0;
-        }
+        // Receive new encrypted filename size
         int *encryptedNewSizePtr = (int *)malloc(sizeof(int));
         if (!encryptedNewSizePtr)
         {
@@ -1211,8 +1194,29 @@ public:
         }
         int encryptedNewSize = *encryptedNewSizePtr;
         free(encryptedNewSizePtr);
+
+        // Receive new filename
+        unsigned char *ivNew = (unsigned char *)malloc(ivSize);
+        unsigned char * concatNew = (unsigned char *) malloc(encryptedNewSize);
         unsigned char *encryptedNewFilename = (unsigned char *)malloc(encryptedNewSize);
-        ret = read(clientfd, encryptedNewFilename, encryptedNewSize);
+        unsigned char * digestNew = (unsigned char *) malloc(sessionKeySize);
+        if (!ivNew || !concatNew || !encryptedNewFilename || !digestNew) {
+            cout << "Error allocating buffers for receiving new encrypted filename\n";
+            return 0;
+        }
+        ret = receiveEncrypted(encryptedNewSize, ivNew, concatNew, encryptedNewFilename, digestNew, clientfd);
+        if (!ret) {
+            cout << "Error receiving new encrypted filename\n";
+            return 0;
+        }
+
+        // Check authenticity
+        counter ++;
+        ret = checkAuthenticity(encryptedNewSize, encryptedNewFilename, digestNew, authKey, counter);
+        if (!ret) {
+            cout << "New filename message could not be authenticated\n";
+            return 0;
+        }
 
         // Decrypt new filename
         unsigned char *newFilename = (unsigned char *)malloc(encryptedNewSize);
@@ -1234,9 +1238,13 @@ public:
 
         // Free eveything
         free(iv);
+        free(concat);
+        free(digest);
         free(filename);
         free(encryptedFilename);
         free(ivNew);
+        free(concatNew);
+        free(digestNew);
         free(newFilename);
         free(encryptedNewFilename);
 
@@ -1248,9 +1256,11 @@ public:
     int logout()
     {
 
-        // Free key
+        // Free keys
         bzero(sessionKey, sessionKeySize);
         free(sessionKey);
+        bzero(authKey, sessionKeySize);
+        free(authKey);
 
         // Close connexion
         close(clientfd);
@@ -1323,10 +1333,6 @@ public:
             ret = logout();
             return ret;
             break;
-        }
-        default: {
-            cout << "Command number does not exists\n";
-            return 0;
         }
         }
 

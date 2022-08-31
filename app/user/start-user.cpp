@@ -55,6 +55,10 @@ class Client
     unsigned int clientSigSize;
     unsigned char * sessionHash;
 
+    // Certificates
+    int certBioLen;
+    unsigned char * charServCert;
+
     // Session
     int counter;
 
@@ -154,9 +158,7 @@ public:
         int ret;
 
         // Receive bio
-        cout << "before bio len pointer\n";
         int * keyBioLenPtr = (int *) malloc(sizeof(int));
-        cout << "before reading\n";
         ret = readInt(socketfd, keyBioLenPtr);
         if (!ret) {
             cerr << "Error reading bio size\n";
@@ -165,7 +167,6 @@ public:
         keyBioLen = *keyBioLenPtr;
         free(keyBioLenPtr);
 
-        cout << "before allocating char pub key\n";
         charTempPubKey = (unsigned char *) malloc(keyBioLen);
         ret = read(socketfd, charTempPubKey, keyBioLen);
         if (ret <= 0) {
@@ -176,13 +177,32 @@ public:
         // Read key from bio
         BIO * keyBio = BIO_new(BIO_s_mem());
         BIO_write(keyBio, charTempPubKey, keyBioLen);
-        cout << "before reading pubkey from bio\n";
         servTempPubKey = PEM_read_bio_PUBKEY(keyBio, NULL, NULL, NULL);
         if (!servTempPubKey) {
             cerr << "Error reading temp pub key from bio\n";
             exit(1);
         }
         free(keyBio);
+
+        // Receive bio
+        int * certBioLenPtr = (int *) malloc(sizeof(int));
+        if (!certBioLenPtr) {
+            cerr << "Error allocating buffer for cert bio len\n";
+            exit(1);
+        }
+        ret = readInt(socketfd, certBioLenPtr);
+        if (!ret) {
+            cerr << "Error reading cert bio len\n";
+            exit(1);
+        }
+        certBioLen = *certBioLenPtr;
+        free(certBioLenPtr);
+        charServCert = (unsigned char *) malloc(certBioLen);
+        ret = read(socketfd, charServCert, certBioLen);
+        if (!ret) {
+            cerr << "Error reading cert bio\n";
+            exit(1);
+        }
 
         // Receive size of M2
         int * sizePtr = (int *) malloc(sizeof(int));
@@ -273,14 +293,11 @@ public:
             exit(1);
         }
 
-        // Read server certificate
-        string serverCertPath = "../certificates/servcert.pem";
-        X509 *serverCert = readCertificate(serverCertPath); // Function from utils.h
-        if (!ret)
-        {
-            cerr << "Error reading server certificate\n";
-            exit(1);
-        }
+        BIO * certBio = BIO_new(BIO_s_mem());
+        BIO_write(certBio, charServCert, certBioLen);
+        X509 * serverCert = PEM_read_bio_X509(certBio, NULL, NULL, NULL);
+        BIO_free(certBio);
+        free(charServCert);
 
         // Verify server's certificate
         X509_STORE_CTX *ctx = X509_STORE_CTX_new();

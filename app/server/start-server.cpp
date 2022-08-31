@@ -390,7 +390,7 @@ public:
         memcpy(concat + serverSigSize, serverNonce, nonceSize);
         free(serverSig);
 
-        // Send content of the bio
+        // Send content of the bio for emphemeral pub key
         ret = sendInt(clientfd, keyBioLen);
         if (!ret) {
             cerr << "Error sending bio len\n";
@@ -403,6 +403,50 @@ public:
             close(clientfd);
             return 0;
         }
+
+        // Open certificate
+        string serverCertPath = "../certificates/servcert.pem";
+        X509 *serverCert = readCertificate(serverCertPath); // Function from utils.h
+        if (!ret)
+        {
+            cerr << "Error reading server certificate\n";
+            close(clientfd);
+            return 0;
+        }
+
+        // Put certificate into a bio
+        BIO * certBio = BIO_new(BIO_s_mem());
+        PEM_write_bio_X509(certBio, serverCert);
+        X509_free(serverCert);
+
+        // Read certificate as a character
+        int certBioLen = BIO_pending(certBio);
+        unsigned char * charCert = (unsigned char *) malloc(certBioLen);
+        if (!charCert) {
+            cerr << "Error allocating buffer for character certificate\n";
+            close(clientfd);
+            return 0;
+        }
+        ret = BIO_read(certBio, charCert, certBioLen);
+        if (ret <= 0) {
+            cerr << "Error reeading certificate bio\n";
+        }
+        BIO_free(certBio);
+
+        // Send certificate
+        ret = sendInt(clientfd, certBioLen);
+        if (!ret) {
+            cerr << "Error sending cert length\n";
+            close(clientfd);
+            return 0;
+        }
+        ret = send(clientfd, charCert, certBioLen, 0);
+        if (!ret) {
+            cerr << "Error sending cert\n";
+            close(clientfd);
+            return 0;
+        }
+        free(charCert);
 
         // Send the message
         ret = sendInt(clientfd, totalSize);

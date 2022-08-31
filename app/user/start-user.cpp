@@ -293,6 +293,7 @@ public:
             exit(1);
         }
 
+        // Read server's certificate
         BIO * certBio = BIO_new(BIO_s_mem());
         BIO_write(certBio, charServCert, certBioLen);
         X509 * serverCert = PEM_read_bio_X509(certBio, NULL, NULL, NULL);

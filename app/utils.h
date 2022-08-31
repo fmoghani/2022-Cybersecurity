@@ -349,9 +349,9 @@ int hashAndConcat(unsigned char * concat, unsigned char * ciphertext, int encryp
     int ret;
 
     string strCounter = to_string(counter);
-    int totalSize = sessionKeySize + strCounter.size() + 1 + encryptedSize;
+    int totalSize = sessionKeySize + strCounter.length() + encryptedSize;
+    cout << "hash and concat counter\n";
     cout << "counter: " << counter << endl;
-    cout << "counter size: " << strCounter.size() + 1 << endl;
 
     // Create the digest of auth key, counter and ciphertext
     unsigned char * toDigest = (unsigned char *) malloc(totalSize);
@@ -361,12 +361,8 @@ int hashAndConcat(unsigned char * concat, unsigned char * ciphertext, int encryp
         return 0;
     }
     memcpy(toDigest, authKey, sessionKeySize);
-    char * charCounter = new char[strCounter.length() + 1];
-    strcpy(charCounter, strCounter.c_str());
-    cout << "char counter: " << charCounter << endl;
-    cout << "size of char counter: " << sizeof(charCounter) << endl;
-    memcpy(toDigest + sessionKeySize, charCounter, strCounter.size());
-    memcpy(toDigest + sessionKeySize + strCounter.length() + 1, ciphertext, encryptedSize);
+    memcpy(toDigest + sessionKeySize, strCounter.data(), strCounter.size());
+    memcpy(toDigest + sessionKeySize + strCounter.length(), ciphertext, encryptedSize);
     ret = createHash256(toDigest, totalSize, digest);
     if (!ret) {
         cerr << "Error creating hash of concat\n";
@@ -380,7 +376,6 @@ int hashAndConcat(unsigned char * concat, unsigned char * ciphertext, int encryp
     // Free
     free(toDigest);
     free(digest);
-    delete[] charCounter;
 
     return 1;
 }
@@ -435,6 +430,10 @@ int receiveEncrypted(int cipherSize, unsigned char * iv, unsigned char * concat,
 int checkAuthenticity(int cipherSize, unsigned char * ciphertext, unsigned char * digest, unsigned char * authKey, int counter) {
 
     int ret;
+
+    // TEST
+    cout << "auth counter\n";
+    cout << "counter: " << counter << endl;
 
     // Compute the digest
     int totalSize = cipherSize + sessionKeySize;

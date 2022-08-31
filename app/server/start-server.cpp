@@ -170,6 +170,7 @@ public:
         free(usernameLen);
         free(buffer);
 
+        // Initialize counter
         counter = 0;
 
         return 1;

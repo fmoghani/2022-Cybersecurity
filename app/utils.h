@@ -350,6 +350,8 @@ int hashAndConcat(unsigned char * concat, unsigned char * ciphertext, int encryp
 
     string strCounter = to_string(counter);
     int totalSize = sessionKeySize + strCounter.size() + 1 + encryptedSize;
+    cout << "counter: " << counter << endl;
+    cout << "counter size: " << strCounter.size() + 1 << endl;
 
     // Create the digest of auth key, counter and ciphertext
     unsigned char * toDigest = (unsigned char *) malloc(totalSize);
@@ -361,6 +363,8 @@ int hashAndConcat(unsigned char * concat, unsigned char * ciphertext, int encryp
     memcpy(toDigest, authKey, sessionKeySize);
     char * charCounter = new char[strCounter.length() + 1];
     strcpy(charCounter, strCounter.c_str());
+    cout << "char counter: " << charCounter << endl;
+    cout << "size of char counter: " << sizeof(charCounter) << endl;
     memcpy(toDigest + sessionKeySize, charCounter, strCounter.size());
     memcpy(toDigest + sessionKeySize + strCounter.length() + 1, ciphertext, encryptedSize);
     ret = createHash256(toDigest, totalSize, digest);
@@ -415,10 +419,6 @@ int receiveEncrypted(int cipherSize, unsigned char * iv, unsigned char * concat,
     if (!ret) {
         return 0;
     }
-    // ret = readInt(socketfd, cipherSizePtr);
-    // if (!ret) {
-    //     return 0;
-    // }
     ret = read(socketfd, concat, cipherSize + sessionKeySize);
     if (!ret) {
         return 0;

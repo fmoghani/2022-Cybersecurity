@@ -652,7 +652,7 @@ public:
         int upload_size = infile.tellg();
         int size = 1;
         if(upload_size > MAX_FILE_SIZE_FOR_UPLOAD){
-            cout << ">> File size is larger than supported (maxSize = " << upload_size << " bytes)\n";    
+            cout << ">> File size is larger than supported (maxSize = " << upload_size << " bytes)\n"; 
             size = 0;
         }
 
@@ -664,6 +664,7 @@ public:
             return 0;
         }
         if (!noProblem) {
+            infile.close();
             return 0; // Either file doesn't exists, size is too big or filename is not valid
         }
 
@@ -866,7 +867,7 @@ public:
         ofstream wf(filepath, ios::out | ios::binary);
         if(!wf) {
             cout << "Cannot open file to write upload file!" << endl;
-            return 1;
+            return 0;
         }
 
         // Read and decrypt every block files
@@ -931,7 +932,6 @@ public:
             for(int i = 0; i < plaintextLen; i++){
                 wf.write((char *) &plainBuffer[i], sizeof(char));
             }
-
             remainedBlock -= plaintextLen;
 
             // Free things

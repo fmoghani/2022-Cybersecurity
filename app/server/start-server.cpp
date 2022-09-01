@@ -859,7 +859,7 @@ public:
             remainedBlock -= plaintextLen;
 
             // Free things
-            free (uploadBlockLen);
+            free(uploadBlockLen);
             free(ivBlock);
             free(cyberBuffer);
             free(digestBlock);
@@ -973,7 +973,7 @@ public:
         }
 
         // Get complete path to the file
-        string sfullPath = "users_info/" + clientUsername + "/files" + filepath;
+        string sfullPath = "./users_infos/" + clientUsername + "/files/" + filepath;
         fs::path fullPath(sfullPath);
 
         // Free things
@@ -985,8 +985,8 @@ public:
         free(decryptedFilepath);
 
         // open file
-        std::ifstream infile(fullPath);
-
+        std::ifstream infile(sfullPath);
+ 
         // Send file size to client 
         infile.seekg(0, std::ios::end);
         int upload_size = infile.tellg();

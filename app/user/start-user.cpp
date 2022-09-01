@@ -297,6 +297,16 @@ public:
         BIO * certBio = BIO_new(BIO_s_mem());
         BIO_write(certBio, charServCert, certBioLen);
         X509 * serverCert = PEM_read_bio_X509(certBio, NULL, NULL, NULL);
+        if (!serverCert) {
+            // Free things
+            BIO_free(certBio);
+            free(charServCert);
+            X509_STORE_free(store);
+
+            // Exit function
+            cerr << "Error reading server's certificate\n";
+            exit(1);
+        }
         BIO_free(certBio);
         free(charServCert);
 
@@ -316,6 +326,11 @@ public:
         ret = X509_verify_cert(ctx);
         if (ret <= 0)
         {
+            // Free things
+            X509_STORE_free(store);
+            X509_STORE_CTX_free(ctx);
+
+            // Exit function
             cerr << "Error server's certificate not valid\n";
             exit(1);
         }
@@ -350,6 +365,14 @@ public:
         }
         ret = EVP_VerifyFinal(mdCtx, serverSig, serverSigSize, X509_get0_pubkey(serverCert));
         if (!ret) {
+            // Free things
+            EVP_MD_CTX_free(mdCtx);
+            X509_free(serverCert);
+            free(clientNonce);
+            free(serverSig);
+            free(concat);
+
+            // Exit function
             cerr << "Server could not be authenticated\n";
             exit(1);
         }
@@ -485,11 +508,6 @@ public:
         memcpy(envelope + encryptedKeySize + encryptedSize, iv, ivLength);
         free(iv);
 
-        // TEST
-        cout << "encryptedKeySize = " << encryptedKeySize << endl;
-        cout << "encryptedSize = " << encryptedSize << endl;
-        cout << "ivLength = " << ivLength << endl;
-
         // Free stuff
         EVP_PKEY_free(servTempPubKey);
         free(charTempPubKey);
@@ -512,7 +530,6 @@ public:
 
         // Retreive user's private key
         string path = "user_infos/key.pem";
-        cout << "after path\n";
         FILE *keyFile = fopen(path.c_str(), "r");
         if (!keyFile)
         {
@@ -520,9 +537,7 @@ public:
             exit(1);
         }
         const char *password = "password";
-        cout << "before client prvkey reading\n";
         EVP_PKEY *clientPrvKey = PEM_read_PrivateKey(keyFile, NULL, NULL, (void *)password);
-        cout << "before close keyfile\n";
         fclose(keyFile);
         cout << "after close keyfile\n";
         if (!clientPrvKey)
@@ -530,7 +545,6 @@ public:
             cerr << "Error cannot read client private key from pem file\n";
             exit(1);
         }
-        cout << "after prv key\n";
 
         // Create buffer for signature
         clientSig = (unsigned char *) malloc(EVP_PKEY_size(clientPrvKey));
@@ -551,21 +565,19 @@ public:
             cerr << "Error during initialization for signature\n";
             exit(1);
         }
-        cout << "after init\n";
         ret = EVP_SignUpdate(ctx, concat, nonceSize + 2*sessionKeySize);
         if (!ret) {
             cerr << "Error during update for signature\n";
             exit(1);
         }
-        cout << "after update\n";
         ret = EVP_SignFinal(ctx, clientSig, &clientSigSize, clientPrvKey);
         if (!ret) {
             cerr << "Error during finalization for signature\n";
             exit(1);
         }
-        cout << "after final\n";
 
         // Free things
+        EVP_MD_CTX_free(ctx);
         free(concat);
         free(sessionHash);
     }
@@ -621,25 +633,38 @@ public:
 
         // Check valididy of filename
         ret = checkFilename(filepath);
+        int check = ret;
         if (!ret) {
-            cout << "Filename not valid\n";
-            return 0;
+            cout << ">> Filename not valid\n";
         }
 
         // Check File Existence
         FILE * file = fopen(filepath.c_str(), "rb");
+        int exists = 1;
         if (!file) {
             cout << ">> File doesn't exists\n";
-            return 0;
+            exists = 0;
         }
 
         // Check file size
         std::ifstream infile(filepath);
         infile.seekg(0, std::ios::end);
         int upload_size = infile.tellg();
+        int size = 1;
         if(upload_size > MAX_FILE_SIZE_FOR_UPLOAD){
-            cout << "File size is larger than supported (maxSize = " << upload_size << " bytes)\n";    
+            cout << ">> File size is larger than supported (maxSize = " << upload_size << " bytes)\n";    
+            size = 0;
+        }
+
+        // Tell the server if he should avort operation or go on
+        int noProblem = check && exists && size;
+        ret = sendInt(socketfd, noProblem);
+        if (!ret) {
+            cout << "Error sending the check integer to the server\n";
             return 0;
+        }
+        if (!noProblem) {
+            return 0; // Either file doesn't exists, size is too big or filename is not valid
         }
 
         // Encrypt filename
@@ -713,7 +738,7 @@ public:
 
             // Concat and hash
             int totalSizeBlock = encryptedSizeBlock + sessionKeySize;
-            unsigned char * concatBlock = (unsigned char *) malloc(totalSize);
+            unsigned char * concatBlock = (unsigned char *) malloc(totalSizeBlock);
             if (!concat) {
                 cerr << "Error allocating buffer for concat\n";
                 return 0;
@@ -763,6 +788,16 @@ public:
         ret = checkFilename(filepath);
         if (!ret) {
             cout << ">> Filename not valid\n";
+        }
+
+        // Tell server if the filename is valid
+        int noProblem = ret;
+        ret = sendInt(socketfd, noProblem);
+        if (!ret) {
+            cout << "Error sending integer for file to download\n";
+            return 0;
+        }
+        if (!noProblem) {
             return 0;
         }
 
@@ -805,6 +840,13 @@ public:
         int * responsePtr = (int *) malloc(sizeof(int));
         ret = readInt(socketfd, responsePtr);
         if (!(*responsePtr)) {
+            // Free things
+            free (responsePtr);
+            free(iv);
+            free(encryptedFilepath);
+            free(concat);
+
+            // Exit function
             cout << ">> File doesn't exists\n";
             return 0;
         }
@@ -857,6 +899,16 @@ public:
             counter ++;
             ret = checkAuthenticity(*uploadBlockLen, cyberBuffer, digest, authKey, counter);
             if (!ret) {
+                // Free things
+                free(ivBlock);
+                free(concatBlock);
+                free(cyberBuffer);
+                free(digest);
+                free(iv);
+                free(concat);
+                free(encryptedFilepath);
+
+                // Exit function
                 cout << ">> Error encrypted block could not be authenticated\n";
                 return 0;
             }
@@ -919,6 +971,16 @@ public:
         if (!ret)
         {
             cout << ">> Filename is not valid \n";
+        }
+
+        // Tell server if the filename is valid
+        int noProblem = ret;
+        ret = sendInt(socketfd, noProblem);
+        if (!ret) {
+            cout << "Error sending integer for file to download\n";
+            return 0;
+        }
+        if (!noProblem) {
             return 0;
         }
 
@@ -976,6 +1038,12 @@ public:
         free(responsePtr);
         if (!response)
         {
+            // Free things
+            free(iv);
+            free(concat);
+            free(encryptedFileName);
+
+            // Exit function
             cout << ">> File does not exists\n";
             return 0;
         }
@@ -1039,6 +1107,13 @@ public:
             counter ++;
             ret = checkAuthenticity(encryptedSize, encryptedFilename, digest, authKey, counter);
             if (!ret) {
+                // Free things
+                free(iv);
+                free(concat);
+                free(encryptedFilename);
+                free(digest);
+
+                // Exit function
                 cout << "Error encrypted filename message could not be authenticated\n";
                 return 0;
             }
@@ -1087,6 +1162,16 @@ public:
         if (!ret)
         {
             cout << ">> Filename not valid\n";
+        }
+
+        // Tell server if the filename is valid
+        int noProblem = ret;
+        ret = sendInt(socketfd, noProblem);
+        if (!ret) {
+            cout << "Error sending integer for file to download\n";
+            return 0;
+        }
+        if (!noProblem) {
             return 0;
         }
 
@@ -1161,7 +1246,23 @@ public:
         ret = checkFilename(newFilename);
         if (!ret)
         {
+            // Free things
+            free(encryptedFilename);
+            free(iv);
+            free(concat);
+
+            // Exit function
             cout << ">> New filename not valid\n";
+        }
+
+        // Tell server if the new filename is valid
+        int noProblemNew = ret;
+        ret = sendInt(socketfd, noProblemNew);
+        if (!ret) {
+            cout << "Error sending integer for file to download\n";
+            return 0;
+        }
+        if (!noProblemNew) {
             return 0;
         }
 

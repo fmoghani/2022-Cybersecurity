@@ -574,7 +574,6 @@ public:
             close(clientfd);
             return 0;
         }
-        cout << "encrypted size: " << encryptedSize << endl;
         ret = EVP_OpenUpdate(ctx, sessionHash, &bytesWritten, encryptedSecret, encryptedSize);
         if (ret <= 0)
         {
@@ -637,7 +636,6 @@ public:
             close(clientfd);
             return 0;
         }
-        cout << "before key\n";
         EVP_PKEY * clientPubKey = PEM_read_PUBKEY(keyFile, NULL, NULL, NULL);
         fclose(keyFile);
         if (!clientPubKey)
@@ -648,7 +646,6 @@ public:
         }
 
         // Verify signature
-        cout << "before sig\n";
         const EVP_MD * md = EVP_sha256();
         EVP_MD_CTX * mdCtx = EVP_MD_CTX_new();
         if (!mdCtx) {
@@ -670,6 +667,14 @@ public:
         }
         ret = EVP_VerifyFinal(mdCtx, clientSig, clientSigSize, clientPubKey);
         if (!ret) {
+            // Free things
+            EVP_MD_CTX_free(mdCtx);
+            EVP_PKEY_free(clientPubKey);
+            free(concat);
+            free(clientSig);
+            free(sessionHash);
+
+            // Close connexion and exit function
             cerr << "User could not be authenticated\n";
             close(clientfd);
             return 0;
@@ -697,6 +702,20 @@ public:
         int ret;
 
         cout << "Client "<< clientUsername << " requested an upload\n";
+
+        // Receive client's integer concerning file to upload
+        int * noProblemPtr = (int *) malloc(sizeof(int));
+        ret = readInt(clientfd, noProblemPtr);
+        if (!ret) {
+            cout << "Error reading integer for file upload\n";
+            return 0;
+        }
+        int noProblem = *noProblemPtr;
+        free(noProblemPtr);
+        if (!noProblem) {
+            cout << "Something was not valid in the file on client side\n";
+            return 0; 
+        }
 
         // Receive encrypted filepath size
         int * filepathEncLen = (int *) malloc(sizeof(int));
@@ -730,6 +749,13 @@ public:
         counter ++;
         ret = checkAuthenticity(*filepathEncLen, filepathEnc, digest, authKey, counter);
         if (!ret) {
+            // Free things
+            free(concat);
+            free(iv);
+            free(filepathEnc);
+            free(digest);
+
+            // Exit function
             cout << "Error encrypted filepath message not authenticated\n";
             return 0;
         }
@@ -805,6 +831,14 @@ public:
             counter ++;
             ret = checkAuthenticity(*uploadBlockLen, cyberBuffer, digestBlock, authKey, counter);
             if (!ret) {
+                // Free things
+                free(concatBlock);
+                free(ivBlock);
+                free(digestBlock);
+                free(cyberBuffer);
+                free(uploadBlockLen);
+
+                // Exit function
                 cout << "Error encrypted upload block message could not be authenticated\n";
                 return 0;
             }
@@ -849,6 +883,20 @@ public:
         cout << "Client "<< clientUsername << " requested a download\n";
 
         int ret;
+
+        // Receive client's integer
+        int * noProblemPtr = (int *) malloc(sizeof(int));
+        ret = readInt(clientfd, noProblemPtr);
+        if (!ret) {
+            cout << "Error reading integer for download file\n";
+            return 0;
+        }
+        int noProblem = *noProblemPtr;
+        free(noProblemPtr);
+        if (!noProblem) {
+            cout << "Error on filename from client's side\n";
+            return 0;
+        }
         
         // Read Filepath length
         int * filepathEncLen = (int *) malloc(sizeof(int));
@@ -881,6 +929,14 @@ public:
         counter ++;
         ret = checkAuthenticity(*filepathEncLen, filepathEnc, digest, authKey, counter);
         if (!ret) {
+            // Free things
+            free(filepathEnc);
+            free(iv);
+            free(concat);
+            free(digest);
+            free(filepathEncLen);
+
+            // Exit function
             cout << "Error encrypted filepath message not authenticated\n";
             return 0;
         }
@@ -896,14 +952,23 @@ public:
 
         // Check existence of the file and send the response to the client
         ret = existsFile(filepath, clientUsername);
-        if (!ret) {
-            cout << "File does not exists\n";
-            return 0;
-        }
         int exists = ret;
         ret = sendInt(clientfd, exists);
         if (!ret) {
             cout << "Error sending response to the client\n";
+            return 0;
+        }
+        if (!exists) {
+            // Free things
+            free(filepathEncLen);
+            free(iv);
+            free(concat);
+            free(digest);
+            free(filepathEnc);
+            free(decryptedFilepath);
+
+            // Exit function
+            cout << "File does not exists\n";
             return 0;
         }
 
@@ -996,6 +1061,20 @@ public:
 
         int ret;
 
+        // Receive client's integer
+        int * noProblemPtr = (int *) malloc(sizeof(int));
+        ret = readInt(clientfd, noProblemPtr);
+        if (!ret) {
+            cout << "Error reading integer for delete file\n";
+            return 0;
+        }
+        int noProblem = *noProblemPtr;
+        free(noProblemPtr);
+        if (!noProblem) {
+            cout << "Error on filename from client's side\n";
+            return 0;
+        }
+
         // Receive encrypted filename size
         int *encryptedSizePtr = (int *)malloc(sizeof(int));
         if (!encryptedSizePtr)
@@ -1031,11 +1110,18 @@ public:
         counter ++;
         ret = checkAuthenticity(encryptedSize, encryptedFilename, digest, authKey, counter);
         if (!ret) {
+            // Free things
+            free(iv);
+            free(concat);
+            free(encryptedFilename);
+            free(digest);
+
+            // Exit function
             cerr << "Filename message not authenticated\n";
             return 0;
         }
 
-        // Decrypt new filename
+        // Decrypt filename
         unsigned char *buggedFilename = (unsigned char *)malloc(encryptedSize);
         int decryptedSize;
         decryptedSize = decryptSym(encryptedFilename, encryptedSize, buggedFilename, iv, sessionKey);
@@ -1060,7 +1146,16 @@ public:
         }
         if (!exists)
         {
-            return 1; // If the file does not exists we get out of the function without doing anything
+            // Free things
+            free(iv);
+            free(concat);
+            free(encryptedFilename);
+            free(digest);
+            free(filename);
+
+            // Exit function
+            cout << "Error file doesn't exists\n";
+            return 0; // If the file does not exists we get out of the function without doing anything
         }
 
         // Delete file
@@ -1160,6 +1255,20 @@ public:
 
         int ret;
 
+        // Receive client's integer
+        int * noProblemPtr = (int *) malloc(sizeof(int));
+        ret = readInt(clientfd, noProblemPtr);
+        if (!ret) {
+            cout << "Error reading integer for rename file\n";
+            return 0;
+        }
+        int noProblem = *noProblemPtr;
+        free(noProblemPtr);
+        if (!noProblem) {
+            cout << "Error on filename from client's side\n";
+            return 0;
+        }
+
         // Receive encrypted filename size
         int *encryptedSizePtr = (int *)malloc(sizeof(int));
         if (!encryptedSizePtr)
@@ -1194,6 +1303,13 @@ public:
         counter ++;
         ret = checkAuthenticity(encryptedSize, encryptedFilename, digest, authKey, counter);
         if (!ret) {
+            // Free things
+            free(iv);
+            free(concat);
+            free(encryptedFilename);
+            free(digest);
+
+            // Exit function
             cerr << "Filename message not authenticated\n";
             return 0;
         }
@@ -1235,6 +1351,20 @@ public:
             return 0; // If the file does not exists we get out of the function without doing anything
         }
 
+        // Receive client's integer
+        int * noProblemPtrNew = (int *) malloc(sizeof(int));
+        ret = readInt(clientfd, noProblemPtrNew);
+        if (!ret) {
+            cout << "Error reading integer for rename file\n";
+            return 0;
+        }
+        int noProblemNew = *noProblemPtrNew;
+        free(noProblemPtrNew);
+        if (!noProblemNew) {
+            cout << "Error on new filename from client's side\n";
+            return 0;
+        }
+
         // Receive new encrypted filename size
         int *encryptedNewSizePtr = (int *)malloc(sizeof(int));
         if (!encryptedNewSizePtr)
@@ -1270,6 +1400,18 @@ public:
         counter ++;
         ret = checkAuthenticity(encryptedNewSize, encryptedNewFilename, digestNew, authKey, counter);
         if (!ret) {
+            // Free things
+            free(ivNew);
+            free(concatNew);
+            free(encryptedNewFilename);
+            free(digestNew);
+            free(iv);
+            free(concat);
+            free(encryptedFilename);
+            free(digest);
+            free(filename);
+
+            // Exit function
             cout << "New filename message could not be authenticated\n";
             return 0;
         }

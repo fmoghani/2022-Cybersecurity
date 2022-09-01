@@ -1144,6 +1144,12 @@ public:
         free(responsePtr);
         if (!response)
         {
+            // Free things for next use of rename
+            free(encryptedFilename);
+            free(iv);
+            free(concat);
+
+            // Exit function
             cout << ">> File does not exists\n";
             return 0;
         }

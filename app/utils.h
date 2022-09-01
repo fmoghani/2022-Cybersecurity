@@ -350,8 +350,6 @@ int hashAndConcat(unsigned char * concat, unsigned char * ciphertext, int encryp
 
     string strCounter = to_string(counter);
     int totalSize = sessionKeySize + strCounter.length() + encryptedSize;
-    cout << "hash and concat counter\n";
-    cout << "counter: " << counter << endl;
 
     // Create the digest of auth key, counter and ciphertext
     unsigned char * toDigest = (unsigned char *) malloc(totalSize);
@@ -431,10 +429,6 @@ int checkAuthenticity(int cipherSize, unsigned char * ciphertext, unsigned char 
 
     int ret;
 
-    // TEST
-    cout << "auth counter\n";
-    cout << "counter: " << counter << endl;
-
     // Compute the digest
     int totalSize = cipherSize + sessionKeySize;
     unsigned char * concatCheck = (unsigned char *) malloc(totalSize);
@@ -455,5 +449,7 @@ int checkAuthenticity(int cipherSize, unsigned char * ciphertext, unsigned char 
         return 0;
     }
 
+    free(concatCheck);
+    
     return 1;
 }

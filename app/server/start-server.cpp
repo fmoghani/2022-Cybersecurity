@@ -609,7 +609,6 @@ public:
         free(iv);
         free(encryptedSecret);
         free(servTempPrvKey);
-        // free(sessionHash);
 
         return 1;
     }
@@ -682,12 +681,11 @@ public:
         }
 
         // Free stuff
-        cout << "before ctx\n";
         EVP_MD_CTX_free(mdCtx);
-        cout << "before pubkey\n";
         EVP_PKEY_free(clientPubKey);
         free(concat);
         free(clientSig);
+        free(sessionHash);
         
         CONNEXION_STATUS = 1;
 
@@ -1225,7 +1223,16 @@ public:
         }
         if (!exists)
         {
-            return 1; // If the file does not exists we get out of the function without doing anything
+            // Free things for next use of rename
+            free(iv);
+            free(concat);
+            free(encryptedFilename);
+            free(digest);
+            free(filename);
+
+            // Exit function
+            cout << "File does not exists\n";
+            return 0; // If the file does not exists we get out of the function without doing anything
         }
 
         // Receive new encrypted filename size
@@ -1246,7 +1253,7 @@ public:
 
         // Receive new filename
         unsigned char *ivNew = (unsigned char *)malloc(ivSize);
-        unsigned char * concatNew = (unsigned char *) malloc(encryptedNewSize);
+        unsigned char * concatNew = (unsigned char *) malloc(encryptedNewSize + sessionKeySize);
         unsigned char *encryptedNewFilename = (unsigned char *)malloc(encryptedNewSize);
         unsigned char * digestNew = (unsigned char *) malloc(sessionKeySize);
         if (!ivNew || !concatNew || !encryptedNewFilename || !digestNew) {

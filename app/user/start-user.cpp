@@ -15,6 +15,8 @@
 #include <cerrno>
 #include <map>
 #include <vector>
+#include <termios.h>
+#include <unistd.h>
 #include "../utils.h"
 #include "../const.h"
 
@@ -528,6 +530,17 @@ public:
         memcpy(concat + nonceSize, sessionHash, 2*sessionKeySize);
         free(serverNonce);
 
+        // Get user's password
+        cout << ">> Please type in your password\n";
+        termios oldt;
+        tcgetattr(STDIN_FILENO, &oldt);
+        termios newt = oldt;
+        newt.c_lflag &= ~ECHO;
+        tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+        string sPassword;
+        getline(cin, sPassword);
+        tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+
         // Retreive user's private key
         string path = "user_infos/key.pem";
         FILE *keyFile = fopen(path.c_str(), "r");
@@ -536,7 +549,8 @@ public:
             cerr << "Error could not open client private key file\n";
             exit(1);
         }
-        const char *password = "password";
+        char * password = new char[sPassword.size()];
+        strcpy(password, sPassword.data());
         EVP_PKEY *clientPrvKey = PEM_read_PrivateKey(keyFile, NULL, NULL, (void *)password);
         fclose(keyFile);
         cout << "after close keyfile\n";
@@ -580,6 +594,7 @@ public:
         EVP_MD_CTX_free(ctx);
         free(concat);
         free(sessionHash);
+        delete[] password;
     }
 
     void sendMessage3() {

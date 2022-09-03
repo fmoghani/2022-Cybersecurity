@@ -585,16 +585,25 @@ public:
     void sendMessage3() {
 
         int ret;
-        int totalSize = clientSigSize + envelopeSize;
+        int totalSize = nonceSize + clientSigSize + envelopeSize;
 
-        // Concatenate envelope and client signature
+        // Create a new nonce
+        clientNonce = (unsigned char *) malloc(nonceSize);
+        ret = createNonce(clientNonce);
+        if (!ret) {
+            cerr << "Error creating second client nonce\n";
+            exit(1);
+        }
+
+        // Concatenate new nonce, envelope and client signature
         unsigned char * concat = (unsigned char *) malloc(totalSize);
         if (!concat) {
             cerr << "Error allocating buffer for message 3\n";
             exit(1);
         }
-        memcpy(concat, envelope, envelopeSize);
-        memcpy(concat + envelopeSize, clientSig, clientSigSize);
+        memcpy(concat, clientNonce, nonceSize);
+        memcpy(concat + nonceSize, envelope, envelopeSize);
+        memcpy(concat + envelopeSize + nonceSize, clientSig, clientSigSize);
         free(envelope);
 
         // Send the message (additional int for decomposing the message)
@@ -619,6 +628,60 @@ public:
         free(concat);
 
         CONNEXION_STATUS = 1;
+    }
+
+    void receiveMessage4() {
+        
+        int ret;
+
+        // Receive the message size
+        int * encryptedSizePtr = (int *) malloc(sizeof(int));
+        ret = readInt(socketfd, encryptedSizePtr);
+        if (!ret) {
+            cerr << "Error reading encrypted size for message 4\n";
+            exit(1);
+        }
+        int encryptedSize = *encryptedSizePtr;
+        free(encryptedSizePtr);
+        
+        // Receive message
+        unsigned char * encryptedConcat = (unsigned char *) malloc(encryptedSize);
+        unsigned char * iv = (unsigned char *) malloc(ivSize);
+        unsigned char * concat = (unsigned char *) malloc(encryptedSize);
+        if (!iv || !encryptedConcat || !concat) {
+            cerr << "Error allocating buffers for message 4\n";
+            exit(1);
+        }
+        ret = read(socketfd, iv, ivSize);
+        if (!ret) {
+            cerr << "Error reading iv\n";
+            exit(1);
+        }
+        ret = read(socketfd, encryptedConcat, encryptedSize);
+        if (!ret) {
+            cerr << "Error reading concat\n";
+            exit(1);
+        }
+
+        // Decrypt message
+        ret = decryptSym(encryptedConcat, encryptedSize, concat, iv, sessionKey);
+        if (!ret) {
+            cerr << "Error decrypting concat for message 4\n";
+            exit(1);
+        }
+
+        // Check if nonce is correct
+        ret = memcmp(concat, clientNonce, nonceSize);
+        if (ret) {
+            cerr << "Error new client nonce incorrect\n";
+            exit(1);
+        }
+
+        // Free things
+        free(clientNonce);
+        free(concat);
+        free(iv);
+        free(encryptedConcat);
     }
 
     int uploadFile() {
@@ -1478,6 +1541,8 @@ int main()
 
     user1.sendMessage3();
     cout << "Proof of ID sent to the server\n";
+    user1.receiveMessage4();
+    cout << "Message 4 received\n";
 
     user1.updateCommands();
     cout << "Session started\n";

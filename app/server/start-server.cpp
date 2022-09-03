@@ -43,6 +43,7 @@ class Server
     // Client infos
     string clientUsername;
     unsigned char *serverNonce;
+    unsigned char * NewClientNonce;
 
     // Keys
     EVP_PKEY * servTempPubKey;
@@ -505,16 +506,18 @@ public:
         ret = read(clientfd, concat, totalSize);
 
         // Separate the parts
-        envelopeSize = totalSize - clientSigSize;
+        envelopeSize = totalSize - clientSigSize - nonceSize;
+        NewClientNonce = (unsigned char *) malloc(nonceSize);
         envelope = (unsigned char *) malloc(envelopeSize);
         clientSig = (unsigned char *) malloc(clientSigSize);
-        if (!envelope || !clientSig) {
+        if (!envelope || !clientSig || !NewClientNonce) {
             cerr << "Error allocating buffer for message 3\n";
             close(clientfd);
             return 0;
         }
-        memcpy(envelope, concat, envelopeSize);
-        memcpy(clientSig, concat + envelopeSize, clientSigSize);
+        memcpy(NewClientNonce, concat, nonceSize);
+        memcpy(envelope, concat + nonceSize, envelopeSize);
+        memcpy(clientSig, concat + envelopeSize + nonceSize, clientSigSize);
         free(concat);
 
         return 1;
@@ -690,9 +693,69 @@ public:
         EVP_PKEY_free(clientPubKey);
         free(concat);
         free(clientSig);
-        free(sessionHash);
         
         CONNEXION_STATUS = 1;
+
+        return 1;
+    }
+
+    // Last message containing the nonce conatenated with the session key encrypted with session key
+    int sendMessage4() {
+
+        int ret;
+
+        // Concatenate nonce with session key
+        unsigned char * concat = (unsigned char *) malloc(nonceSize + 2*sessionKeySize);
+        if (!concat) {
+            cerr << "Error allocating buffer for message 4 concat\n";
+            close(clientfd);
+            return 0;
+        }
+        memcpy(concat, NewClientNonce, nonceSize);
+        memcpy(concat + nonceSize, sessionHash, 2*sessionKeySize);
+        free(sessionHash);
+        free(NewClientNonce);
+
+        // Encrypt the concat
+        unsigned char * encryptedConcat = (unsigned char *) malloc(nonceSize + 2*sessionKeySize + blockSize);
+        unsigned char * iv = (unsigned char *) malloc(ivSize);
+        if (!iv || !encryptedConcat) {
+            cerr << "Error allocating buffers for encrypting message 4 concat\n";
+            close(clientfd);
+            return 0;
+        }
+        ret = encryptSym(concat, nonceSize + 2*sessionKeySize, encryptedConcat, iv, sessionKey);
+        if (!ret) {
+            cerr << "Error encrypting concat for message 4\n";
+            close(clientfd);
+            return 0;
+        }
+        int encryptedSize = ret;
+
+        // Send the concat
+        ret = sendInt(clientfd, encryptedSize);
+        if (!ret) {
+            cerr << "Error sending encrypted size for message 4\n";
+            close(clientfd);
+            return 0;
+        }
+        ret = send(clientfd, iv, ivSize, 0);
+        if (!ret) {
+            cerr << "Error sending the iv for message 4\n";
+            close(clientfd);
+            return 0;
+        }
+        ret = send(clientfd, encryptedConcat, encryptedSize, 0);
+        if (!ret) {
+            cerr << "Error sending encrypted concat for message 4\n";
+            close(clientfd);
+            return 0;
+        }
+
+        // Free things
+        free(encryptedConcat);
+        free(iv);
+        free(concat);
 
         return 1;
     }
@@ -1634,6 +1697,13 @@ int main()
             continue;
         }
         cout << "Client authenticated, session started\n";
+
+        ret = serv.sendMessage4();
+        if (!ret) {
+            cerr << "Error sending message 4\n";
+            continue;
+        }
+        cout << "Message 4 sent successfully\n";
 
         while (serv.getConnexionStatus())
         {

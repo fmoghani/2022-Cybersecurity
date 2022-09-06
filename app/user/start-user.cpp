@@ -985,14 +985,13 @@ public:
         int remainedBlock = *upload_size;
         free(upload_size);
 
-        // Create file to write in
-        ofstream wf(filepath, ios::out | ios::binary);
-        if(!wf) {
-            cout << "Cannot open file to write upload file!" << endl;
+        // Read and decrypt every block files
+        unsigned char * fileContent = (unsigned char *) malloc(remainedBlock);
+        if (!fileContent) {
+            cout << "Error allocating buffer for file content\n";
             return 0;
         }
-
-        // Read and decrypt every block files
+        int prevWrite = 0;
         while(remainedBlock>0){
 
             // Before receiving anything check if the counter if going to wrap around
@@ -1057,11 +1056,10 @@ public:
             free(uploadBlockLen);
             int plaintextLen = ret;
 
-            // Write decrypted block in the file
-            for(int i = 0; i < plaintextLen; i++){
-                wf.write((char *) &plainBuffer[i], sizeof(char));
-            }
+            // Write data on the buffer
+            memcpy(fileContent + prevWrite, plainBuffer, plaintextLen);
             remainedBlock -= plaintextLen;
+            prevWrite += plaintextLen;
 
             // Free things
             free(ivBlock);
@@ -1070,8 +1068,17 @@ public:
             free(digest);
             free(plainBuffer);
         }
-        wf.close();
 
+        // Write data into a file
+        ofstream wf(filepath, ios::out | ios::binary);
+        if(!wf) {
+            cout << "Cannot open file to write upload file!" << endl;
+            return 0;
+        }
+        for (int i = 0; i < prevWrite; i++) {
+            wf.write((char *) &fileContent[i], sizeof(char));
+        }
+        wf.close();
         if(!wf.good()) {
             cout << "Error occurred at writing time while saving uploaded file!" << endl;
             return 0;
@@ -1081,6 +1088,7 @@ public:
         free(iv);
         free(concat);
         free(encryptedFilepath);
+        free(fileContent);
 
         cout << ">> Files downloaded successfully\n";
 

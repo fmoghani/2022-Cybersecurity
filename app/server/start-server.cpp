@@ -945,14 +945,13 @@ public:
         int remainedBlock = *upload_size;
         free(upload_size);
 
-        // Create file in user's file folder
-        ofstream wf(path, ios::out | ios::binary);
-        if(!wf) {
-            cout << "Cannot open file to write upload file!" << endl;
+        // Read file content
+        unsigned char * fileContent = (unsigned char *) malloc(remainedBlock);
+        if (!fileContent) {
+            cout << "Error allocating buffer for file content for upload\n";
             return 0;
         }
-
-        // Read file content
+        int prevWrite = 0;
         while(remainedBlock>0){
 
             // Before receiving anything check if counter wraps around
@@ -1018,11 +1017,10 @@ public:
             }
             int plaintextLen = ret;
 
-            // Write decrypted content into the file on user's filesystem
-            for(int i = 0; i < plaintextLen; i++){
-                wf.write((char *) &plainBuffer[i], sizeof(char));
-            }
+            // Add data to the file content
+            memcpy(fileContent + prevWrite, plainBuffer, plaintextLen);
             remainedBlock -= plaintextLen;
+            prevWrite += plaintextLen;
 
             // Free things
             free(uploadBlockLen);
@@ -1032,12 +1030,25 @@ public:
             free(concatBlock);
             free(plainBuffer);
         }
+
+        // Write file content into a new file
+        ofstream wf(path, ios::out | ios::binary);
+        if(!wf) {
+            cout << "Cannot open file to write upload file!" << endl;
+            return 0;
+        }
+        for (int i = 0; i < prevWrite; i++) {
+            wf.write((char *) &fileContent[i], sizeof(char));
+        }
         wf.close();
 
         if(!wf.good()) {
             cout << "Error occurred at writing time while saving uploaded file!" << endl;
             return 0;
         }
+
+        // Free things
+        free(fileContent);
 
         cout << "--- FILE UPLOADED ---\n";
         

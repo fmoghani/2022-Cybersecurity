@@ -65,7 +65,7 @@ class Server
     unsigned int clientSigSize;
 
     // Session
-    int counter;
+    unsigned int counter;
 
 public:
     // Get username
@@ -760,6 +760,89 @@ public:
         return 1;
     }
 
+    // Function used to renegociate keys in case the counter wraps around
+    int renegociateServer() {
+
+        int ret;
+
+        // Free some things
+        bzero(sessionKey, sessionKeySize);
+        free(sessionKey);
+        bzero(authKey, sessionKeySize);
+        free(authKey);
+
+        // Now redo the process of generating the keys
+        ret = generateSessionKeyPair();
+        if (!ret)
+        {
+            cerr << "Error generating temporary RSA key pair, communication stopped\n\n";
+            CONNEXION_STATUS = 0;
+            close(clientfd);
+            return 0;
+        }
+        cout << "Temporary RSA key pair generated\n";
+
+        cout << "Creating ID proof\n";
+        ret = createIdProof();
+        if (!ret) {
+            cerr << "Error creating ID proof, communication stopped\n\n";
+            CONNEXION_STATUS = 0;
+            close(clientfd);
+            return 0;
+        }
+        cout << "Proof of ID created\n";
+
+        ret = sendMessage2();
+        if (!ret) {
+            cerr << "Error sending ID proof\n\n";
+            CONNEXION_STATUS = 0;
+            close(clientfd);
+            return 0;
+        }
+        cout << "ID proof sent\n";
+        
+        ret = receiveMessage3();
+        if (!ret) {
+            cerr << "Error receiving message 3\n\n";
+            CONNEXION_STATUS = 0;
+            close(clientfd);
+            return 0;
+        }
+        cout << "Message 3 received\n";
+
+        ret = retreiveSessionKey();
+        if (!ret) {
+            cerr << "Error retreiving session key from client's envelope\n\n";
+            CONNEXION_STATUS = 0;
+            close(clientfd);
+            return 0;
+        }
+        cout << "Session key retreived\n";
+
+        ret = authenticateClient();
+        if (!ret) {
+            cerr << "Client could not be authenticated, communication stopped\n\n";
+            CONNEXION_STATUS = 0;
+            close(clientfd);
+            return 0;
+        }
+        cout << "Client authenticated, session started\n";
+
+        ret = sendMessage4();
+        if (!ret) {
+            cerr << "Error sending message 4\n";
+            CONNEXION_STATUS = 0;
+            close(clientfd);
+            return 0;
+        }
+        cout << "Message 4 sent successfully\n";
+
+        counter = 0;
+
+        return 1;
+
+    }
+
     int uploadFile() {
         
         int ret;
@@ -778,6 +861,16 @@ public:
         if (!noProblem) {
             cout << "Something was not valid in the file on client side\n";
             return 0; 
+        }
+
+        // Before receiving anything check if counter wraps around
+        ret = checkCounter(counter);
+        if (ret) {
+            cout << "Counter wrapped around\n";
+            ret = renegociateServer();
+            if (!ret) {
+                return 0;
+            }
         }
 
         // Receive encrypted filepath size
@@ -861,6 +954,16 @@ public:
 
         // Read file content
         while(remainedBlock>0){
+
+            // Before receiving anything check if counter wraps around
+            ret = checkCounter(counter);
+            if (ret) {
+                cout << "Counter wrapped around\n";
+                ret = renegociateServer();
+                if (!ret) {
+                    return 0;
+                }
+            }
 
             // Receive upload block size
             int * uploadBlockLen = (int *) malloc(sizeof(int));
@@ -959,6 +1062,16 @@ public:
         if (!noProblem) {
             cout << "Error on filename from client's side\n";
             return 0;
+        }
+
+        // Before receiving anything check if counter wraps around
+        ret = checkCounter(counter);
+        if (ret) {
+            cout << "Counter wrapped around\n";
+            ret = renegociateServer();
+            if (!ret) {
+                return 0;
+            }
         }
         
         // Read Filepath length
@@ -1069,6 +1182,16 @@ public:
             readlength = std::min(readlength,remainbytes);
             remainbytes -= readlength;
             infile.read(plainBuffer, readlength);
+
+            // Before encrypting anything check if counter wraps around
+            ret = checkCounter(counter);
+            if (ret) {
+                cout << "Counter wrapped around\n";
+                ret = renegociateServer();
+                if (!ret) {
+                    return 0;
+                }
+            }
             
             // Encrypt the block
             unsigned char * cyperBuffer = (unsigned char *) malloc(readlength + blockSize);
@@ -1136,6 +1259,16 @@ public:
         if (!noProblem) {
             cout << "Error on filename from client's side\n";
             return 0;
+        }
+
+        // Before receiving anything check if counter wraps around
+        ret = checkCounter(counter);
+        if (ret) {
+            cout << "Counter wrapped around\n";
+            ret = renegociateServer();
+            if (!ret) {
+                return 0;
+            }
         }
 
         // Receive encrypted filename size
@@ -1261,6 +1394,16 @@ public:
         // Iterate through files and send them
         for (const auto &file : directory_iterator(filesPath)) {
 
+            // Before encrypting anything check if counter wraps around
+            ret = checkCounter(counter);
+            if (ret) {
+                cout << "Counter wrapped around\n";
+                ret = renegociateServer();
+                if (!ret) {
+                    return 0;
+                }
+            }
+
             // Encrypt the filename
             int encryptedSize;
             string filename = file.path().filename().string();
@@ -1330,6 +1473,16 @@ public:
         if (!noProblem) {
             cout << "Error on filename from client's side\n";
             return 0;
+        }
+
+        // Before receiving anything check if counter wraps around
+        ret = checkCounter(counter);
+        if (ret) {
+            cout << "Counter wrapped around\n";
+            ret = renegociateServer();
+            if (!ret) {
+                return 0;
+            }
         }
 
         // Receive encrypted filename size
@@ -1426,6 +1579,16 @@ public:
         if (!noProblemNew) {
             cout << "Error on new filename from client's side\n";
             return 0;
+        }
+
+        // Before receiving anything check if counter wraps around
+        ret = checkCounter(counter);
+        if (ret) {
+            cout << "Counter wrapped around\n";
+            ret = renegociateServer();
+            if (!ret) {
+                return 0;
+            }
         }
 
         // Receive new encrypted filename size
@@ -1696,14 +1859,14 @@ int main()
             cerr << "Client could not be authenticated, communication stopped\n\n";
             continue;
         }
-        cout << "Client authenticated, session started\n";
+        cout << "Client authenticated\n";
 
         ret = serv.sendMessage4();
         if (!ret) {
             cerr << "Error sending message 4\n";
             continue;
         }
-        cout << "Message 4 sent successfully\n";
+        cout << "Message 4 sent successfully, session started\n";
 
         while (serv.getConnexionStatus())
         {

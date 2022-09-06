@@ -60,7 +60,7 @@ class Client
     unsigned char * charServCert;
 
     // Session
-    int counter;
+    unsigned int counter;
 
     // Available commands
     vector<string> commands = {"upload", "download", "delete", "list", "rename", "logout"};
@@ -539,7 +539,6 @@ public:
         const char *password = "password";
         EVP_PKEY *clientPrvKey = PEM_read_PrivateKey(keyFile, NULL, NULL, (void *)password);
         fclose(keyFile);
-        cout << "after close keyfile\n";
         if (!clientPrvKey)
         {
             cerr << "Error cannot read client private key from pem file\n";
@@ -684,6 +683,45 @@ public:
         free(encryptedConcat);
     }
 
+    // Function used when counter wraps around to renegociate keys
+    void renegociateClient() {
+
+        int ret;
+
+        // First free the current keys
+        bzero(sessionKey, sessionKeySize);
+        free(sessionKey);
+        bzero(authKey, sessionKeySize);
+        free(authKey);
+
+        // Now restart the procedure of key negociation
+        sendChallenge();
+        cout << "Challenge sent to the client\n";
+
+        receiveMessage2();
+        cout << "Message 2 received\n";
+
+        authenticateServer();
+        cout << "Server authenticated\n";
+
+        createSessionKey();
+        cout << "Session key created\n";
+
+        encryptKey();
+        cout << "Session key encrypted\n";
+
+        createIdProof();
+        cout << "Proof of ID created\n";
+
+        sendMessage3();
+        cout << "Proof of ID sent to the server\n";
+        
+        receiveMessage4();
+        cout << "Message 4 received\n";
+
+        counter = 0;
+    }
+
     int uploadFile() {
 
         int ret;
@@ -729,6 +767,13 @@ public:
         if (!noProblem) {
             infile.close();
             return 0; // Either file doesn't exists, size is too big or filename is not valid
+        }
+
+        // Before encrypting anything check if the counter if going to wrap around
+        ret = checkCounter(counter);
+        if (ret) {
+            cout << ">> Counter wrapped around\n";
+            renegociateClient();
         }
 
         // Encrypt filename
@@ -785,6 +830,13 @@ public:
             readlength = std::min(readlength,remainbytes);
             remainbytes -= readlength;
             infile.read(plainBuffer, readlength);
+
+            // Before encrypting anything check if the counter if going to wrap around
+            ret = checkCounter(counter);
+            if (ret) {
+                cout << ">> Counter wrapped around\n";
+                renegociateClient();
+            }
 
             // Encrypt file content
             unsigned char * cyperBuffer = (unsigned char *) malloc(readlength + blockSize);
@@ -865,6 +917,13 @@ public:
             return 0;
         }
 
+        // Before encrypting anything check if the counter if going to wrap around
+        ret = checkCounter(counter);
+        if (ret) {
+            cout << ">> Counter wrapped around\n";
+            renegociateClient();
+        }
+
         // Encrypt filename
         unsigned char * encryptedFilepath = (unsigned char *) malloc(filepath.length() + blockSize);
         unsigned char * iv = (unsigned char *) malloc(ivSize);
@@ -935,6 +994,13 @@ public:
 
         // Read and decrypt every block files
         while(remainedBlock>0){
+
+            // Before receiving anything check if the counter if going to wrap around
+            ret = checkCounter(counter);
+            if (ret) {
+                cout << ">> Counter wrapped around\n";
+                renegociateClient();
+            }
 
             // Receive encrypted block size
             int * uploadBlockLen = (int *) malloc(sizeof(int));
@@ -1047,6 +1113,13 @@ public:
             return 0;
         }
 
+        // Before encrypting anything check if the counter if going to wrap around
+        ret = checkCounter(counter);
+        if (ret) {
+            cout << ">> Counter wrapped around\n";
+            renegociateClient();
+        }
+
         // Encrypt filename
         int encryptedFileSize;
         unsigned char *encryptedFileName = (unsigned char *)malloc(fileName.size() + blockSize);
@@ -1136,6 +1209,13 @@ public:
 
         // Iterate the correct number of times, read and decrypt the filenames
         for (int i = 0; i < filesNumber; i++) {
+
+            // Before receiving anything check if the counter if going to wrap around
+            ret = checkCounter(counter);
+            if (ret) {
+                cout << ">> Counter wrapped around\n";
+                renegociateClient();
+            }
 
             // Receive enrypted filename size
             int *encryptedSizePtr = (int *)malloc(sizeof(int));
@@ -1238,6 +1318,13 @@ public:
             return 0;
         }
 
+        // Before encrypting anything check if the counter if going to wrap around
+        ret = checkCounter(counter);
+        if (ret) {
+            cout << ">> Counter wrapped around\n";
+            renegociateClient();
+        }
+
         // Encrypt filename
         int encryptedSize;
         unsigned char *encryptedFilename = (unsigned char *)malloc(filename.size() + blockSize);
@@ -1327,6 +1414,13 @@ public:
         }
         if (!noProblemNew) {
             return 0;
+        }
+
+        // Before encrypting anything check if the counter if going to wrap around
+        ret = checkCounter(counter);
+        if (ret) {
+            cout << ">> Counter wrapped around\n";
+            renegociateClient();
         }
 
         // Encrypt new filename
@@ -1522,7 +1616,7 @@ int main()
     cout << "Client successfuly connected to the server\n";
 
     user1.sendChallenge();
-    cout << "Challenge sent to the client\n";
+    cout << "Challenge sent to the server\n";
 
     user1.receiveMessage2();
     cout << "Message 2 received\n";
@@ -1541,6 +1635,7 @@ int main()
 
     user1.sendMessage3();
     cout << "Proof of ID sent to the server\n";
+
     user1.receiveMessage4();
     cout << "Message 4 received\n";
 

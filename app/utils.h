@@ -453,3 +453,14 @@ int checkAuthenticity(int cipherSize, unsigned char * ciphertext, unsigned char 
     
     return 1;
 }
+
+// Check if the counter wraps around and returns 1 if so
+int checkCounter(unsigned int counter) {
+
+    if (counter > UINT_MAX - 1) {
+        cout << "Counter too big, wrapping around\n";
+        return 1;
+    }
+
+    return 0;
+}

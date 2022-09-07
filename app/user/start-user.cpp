@@ -686,8 +686,6 @@ public:
     // Function used when counter wraps around to renegociate keys
     void renegociateClient() {
 
-        int ret;
-
         // First free the current keys
         bzero(sessionKey, sessionKeySize);
         free(sessionKey);

@@ -927,6 +927,13 @@ public:
         string spath = "users_infos/" + clientUsername + "/files/" + filepath;
         filesystem::path path(spath);
 
+        // check validity of the filename
+        ret = checkFilename(filepath);
+        if (!ret) {
+            cout << "Filename not valid\n";
+            return 0;
+        }
+
         // Free things
         free(iv);
         free(concat);
@@ -1137,6 +1144,13 @@ public:
         }
         string filepath(decryptedFilepath, decryptedFilepath + ret);
 
+        // Check validity of filename
+        ret = checkFilename(filepath);
+        if (!ret) {
+            cout << ">> Filename not valid\n";
+            return 0;
+        }
+
         // Check existence of the file and send the response to the client
         ret = existsFile(filepath, clientUsername);
         int exists = ret;
@@ -1341,9 +1355,16 @@ public:
         memcpy(filename, buggedFilename, decryptedSize);
         free(buggedFilename);
 
+        // Check validity of filename
+        string sfilename(filename, filename + decryptedSize);
+        ret = checkFilename(sfilename);
+        if (!ret) {
+            cout << ">> Filename not valid\n";
+            return 0;
+        }
+
         // Check if file exists and send the result to the client
         int exists;
-        string sfilename(filename, filename + decryptedSize);
         exists = existsFile(sfilename, clientUsername);
         ret = sendInt(clientfd, exists);
         if (!ret)
@@ -1554,9 +1575,16 @@ public:
         memcpy(filename, buggedFilename, decryptedSize);
         free(buggedFilename);
 
+        // Check validity of filename
+        string sfilename(filename, filename + decryptedSize);
+        ret = checkFilename(sfilename);
+        if (!ret) {
+            cout << ">> Filename not valid\n";
+            return 0;
+        }
+
         // Check if file exists and send the result to the client
         int exists;
-        string sfilename(filename, filename + decryptedSize);
         exists = existsFile(sfilename, clientUsername);
         ret = sendInt(clientfd, exists);
         if (!ret)
@@ -1663,8 +1691,15 @@ public:
             return 0;
         }
 
-        // Rename file
+        // Check validity of filename
         string snewFilename(newFilename, newFilename + decryptedNewSize);
+        ret = checkFilename(snewFilename);
+        if (!ret) {
+            cout << ">> Filename not valid\n";
+            return 0;
+        }
+
+        // Rename file
         string soldPath = "./users_infos/" + clientUsername + "/files/" + sfilename;
         string snewPath = "./users_infos/" + clientUsername + "/files/" + snewFilename;
         filesystem::path oldPath(soldPath);

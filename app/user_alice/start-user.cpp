@@ -15,6 +15,8 @@
 #include <cerrno>
 #include <map>
 #include <vector>
+#include <termios.h>
+#include <unistd.h>
 #include "../utils.h"
 #include "../const.h"
 
@@ -547,7 +549,8 @@ public:
             cerr << "Error could not open client private key file\n";
             exit(1);
         }
-        char *password = "password";
+        char * password = new char[sPassword.size()];
+        strcpy(password, sPassword.data());
         EVP_PKEY *clientPrvKey = PEM_read_PrivateKey(keyFile, NULL, NULL, (void *)password);
         fclose(keyFile);
         if (!clientPrvKey)

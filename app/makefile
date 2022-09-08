@@ -10,8 +10,11 @@ all : start-server start-user
 start-server: server/start-server.cpp
 	$(CC) $(CFLAGS) $< -o server/$@ -I$(DEPS) $(LDFLAGS)
 
-start-user: user/start-user.cpp
-	$(CC) $(CFLAGS) $< -o user/$@ $(OPT) -I$(DEPS) $(LDFLAGS)
+start-user: user_khabib/start-user.cpp
+	$(CC) $(CFLAGS) $< -o user_khabib/$@ $(OPT) -I$(DEPS) $(LDFLAGS)
+
+start-user: user_alice/start-user.cpp
+	$(CC) $(CFLAGS) $< -o user_alice/$@ $(OPT) -I$(DEPS) $(LDFLAGS)
 
 clean:
 	rm server/start-server

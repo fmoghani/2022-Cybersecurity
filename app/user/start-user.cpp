@@ -528,6 +528,17 @@ public:
         memcpy(concat + nonceSize, sessionHash, 2*sessionKeySize);
         free(serverNonce);
 
+        // Get user's password
+        cout << ">> Please type in your password\n";
+        termios oldt;
+        tcgetattr(STDIN_FILENO, &oldt);
+        termios newt = oldt;
+        newt.c_lflag &= ~ECHO;
+        tcsetattr(STDIN_FILENO, TCSANOW, &newt);
+        string sPassword;
+        getline(cin, sPassword);
+        tcsetattr(STDIN_FILENO, TCSANOW, &oldt);
+
         // Retreive user's private key
         string path = "user_infos/key.pem";
         FILE *keyFile = fopen(path.c_str(), "r");
@@ -536,7 +547,7 @@ public:
             cerr << "Error could not open client private key file\n";
             exit(1);
         }
-        const char *password = "password";
+        char *password = "password";
         EVP_PKEY *clientPrvKey = PEM_read_PrivateKey(keyFile, NULL, NULL, (void *)password);
         fclose(keyFile);
         if (!clientPrvKey)

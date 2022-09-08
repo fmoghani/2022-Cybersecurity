@@ -6,7 +6,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Thu Sep  8 10:38:35 2022
+# Make data base, printed on Thu Sep  8 11:15:34 2022
 
 # Variables
 
@@ -153,7 +153,7 @@ VSCODE_CODE_CACHE_PATH = /home/djolopez/.config/Code/CachedData/e4503b30fc78200f
 # environment
 LOGNAME = djolopez
 # environment
-APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL = 1
+APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL = true
 # environment
 SNAP_LIBRARY_PATH = /var/lib/snapd/lib/gl:/var/lib/snapd/lib/gl32:/var/lib/snapd/void
 # environment
@@ -277,6 +277,9 @@ TERM = xterm-256color
 # environment
 VSCODE_PID = 4572
  
+makefile:17: warning: overriding recipe for target 'start-user'
+makefile:14: warning: ignoring old recipe for target 'start-user'
+
 # environment
 DBUS_STARTER_ADDRESS = unix:path=/run/user/1000/bus,guid=fe6967f3e8c0392060956f206319a15c
 # variable set hash-table stats:
@@ -288,9 +291,9 @@ DBUS_STARTER_ADDRESS = unix:path=/run/user/1000/bus,guid=fe6967f3e8c0392060956f2
 
 # Directories
 
-# . (device 2053, inode 1196171): 9 files, no impossibilities.
+# . (device 2053, inode 1196171): 10 files, no impossibilities.
 
-# 9 files, no impossibilities in 1 directories.
+# 10 files, no impossibilities in 1 directories.
 
 # Implicit Rules
 
@@ -308,6 +311,12 @@ all: start-server start-user
 # Load=0/32=0%, Rehash=0, Collisions=0/7=0%
 
 # Not a target:
+user_khabib/start-user.cpp:
+#  Implicit rule search has not been done.
+#  Modification time never checked.
+#  File has not been updated.
+
+# Not a target:
 .SUFFIXES:
 #  Implicit rule search has not been done.
 #  Modification time never checked.
@@ -316,12 +325,12 @@ all: start-server start-user
 # Not a target:
 makefile:
 #  Implicit rule search has been done.
-#  Last modified 2022-08-29 16:14:50.10401917
+#  Last modified 2022-09-08 11:06:32.532360313
 #  File has been updated.
 #  Successfully updated.
 
 # Not a target:
-user/start-user.cpp:
+user_alice/start-user.cpp:
 #  Implicit rule search has not been done.
 #  Modification time never checked.
 #  File has not been updated.
@@ -332,18 +341,18 @@ user/start-user.cpp:
 #  Modification time never checked.
 #  File has not been updated.
 
-start-user: user/start-user.cpp
+start-user: user_alice/start-user.cpp user_khabib/start-user.cpp
 #  Implicit rule search has not been done.
 #  Modification time never checked.
 #  File has not been updated.
-#  recipe to execute (from 'makefile', line 14):
-	$(CC) $(CFLAGS) $< -o user/$@ $(OPT) -I$(DEPS) $(LDFLAGS)
+#  recipe to execute (from 'makefile', line 17):
+	$(CC) $(CFLAGS) $< -o user_alice/$@ $(OPT) -I$(DEPS) $(LDFLAGS)
 
 clean:
 #  Implicit rule search has not been done.
 #  Modification time never checked.
 #  File has not been updated.
-#  recipe to execute (from 'makefile', line 17):
+#  recipe to execute (from 'makefile', line 20):
 	rm server/start-server
 	rm user/start-user
 
@@ -377,24 +386,24 @@ start-server: server/start-server.cpp
 # Not a target:
 server/start-server.cpp:
 #  Implicit rule search has been done.
-#  Last modified 2022-09-08 10:36:33.579150219
+#  Last modified 2022-09-08 10:44:07.05477696
 #  File has been updated.
 #  Successfully updated.
 
 # files hash-table stats:
-# Load=9/1024=1%, Rehash=0, Collisions=0/27=0%
+# Load=10/1024=1%, Rehash=0, Collisions=0/30=0%
 # VPATH Search Paths
 
 # No 'vpath' search paths.
 
 # No general ('VPATH' variable) search path.
 
-# strcache buffers: 1 (0) / strings = 19 / storage = 192 B / avg = 10 B
-# current buf: size = 8162 B / used = 192 B / count = 19 / avg = 10 B
+# strcache buffers: 1 (0) / strings = 21 / storage = 243 B / avg = 11 B
+# current buf: size = 8162 B / used = 243 B / count = 21 / avg = 11 B
 
-# strcache performance: lookups = 31 / hit rate = 38%
+# strcache performance: lookups = 35 / hit rate = 40%
 # hash-table stats:
-# Load=19/8192=0%, Rehash=0, Collisions=1/31=3%
-# Finished Make data base on Thu Sep  8 10:38:35 2022
+# Load=21/8192=0%, Rehash=0, Collisions=1/35=3%
+# Finished Make data base on Thu Sep  8 11:15:34 2022
 
  

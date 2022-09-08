@@ -902,11 +902,11 @@ public:
         return 1;
     }
 
-    int downloadFile() {
+int downloadFile() {
 
         int ret;
 
-        cout << ">> Please type the name of the file to download:\n>> ";
+        cout << ">> Please type the fuckiiiiiiing name of the file to download:\n>> ";
 
         // Get Upload File path from User
         string filepath;
@@ -917,6 +917,7 @@ public:
         if (!ret) {
             cout << ">> Filename not valid\n";
         }
+        cout<<"here";
 
         // Tell server if the filename is valid
         int noProblem = ret;

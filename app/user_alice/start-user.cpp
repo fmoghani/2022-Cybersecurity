@@ -902,11 +902,11 @@ public:
         return 1;
     }
 
-    int downloadFile() {
+  int downloadFile() {
 
         int ret;
 
-        cout << ">> Please type the name of the file to download:\n>> ";
+        cout << ">> Im Modified so please type the name of the file to download:\n>> ";
 
         // Get Upload File path from User
         string filepath;
@@ -988,22 +988,27 @@ public:
         free(responsePtr);
 
         // Receive file size
-        int * upload_size = (int *) malloc(sizeof(int));
-        ret = readInt(socketfd, upload_size);
+        long int * upload_size = (long int *) malloc(sizeof(long int));
+        ret = readLongInt(socketfd, upload_size);
         if (!ret) {
             cerr << "Error upload filepath length\n";
             return 0;
         }
-        int remainedBlock = *upload_size;
+        long int remainedBlock = *upload_size;
         free(upload_size);
 
         // Read and decrypt every block files
-        unsigned char * fileContent = (unsigned char *) malloc(remainedBlock);
-        if (!fileContent) {
-            cout << "Error allocating buffer for file content\n";
-            return 0;
-        }
+        // unsigned char * fileContent = (unsigned char *) malloc(remainedBlock);
+        // if (!fileContent) {
+        //     cout << "Error allocating buffer for file content\n";
+        //     return 0;
+        // }
         int prevWrite = 0;
+
+        bool first_of_file = true;
+
+        cout << ">>>>" << remainedBlock<<"\n";
+        
         while(remainedBlock>0){
 
             // Before receiving anything check if the counter if going to wrap around
@@ -1069,9 +1074,59 @@ public:
             int plaintextLen = ret;
 
             // Write data on the buffer
-            memcpy(fileContent + prevWrite, plainBuffer, plaintextLen);
+            // memcpy(fileContent + prevWrite, plainBuffer, plaintextLen);
             remainedBlock -= plaintextLen;
-            prevWrite += plaintextLen;
+            // prevWrite += plaintextLen;
+            //
+            
+            
+            if(first_of_file){
+                ofstream wf(filepath, ios::out | ios::binary);
+                if(!wf) {
+                    cout << "Cannot open file to write upload file!" << endl;
+                    return 0;
+                }
+                for (int i = 0; i < plaintextLen; i++) {
+                    wf.write((char *) &plainBuffer[i], sizeof(char));
+                }
+                wf.close();
+                if(!wf.good()) {
+                    cout << "Error occurred at writing time while saving uploaded file!" << endl;
+                    return 0;
+                }
+                first_of_file = false;
+            }
+            else{
+                ofstream wf(filepath, ios::out | ios::binary | ios::app);
+                if(!wf) {
+                    cout << "Cannot open file to write upload file!" << endl;
+                    return 0;
+                }
+                for (int i = 0; i < plaintextLen; i++) {
+                    wf.write((char *) &plainBuffer[i], sizeof(char));
+                }
+                wf.close();
+                if(!wf.good()) {
+                    cout << "Error occurred at writing time while saving uploaded file!" << endl;
+                    return 0;
+                }
+            }
+
+            cout << ">>>>" << remainedBlock<<"\n";    
+
+            // ofstream wf(filepath, ios::out | ios::binary);
+            // if(!wf) {
+            //     cout << "Cannot open file to write upload file!" << endl;
+            //     return 0;
+            // }
+            // for (int i = 0; i < prevWrite; i++) {
+            //     wf.write((char *) &fileContent[i], sizeof(char));
+            // }
+            // wf.close();
+            // if(!wf.good()) {
+            //     cout << "Error occurred at writing time while saving uploaded file!" << endl;
+            //     return 0;
+            // }
 
             // Free things
             free(ivBlock);
@@ -1081,26 +1136,13 @@ public:
             free(plainBuffer);
         }
 
-        // Write data into a file
-        ofstream wf(filepath, ios::out | ios::binary);
-        if(!wf) {
-            cout << "Cannot open file to write upload file!" << endl;
-            return 0;
-        }
-        for (int i = 0; i < prevWrite; i++) {
-            wf.write((char *) &fileContent[i], sizeof(char));
-        }
-        wf.close();
-        if(!wf.good()) {
-            cout << "Error occurred at writing time while saving uploaded file!" << endl;
-            return 0;
-        }
+
 
         // Free things
         free(iv);
         free(concat);
         free(encryptedFilepath);
-        free(fileContent);
+        // free(fileContent);
 
         cout << ">> Files downloaded successfully\n";
 

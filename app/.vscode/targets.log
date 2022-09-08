@@ -6,7 +6,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Thu Sep  8 10:03:00 2022
+# Make data base, printed on Thu Sep  8 10:38:35 2022
 
 # Variables
 
@@ -275,7 +275,7 @@ LANG = C
 # environment
 TERM = xterm-256color
 # environment
-VSCODE_PID = 3016
+VSCODE_PID = 4572
  
 # environment
 DBUS_STARTER_ADDRESS = unix:path=/run/user/1000/bus,guid=fe6967f3e8c0392060956f206319a15c
@@ -377,7 +377,7 @@ start-server: server/start-server.cpp
 # Not a target:
 server/start-server.cpp:
 #  Implicit rule search has been done.
-#  Last modified 2022-09-07 23:30:25.984
+#  Last modified 2022-09-08 10:36:33.579150219
 #  File has been updated.
 #  Successfully updated.
 
@@ -395,6 +395,6 @@ server/start-server.cpp:
 # strcache performance: lookups = 31 / hit rate = 38%
 # hash-table stats:
 # Load=19/8192=0%, Rehash=0, Collisions=1/31=3%
-# Finished Make data base on Thu Sep  8 10:03:00 2022
+# Finished Make data base on Thu Sep  8 10:38:35 2022
 
  

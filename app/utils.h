@@ -74,7 +74,7 @@ int sendInt(int socketfd, int n) {
     return 1;
 }
 
-int sendLongInt(int socketfd, long int n) {
+int sendLongInt(int socketfd, unsigned long n) {
 
     int ret;
     
@@ -100,11 +100,11 @@ int readInt(int socketfd, int * n) {
     return 1;
 }
 
-long int readLongInt(int socketfd, long int * n) {
+long int readLongInt(int socketfd, unsigned long * n) {
 
     long int ret;
 
-    ret = read(socketfd, (char *) n, sizeof(long int));
+    ret = read(socketfd, (char *) n, sizeof(unsigned long));
     if (ret < 0) {
         cerr << "Error reading int\n";
         return 0;

@@ -593,6 +593,7 @@ public:
         EVP_MD_CTX_free(ctx);
         free(concat);
         free(sessionHash);
+        delete[] password;
     }
 
     void sendMessage3() {
@@ -988,13 +989,13 @@ public:
         free(responsePtr);
 
         // Receive file size
-        long int * upload_size = (long int *) malloc(sizeof(long int));
+        unsigned long * upload_size = (unsigned long *) malloc(sizeof(unsigned long));
         ret = readLongInt(socketfd, upload_size);
         if (!ret) {
             cerr << "Error upload filepath length\n";
             return 0;
         }
-        long int remainedBlock = *upload_size;
+        unsigned long remainedBlock = *upload_size;
         
 
         // Read and decrypt every block files
@@ -1007,7 +1008,7 @@ public:
 
         bool first_of_file = true;
 
-        cout << "\r>>>" << remainedBlock<<"/"<<*upload_size;
+        cout << "\r>> " << remainedBlock << " / " << *upload_size << endl;
         
         while(remainedBlock>0){
 
@@ -1112,7 +1113,7 @@ public:
                 }
             }
 
-            cout << "\r>>>" << remainedBlock<<"/"<<*upload_size;    
+            cout << "\r>> " << remainedBlock<< " / " << *upload_size << endl;    
 
             // ofstream wf(filepath, ios::out | ios::binary);
             // if(!wf) {

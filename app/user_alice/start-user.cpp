@@ -593,6 +593,7 @@ public:
         EVP_MD_CTX_free(ctx);
         free(concat);
         free(sessionHash);
+        delete[] password;
     }
 
     void sendMessage3() {

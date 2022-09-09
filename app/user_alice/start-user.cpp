@@ -1008,7 +1008,7 @@ public:
 
         bool first_of_file = true;
 
-        cout << "\r>> " << remainedBlock << " / " << *upload_size << endl;
+        cout << "\r>> " << remainedBlock << " / " << *upload_size;
         
         while(remainedBlock>0){
 
@@ -1113,7 +1113,7 @@ public:
                 }
             }
 
-            cout << "\r>> " << remainedBlock<< " / " << *upload_size << endl;    
+            cout << "\r>> " << remainedBlock<< " / " << *upload_size;    
 
             // ofstream wf(filepath, ios::out | ios::binary);
             // if(!wf) {

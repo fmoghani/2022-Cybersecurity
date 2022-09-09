@@ -995,7 +995,7 @@ public:
             return 0;
         }
         long int remainedBlock = *upload_size;
-        free(upload_size);
+        
 
         // Read and decrypt every block files
         // unsigned char * fileContent = (unsigned char *) malloc(remainedBlock);
@@ -1007,7 +1007,7 @@ public:
 
         bool first_of_file = true;
 
-        cout << ">>>>" << remainedBlock<<"\n";
+        cout << "\r>>>" << remainedBlock<<"/"<<*upload_size;
         
         while(remainedBlock>0){
 
@@ -1112,7 +1112,7 @@ public:
                 }
             }
 
-            cout << ">>>>" << remainedBlock<<"\n";    
+            cout << "\r>>>" << remainedBlock<<"/"<<*upload_size;    
 
             // ofstream wf(filepath, ios::out | ios::binary);
             // if(!wf) {
@@ -1129,6 +1129,7 @@ public:
             // }
 
             // Free things
+            free(upload_size);
             free(ivBlock);
             free(concatBlock);
             free(cyberBuffer);
@@ -1144,7 +1145,7 @@ public:
         free(encryptedFilepath);
         // free(fileContent);
 
-        cout << ">> Files downloaded successfully\n";
+        cout << "\n>> Files downloaded successfully\n";
 
         return 1;
     }

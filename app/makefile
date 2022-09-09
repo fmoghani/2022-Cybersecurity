@@ -19,5 +19,9 @@ start-user: user_alice/start-user.cpp
 clean:
 	rm server/start-server
 	rm user/start-user
+	
+# valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --verbose --log-file=valgrind-out.txt  ./start-server
+
+# valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --verbose --log-file=valgrind-out.txt ./start-user
 
 # valgrind --leak-check=full --show-leak-kinds=all --track-origins=yes --verbose --log-file=valgrind-out.txt --exit-on-first-error=yes --error-exitcode=1 ./executable exampleParam1

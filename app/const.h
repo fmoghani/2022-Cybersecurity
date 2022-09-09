@@ -15,5 +15,5 @@
 
 // Constant relative to user
 #define maxCommandSize 32
-#define UPLOAD_BUFFER_SIZE 1024
+#define UPLOAD_BUFFER_SIZE 16384
 #define MAX_FILE_SIZE_FOR_UPLOAD 4000000000

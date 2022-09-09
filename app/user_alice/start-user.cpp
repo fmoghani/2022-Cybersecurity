@@ -1015,23 +1015,25 @@ public:
             }
 
             // Receive encrypted block size
-            unsigned int * uploadBlockLen = (unsigned int *) malloc(sizeof(unsigned int));
-            ret = readInt(socketfd, uploadBlockLen);
+            unsigned int * uploadBlockLenPtr = (unsigned int *) malloc(sizeof(unsigned int));
+            ret = readInt(socketfd, uploadBlockLenPtr);
             if (!ret) {
                 cerr << "Error upload block length\n";
                 return 0;
             }
+            unsigned int uploadBlockLen = *uploadBlockLenPtr;
+            free(uploadBlockLenPtr);
 
-            // Receive upload block
+            // Receive upload bloc
             unsigned char * ivBlock = (unsigned char *) malloc(ivSize);
-            unsigned char * concatBlock = (unsigned char *) malloc(*uploadBlockLen + sessionKeySize);
-            unsigned char * cyberBuffer = (unsigned char *) malloc(*uploadBlockLen);
+            unsigned char * concatBlock = (unsigned char *) malloc(uploadBlockLen + sessionKeySize);
+            unsigned char * cyberBuffer = (unsigned char *) malloc(uploadBlockLen);
             unsigned char * digest = (unsigned char *) malloc(sessionKeySize);
             if (!ivBlock || !concatBlock || !cyberBuffer || !digest) {
                 cout << "Error allocating buffers to decrypt file block\n";
                 return 0;
             }
-            ret = receiveEncrypted(*uploadBlockLen, ivBlock, concatBlock, cyberBuffer, digest, socketfd);
+            ret = receiveEncrypted(uploadBlockLen, ivBlock, concatBlock, cyberBuffer, digest, socketfd);
             if (!ret) {
                 cout << ">> Error receiving encrypted block\n";
                 return 0;
@@ -1039,7 +1041,7 @@ public:
 
             // Check validity of the block
             counter ++;
-            ret = checkAuthenticity(*uploadBlockLen, cyberBuffer, digest, authKey, counter);
+            ret = checkAuthenticity(uploadBlockLen, cyberBuffer, digest, authKey, counter);
             if (!ret) {
                 // Free things
                 free(ivBlock);
@@ -1061,12 +1063,11 @@ public:
                 cout << ">> Error allocatinf buffer for decrypted block\n";
                 return 0;
             }
-            ret = decryptSym(cyberBuffer, *uploadBlockLen, plainBuffer, ivBlock, sessionKey);
+            ret = decryptSym(cyberBuffer, uploadBlockLen, plainBuffer, ivBlock, sessionKey);
             if (!ret) {
                 cerr << "Error decrypting the upload block\n";
                 return 0;
             }
-            free(uploadBlockLen);
             int plaintextLen = ret;
 
             // Write data on the buffer

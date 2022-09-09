@@ -136,7 +136,7 @@ public:
         }
 
         // Receive username et convert it back to string
-        int *usernameLen = (int *)malloc(sizeof(int));
+        unsigned int *usernameLen = (unsigned int *)malloc(sizeof(unsigned int));
         if (!usernameLen)
         {
             cerr << "Error allocating buffer for username length\n";
@@ -475,18 +475,18 @@ public:
         int ret;
 
         // Read message size
-        int * totalSizePtr = (int *) malloc(sizeof(int));
+        unsigned int * totalSizePtr = (unsigned int *) malloc(sizeof(unsigned int));
         ret = readInt(clientfd, totalSizePtr);
         if (!ret) {
             cerr << "Error reading message 3 total size\n";
             close(clientfd);
             return 0;
         }
-        int totalSize = *totalSizePtr;
+        unsigned int totalSize = *totalSizePtr;
         free(totalSizePtr);
 
         // Read client sig size
-        int * sizePtr = (int *) malloc(sizeof(int));
+        unsigned int * sizePtr = (unsigned int *) malloc(sizeof(unsigned int));
         ret = readInt(clientfd, sizePtr);
         if (!ret) {
             cerr << "Error reading client sig size\n";
@@ -850,7 +850,7 @@ public:
         cout << "Client "<< clientUsername << " requested an upload\n";
 
         // Receive client's integer concerning file to upload
-        int * noProblemPtr = (int *) malloc(sizeof(int));
+        unsigned int * noProblemPtr = (unsigned int *) malloc(sizeof(unsigned int));
         ret = readInt(clientfd, noProblemPtr);
         if (!ret) {
             cout << "Error reading integer for file upload\n";
@@ -874,7 +874,7 @@ public:
         }
 
         // Receive encrypted filepath size
-        int * filepathEncLen = (int *) malloc(sizeof(int));
+        unsigned int * filepathEncLen = (unsigned int *) malloc(sizeof(unsigned int));
         if (!filepathEncLen) {
             cout << "Error allocating buffers to receive encrypted filename\n";
             return 0;
@@ -943,14 +943,15 @@ public:
         free(decryptedFilepath);
 
         // Read size of file
-        int * upload_size = (int *) malloc(sizeof(int));
+        unsigned int * upload_size = (unsigned int *) malloc(sizeof(unsigned int));
         ret = readInt(clientfd, upload_size);
         if (!ret) {
             cerr << "Error upload filepath length\n";
             return 0;
         }
-        int remainedBlock = *upload_size;
+        unsigned int remainedBlock = *upload_size;
         free(upload_size);
+        cout << "upload size: " << remainedBlock << endl;
 
         // Read file content
         unsigned char * fileContent = (unsigned char *) malloc(remainedBlock);
@@ -972,7 +973,7 @@ public:
             }
 
             // Receive upload block size
-            int * uploadBlockLen = (int *) malloc(sizeof(int));
+            unsigned int * uploadBlockLen = (unsigned int *) malloc(sizeof(unsigned int));
             if (!uploadBlockLen) {
                 cout << "Error allocating buffer for upload block len pointer\n";
                 return 0;
@@ -1069,13 +1070,13 @@ public:
         int ret;
 
         // Receive client's integer
-        int * noProblemPtr = (int *) malloc(sizeof(int));
+        unsigned int * noProblemPtr = (unsigned int *) malloc(sizeof(unsigned int));
         ret = readInt(clientfd, noProblemPtr);
         if (!ret) {
             cout << "Error reading integer for download file\n";
             return 0;
         }
-        int noProblem = *noProblemPtr;
+        unsigned int noProblem = *noProblemPtr;
         free(noProblemPtr);
         if (!noProblem) {
             cout << "Error on filename from client's side\n";
@@ -1093,7 +1094,7 @@ public:
         }
         
         // Read Filepath length
-        int * filepathEncLen = (int *) malloc(sizeof(int));
+        unsigned int * filepathEncLen = (unsigned int *) malloc(sizeof(unsigned int));
         if (!filepathEncLen) {
             cerr << "Error allocating buffer for upload filepath length\n";
             return 0;
@@ -1273,13 +1274,13 @@ public:
         int ret;
 
         // Receive client's integer
-        int * noProblemPtr = (int *) malloc(sizeof(int));
+        unsigned int * noProblemPtr = (unsigned int *) malloc(sizeof(unsigned int));
         ret = readInt(clientfd, noProblemPtr);
         if (!ret) {
             cout << "Error reading integer for delete file\n";
             return 0;
         }
-        int noProblem = *noProblemPtr;
+        unsigned int noProblem = *noProblemPtr;
         free(noProblemPtr);
         if (!noProblem) {
             cout << "Error on filename from client's side\n";
@@ -1297,7 +1298,7 @@ public:
         }
 
         // Receive encrypted filename size
-        int *encryptedSizePtr = (int *)malloc(sizeof(int));
+        unsigned int *encryptedSizePtr = (unsigned int *)malloc(sizeof(unsigned int));
         if (!encryptedSizePtr)
         {
             cout << "Error allocating buffer for encrypted filename size\n";
@@ -1309,7 +1310,7 @@ public:
             cout << "Error reading encrypted filename size\n";
             return 0;
         }
-        int encryptedSize = *encryptedSizePtr;
+        unsigned int encryptedSize = *encryptedSizePtr;
         free(encryptedSizePtr);
 
         // Receive encrypted filename
@@ -1494,13 +1495,13 @@ public:
         int ret;
 
         // Receive client's integer
-        int * noProblemPtr = (int *) malloc(sizeof(int));
+        unsigned int * noProblemPtr = (unsigned int *) malloc(sizeof(unsigned int));
         ret = readInt(clientfd, noProblemPtr);
         if (!ret) {
             cout << "Error reading integer for rename file\n";
             return 0;
         }
-        int noProblem = *noProblemPtr;
+        unsigned int noProblem = *noProblemPtr;
         free(noProblemPtr);
         if (!noProblem) {
             cout << "Error on filename from client's side\n";
@@ -1518,7 +1519,7 @@ public:
         }
 
         // Receive encrypted filename size
-        int *encryptedSizePtr = (int *)malloc(sizeof(int));
+        unsigned int *encryptedSizePtr = (unsigned int *)malloc(sizeof(unsigned int));
         if (!encryptedSizePtr)
         {
             cout << "Error allocating buffer for encrypted filename size\n";
@@ -1530,7 +1531,7 @@ public:
             cout << "Error reading encrypted filename size\n";
             return 0;
         }
-        int encryptedSize = *encryptedSizePtr;
+        unsigned int encryptedSize = *encryptedSizePtr;
         free(encryptedSizePtr);
 
         // Receive encrypted filename
@@ -1607,13 +1608,13 @@ public:
         }
 
         // Receive client's integer
-        int * noProblemPtrNew = (int *) malloc(sizeof(int));
+        unsigned int * noProblemPtrNew = (unsigned int *) malloc(sizeof(unsigned int));
         ret = readInt(clientfd, noProblemPtrNew);
         if (!ret) {
             cout << "Error reading integer for rename file\n";
             return 0;
         }
-        int noProblemNew = *noProblemPtrNew;
+        unsigned int noProblemNew = *noProblemPtrNew;
         free(noProblemPtrNew);
         if (!noProblemNew) {
             cout << "Error on new filename from client's side\n";
@@ -1631,7 +1632,7 @@ public:
         }
 
         // Receive new encrypted filename size
-        int *encryptedNewSizePtr = (int *)malloc(sizeof(int));
+        unsigned int *encryptedNewSizePtr = (unsigned int *)malloc(sizeof(unsigned int));
         if (!encryptedNewSizePtr)
         {
             cout << "Error allocating buffer for encrypted filename size\n";
@@ -1643,7 +1644,7 @@ public:
             cout << "Error reading encrypted filename size\n";
             return 0;
         }
-        int encryptedNewSize = *encryptedNewSizePtr;
+        unsigned int encryptedNewSize = *encryptedNewSizePtr;
         free(encryptedNewSizePtr);
 
         // Receive new filename
@@ -1749,7 +1750,7 @@ public:
         int ret;
 
         // Receive the number corresponding to the command to execute
-        int *n = (int *)malloc(sizeof(int));
+        unsigned int *n = (unsigned int *)malloc(sizeof(unsigned int));
         if (!n)
         {
             cerr << "Error allocating buffer for current command number\n";
@@ -1761,7 +1762,7 @@ public:
             cerr << "Error reading current command number\n";
             return 0;
         }
-        int currentCommandNum = *n;
+        unsigned int currentCommandNum = *n;
         free(n);
 
         // Execute the corresponding function

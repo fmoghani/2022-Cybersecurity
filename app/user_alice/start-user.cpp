@@ -48,7 +48,7 @@ class Client
     unsigned char * envelope;
     int envelopeSize;
     int pemSize;
-    int keyBioLen;
+    unsigned int keyBioLen;
 
     // Signatures
     unsigned char * serverSig;
@@ -58,7 +58,7 @@ class Client
     unsigned char * sessionHash;
 
     // Certificates
-    int certBioLen;
+    unsigned int certBioLen;
     unsigned char * charServCert;
 
     // Session
@@ -160,7 +160,7 @@ public:
         int ret;
 
         // Receive bio
-        int * keyBioLenPtr = (int *) malloc(sizeof(int));
+        unsigned int * keyBioLenPtr = (unsigned int *) malloc(sizeof(unsigned int));
         ret = readInt(socketfd, keyBioLenPtr);
         if (!ret) {
             cerr << "Error reading bio size\n";
@@ -187,7 +187,7 @@ public:
         free(keyBio);
 
         // Receive bio
-        int * certBioLenPtr = (int *) malloc(sizeof(int));
+        unsigned int * certBioLenPtr = (unsigned int *) malloc(sizeof(unsigned int));
         if (!certBioLenPtr) {
             cerr << "Error allocating buffer for cert bio len\n";
             exit(1);
@@ -207,13 +207,13 @@ public:
         }
 
         // Receive size of M2
-        int * sizePtr = (int *) malloc(sizeof(int));
+        unsigned int * sizePtr = (unsigned int *) malloc(sizeof(unsigned int));
         ret = readInt(socketfd, sizePtr);
         if (!ret) {
             cerr << "Error reading size of M2\n";
             exit(1);
         }
-        int totalSize = *sizePtr;
+        unsigned int totalSize = *sizePtr;
         free(sizePtr);
 
         // Receive concat
@@ -648,13 +648,13 @@ public:
         int ret;
 
         // Receive the message size
-        int * encryptedSizePtr = (int *) malloc(sizeof(int));
+        unsigned int * encryptedSizePtr = (unsigned int *) malloc(sizeof(unsigned int));
         ret = readInt(socketfd, encryptedSizePtr);
         if (!ret) {
             cerr << "Error reading encrypted size for message 4\n";
             exit(1);
         }
-        int encryptedSize = *encryptedSizePtr;
+        unsigned int encryptedSize = *encryptedSizePtr;
         free(encryptedSizePtr);
         
         // Receive message
@@ -826,6 +826,7 @@ public:
         }
 
         // Send filesize to the server
+        cout << "upload size: " << upload_size << endl;
         ret = sendInt(socketfd, upload_size);
         if (!ret) {
             cerr << "Error sending upload filesize to server\n";
@@ -972,7 +973,7 @@ public:
         }
 
         // Receive server's existence of file
-        int * responsePtr = (int *) malloc(sizeof(int));
+        unsigned int * responsePtr = (unsigned int *) malloc(sizeof(unsigned int));
         ret = readInt(socketfd, responsePtr);
         if (!(*responsePtr)) {
             // Free things
@@ -988,13 +989,13 @@ public:
         free(responsePtr);
 
         // Receive file size
-        int * upload_size = (int *) malloc(sizeof(int));
+        unsigned int * upload_size = (unsigned int *) malloc(sizeof(unsigned int));
         ret = readInt(socketfd, upload_size);
         if (!ret) {
             cerr << "Error upload filepath length\n";
             return 0;
         }
-        int remainedBlock = *upload_size;
+        unsigned int remainedBlock = *upload_size;
         free(upload_size);
 
         // Read and decrypt every block files
@@ -1014,7 +1015,7 @@ public:
             }
 
             // Receive encrypted block size
-            int * uploadBlockLen = (int *) malloc(sizeof(int));
+            unsigned int * uploadBlockLen = (unsigned int *) malloc(sizeof(unsigned int));
             ret = readInt(socketfd, uploadBlockLen);
             if (!ret) {
                 cerr << "Error upload block length\n";
@@ -1183,7 +1184,7 @@ public:
         }
 
         // Receive server info : does the file exists or not
-        int *responsePtr = (int *)malloc(sizeof(int));
+        unsigned int *responsePtr = (unsigned int *)malloc(sizeof(unsigned int));
         ret = readInt(socketfd, responsePtr);
         if (!ret)
         {
@@ -1218,13 +1219,13 @@ public:
         int ret;
 
         // Receive number of files
-        int * numPtr = (int *) malloc(sizeof(int));
+        unsigned int * numPtr = (unsigned int *) malloc(sizeof(unsigned int));
         ret = readInt(socketfd, numPtr);
         if (!ret) {
             cout << "Error reading number of files\n";
             return 0;
         }
-        int filesNumber = *numPtr;
+        unsigned int filesNumber = *numPtr;
         free(numPtr);
 
         // Iterate the correct number of times, read and decrypt the filenames
@@ -1238,7 +1239,7 @@ public:
             }
 
             // Receive enrypted filename size
-            int *encryptedSizePtr = (int *)malloc(sizeof(int));
+            unsigned int *encryptedSizePtr = (unsigned int *)malloc(sizeof(unsigned int));
             if (!encryptedSizePtr) {
                 cout << "Error allocating buffer for encrypted filename size\n";
                 return 0;
@@ -1248,7 +1249,7 @@ public:
                 cout << "Error reading encrypted filename size\n";
                 return 0;
             }
-            int encryptedSize = *encryptedSizePtr;
+            unsigned int encryptedSize = *encryptedSizePtr;
             free(encryptedSizePtr);
 
             // Receive filename
@@ -1388,14 +1389,14 @@ public:
         }
 
         // Receive server info : does the file exists or not
-        int *responsePtr = (int *)malloc(sizeof(int));
+        unsigned int *responsePtr = (unsigned int *)malloc(sizeof(unsigned int));
         ret = readInt(socketfd, responsePtr);
         if (!ret)
         {
             cout << ">> Error reading server's response\n";
             return 0;
         }
-        int response = *responsePtr;
+        unsigned int response = *responsePtr;
         free(responsePtr);
         if (!response)
         {

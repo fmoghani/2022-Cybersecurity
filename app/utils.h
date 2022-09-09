@@ -61,7 +61,7 @@ X509_CRL * readCrl(string path) {
     return crl;
 }
 
-int sendInt(int socketfd, int n) {
+int sendInt(int socketfd, unsigned int n) {
 
     int ret;
     
@@ -74,13 +74,39 @@ int sendInt(int socketfd, int n) {
     return 1;
 }
 
-int readInt(int socketfd, int * n) {
+int readInt(int socketfd, unsigned int * n) {
 
     int ret;
 
-    ret = read(socketfd, (char *) n, sizeof(int));
+    ret = read(socketfd, (char *) n, sizeof(unsigned int));
     if (ret < 0) {
         cerr << "Error reading int\n";
+        return 0;
+    }
+
+    return 1;
+}
+
+int sendLong(int socketfd, long n) {
+
+    int ret;
+
+    ret = send(socketfd, (char *) &n, sizeof(n), 0);
+    if (ret <= 0) {
+        cerr << "Error sending long\n";
+        return 0;
+    }
+
+    return 1;
+}
+
+int readLong(int socketfd, long * n) {
+    
+    int ret;
+
+    ret = read(socketfd, (char *) n, sizeof(long *));
+    if (ret <= 0) {
+        cerr << "Error reading long\n";
         return 0;
     }
 

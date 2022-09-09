@@ -1,4 +1,7 @@
 make all --print-data-base --no-builtin-variables --no-builtin-rules --question
+makefile:17: warning: overriding recipe for target 'start-user'
+makefile:14: warning: ignoring old recipe for target 'start-user'
+
 # GNU Make 4.2.1
 # Built for x86_64-pc-linux-gnu
 # Copyright (C) 1988-2016 Free Software Foundation, Inc.
@@ -6,7 +9,7 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Thu Sep  8 11:15:34 2022
+# Make data base, printed on Thu Sep  8 23:28:17 2022
 
 # Variables
 
@@ -49,7 +52,7 @@ VTE_VERSION = 6003
 # environment
 VSCODE_NLS_CONFIG = {"locale":"en-us","availableLanguages":{},"_languagePackSupport":true}
 # environment
-JOURNAL_STREAM = 8:31161
+JOURNAL_STREAM = 8:30711
 # makefile (from 'makefile', line 2)
 CFLAGS = -Wall -g
 # environment
@@ -75,9 +78,9 @@ MAKELEVEL := 0
 # environment
 XDG_DATA_DIRS = /usr/share/ubuntu:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop
 # environment
-DBUS_SESSION_BUS_ADDRESS = unix:path=/run/user/1000/bus,guid=fe6967f3e8c0392060956f206319a15c
+DBUS_SESSION_BUS_ADDRESS = unix:path=/run/user/1000/bus,guid=dc6ee0e7a82ca8a95373c433631a5e08
 # environment
-MANAGERPID = 785
+MANAGERPID = 817
 # environment
 LESSOPEN = | /usr/bin/lesspipe %s
 # environment
@@ -93,7 +96,7 @@ PATH = /home/djolopez/.local/bin:/opt/maven/bin:/usr/local/sbin:/usr/local/bin:/
 # environment
 GPG_AGENT_INFO = /run/user/1000/gnupg/S.gpg-agent:0:1
 # environment
-SESSION_MANAGER = local/djolopez-VirtualBox:@/tmp/.ICE-unix/1290,unix/djolopez-VirtualBox:/tmp/.ICE-unix/1290
+SESSION_MANAGER = local/djolopez-VirtualBox:@/tmp/.ICE-unix/1298,unix/djolopez-VirtualBox:/tmp/.ICE-unix/1298
 # environment
 XDG_RUNTIME_DIR = /run/user/1000
 # environment
@@ -109,7 +112,7 @@ DISABLE_WAYLAND = 1
 # environment
 ELECTRON_RUN_AS_NODE = 1
 # environment
-INVOCATION_ID = 1a5815dea1754bff8a59a1125dc9c27e
+INVOCATION_ID = 82bab742581b4553ac24b4daf5b0b7d4
 # makefile (from 'makefile', line 3)
 LDFLAGS = -lcrypto -lstdc++fs 
 # environment
@@ -135,7 +138,7 @@ PWD = /home/djolopez/Documents/INGE_S5_Pise/cybersecurity/project/2022-Cybersecu
 # default
 .LOADED := 
 # environment
-SSH_AGENT_PID = 1101
+SSH_AGENT_PID = 1112
 # environment
 ORIGINAL_XDG_CURRENT_DESKTOP = ubuntu:GNOME
 # environment
@@ -153,7 +156,7 @@ VSCODE_CODE_CACHE_PATH = /home/djolopez/.config/Code/CachedData/e4503b30fc78200f
 # environment
 LOGNAME = djolopez
 # environment
-APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL = true
+APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL = 1
 # environment
 SNAP_LIBRARY_PATH = /var/lib/snapd/lib/gl:/var/lib/snapd/lib/gl32:/var/lib/snapd/void
 # environment
@@ -247,13 +250,13 @@ LC_ALL = C
 # environment
 DBUS_STARTER_BUS_TYPE = session
 # environment
-GNOME_TERMINAL_SCREEN = /org/gnome/Terminal/screen/fe63dcec_1486_4d68_be37_a289af0a8851
+GNOME_TERMINAL_SCREEN = /org/gnome/Terminal/screen/42b565a5_5b0f_4744_857a_f499df2de6fa
 # automatic
 ^F = $(notdir $^)
 # makefile (from 'makefile', line 6)
 DEPS = ./utils.h
 # environment
-GNOME_TERMINAL_SERVICE = :1.78
+GNOME_TERMINAL_SERVICE = :1.86
 # default
 SUFFIXES := 
 # environment
@@ -275,13 +278,10 @@ LANG = C
 # environment
 TERM = xterm-256color
 # environment
-VSCODE_PID = 4572
+VSCODE_PID = 2457
  
-makefile:17: warning: overriding recipe for target 'start-user'
-makefile:14: warning: ignoring old recipe for target 'start-user'
-
 # environment
-DBUS_STARTER_ADDRESS = unix:path=/run/user/1000/bus,guid=fe6967f3e8c0392060956f206319a15c
+DBUS_STARTER_ADDRESS = unix:path=/run/user/1000/bus,guid=dc6ee0e7a82ca8a95373c433631a5e08
 # variable set hash-table stats:
 # Load=134/1024=13%, Rehash=0, Collisions=19/166=11%
 
@@ -386,7 +386,7 @@ start-server: server/start-server.cpp
 # Not a target:
 server/start-server.cpp:
 #  Implicit rule search has been done.
-#  Last modified 2022-09-08 10:44:07.05477696
+#  Last modified 2022-09-08 15:39:16.864808537
 #  File has been updated.
 #  Successfully updated.
 
@@ -404,6 +404,6 @@ server/start-server.cpp:
 # strcache performance: lookups = 35 / hit rate = 40%
 # hash-table stats:
 # Load=21/8192=0%, Rehash=0, Collisions=1/35=3%
-# Finished Make data base on Thu Sep  8 11:15:34 2022
+# Finished Make data base on Thu Sep  8 23:28:17 2022
 
  

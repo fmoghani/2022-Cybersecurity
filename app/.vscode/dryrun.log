@@ -1,10 +1,9 @@
-make --dry-run --keep-going --print-directory
-make: Entering directory '/home/djolopez/Documents/INGE_S5_Pise/cybersecurity/project/2022-Cybersecurity/app'
- 
-makefile:17: warning: overriding recipe for target 'start-user'
-makefile:14: warning: ignoring old recipe for target 'start-user'
-
+make --dry-run --always-make --keep-going --print-directory
+make: Entering directory `/Users/mac/Documents/GitHub/2022-Cybersecurity/app'
 g++ -Wall -g server/start-server.cpp -o server/start-server -I./utils.h -lcrypto -lstdc++fs 
 g++ -Wall -g user_alice/start-user.cpp -o user_alice/start-user -ggdb3 -I./utils.h -lcrypto -lstdc++fs 
-make: Leaving directory '/home/djolopez/Documents/INGE_S5_Pise/cybersecurity/project/2022-Cybersecurity/app'
+make: Leaving directory `/Users/mac/Documents/GitHub/2022-Cybersecurity/app'
  
+makefile:17: warning: overriding commands for target `start-user'
+makefile:14: warning: ignoring old commands for target `start-user'
+

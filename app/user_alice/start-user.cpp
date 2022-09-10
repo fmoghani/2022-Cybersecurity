@@ -1129,17 +1129,18 @@ public:
             // }
 
             // Free things
-            free(upload_size);
+            
             free(ivBlock);
             free(concatBlock);
             free(cyberBuffer);
             free(digest);
             free(plainBuffer);
         }
-
+        
 
 
         // Free things
+        free(upload_size);
         free(iv);
         free(concat);
         free(encryptedFilepath);

@@ -904,11 +904,11 @@ public:
         return 1;
     }
 
-    int downloadFile() {
+  int downloadFile() {
 
         int ret;
 
-        cout << ">> Please type the name of the file to download:\n>> ";
+        cout << ">> Im Modified so please type the name of the file to download:\n>> ";
 
         // Get Upload File path from User
         string filepath;
@@ -990,22 +990,27 @@ public:
         free(responsePtr);
 
         // Receive file size
-        unsigned int * upload_size = (unsigned int *) malloc(sizeof(unsigned int));
-        ret = readInt(socketfd, upload_size);
+        uint32_t * upload_size = (uint32_t *) malloc(sizeof(uint32_t));
+        ret = readLongInt(socketfd, upload_size);
         if (!ret) {
             cerr << "Error upload filepath length\n";
             return 0;
         }
-        unsigned int remainedBlock = *upload_size;
-        free(upload_size);
+        uint32_t remainedBlock = *upload_size;
+        
 
         // Read and decrypt every block files
-        unsigned char * fileContent = (unsigned char *) malloc(remainedBlock);
-        if (!fileContent) {
-            cout << "Error allocating buffer for file content\n";
-            return 0;
-        }
+        // unsigned char * fileContent = (unsigned char *) malloc(remainedBlock);
+        // if (!fileContent) {
+        //     cout << "Error allocating buffer for file content\n";
+        //     return 0;
+        // }
         int prevWrite = 0;
+
+        bool first_of_file = true;
+
+        cout << "\r>> Remaining " << remainedBlock << " / " << *upload_size << " bytes";
+        
         while(remainedBlock>0){
 
             // Before receiving anything check if the counter if going to wrap around
@@ -1016,23 +1021,25 @@ public:
             }
 
             // Receive encrypted block size
-            unsigned int * uploadBlockLen = (unsigned int *) malloc(sizeof(unsigned int));
-            ret = readInt(socketfd, uploadBlockLen);
+            unsigned int * uploadBlockLenPtr = (unsigned int *) malloc(sizeof(unsigned int));
+            ret = readInt(socketfd, uploadBlockLenPtr);
             if (!ret) {
                 cerr << "Error upload block length\n";
                 return 0;
             }
+            unsigned int uploadBlockLen = *uploadBlockLenPtr;
+            free(uploadBlockLenPtr);
 
-            // Receive upload block
+            // Receive upload bloc
             unsigned char * ivBlock = (unsigned char *) malloc(ivSize);
-            unsigned char * concatBlock = (unsigned char *) malloc(*uploadBlockLen + sessionKeySize);
-            unsigned char * cyberBuffer = (unsigned char *) malloc(*uploadBlockLen);
+            unsigned char * concatBlock = (unsigned char *) malloc(uploadBlockLen + sessionKeySize);
+            unsigned char * cyberBuffer = (unsigned char *) malloc(uploadBlockLen);
             unsigned char * digest = (unsigned char *) malloc(sessionKeySize);
             if (!ivBlock || !concatBlock || !cyberBuffer || !digest) {
                 cout << "Error allocating buffers to decrypt file block\n";
                 return 0;
             }
-            ret = receiveEncrypted(*uploadBlockLen, ivBlock, concatBlock, cyberBuffer, digest, socketfd);
+            ret = receiveEncrypted(uploadBlockLen, ivBlock, concatBlock, cyberBuffer, digest, socketfd);
             if (!ret) {
                 cout << ">> Error receiving encrypted block\n";
                 return 0;
@@ -1040,7 +1047,7 @@ public:
 
             // Check validity of the block
             counter ++;
-            ret = checkAuthenticity(*uploadBlockLen, cyberBuffer, digest, authKey, counter);
+            ret = checkAuthenticity(uploadBlockLen, cyberBuffer, digest, authKey, counter);
             if (!ret) {
                 // Free things
                 free(ivBlock);
@@ -1062,18 +1069,67 @@ public:
                 cout << ">> Error allocatinf buffer for decrypted block\n";
                 return 0;
             }
-            ret = decryptSym(cyberBuffer, *uploadBlockLen, plainBuffer, ivBlock, sessionKey);
+            ret = decryptSym(cyberBuffer, uploadBlockLen, plainBuffer, ivBlock, sessionKey);
             if (!ret) {
                 cerr << "Error decrypting the upload block\n";
                 return 0;
             }
-            free(uploadBlockLen);
             int plaintextLen = ret;
 
             // Write data on the buffer
-            memcpy(fileContent + prevWrite, plainBuffer, plaintextLen);
+            // memcpy(fileContent + prevWrite, plainBuffer, plaintextLen);
             remainedBlock -= plaintextLen;
-            prevWrite += plaintextLen;
+            // prevWrite += plaintextLen;
+            //
+            
+            
+            if(first_of_file){
+                ofstream wf(filepath, ios::out | ios::binary);
+                if(!wf) {
+                    cout << "Cannot open file to write upload file!" << endl;
+                    return 0;
+                }
+                for (int i = 0; i < plaintextLen; i++) {
+                    wf.write((char *) &plainBuffer[i], sizeof(char));
+                }
+                wf.close();
+                if(!wf.good()) {
+                    cout << "Error occurred at writing time while saving uploaded file!" << endl;
+                    return 0;
+                }
+                first_of_file = false;
+            }
+            else{
+                ofstream wf(filepath, ios::out | ios::binary | ios::app);
+                if(!wf) {
+                    cout << "Cannot open file to write upload file!" << endl;
+                    return 0;
+                }
+                for (int i = 0; i < plaintextLen; i++) {
+                    wf.write((char *) &plainBuffer[i], sizeof(char));
+                }
+                wf.close();
+                if(!wf.good()) {
+                    cout << "Error occurred at writing time while saving uploaded file!" << endl;
+                    return 0;
+                }
+            }
+
+            cout << "\r>> Remaining " << remainedBlock<< " / " << *upload_size << " bytes";    
+
+            // ofstream wf(filepath, ios::out | ios::binary);
+            // if(!wf) {
+            //     cout << "Cannot open file to write upload file!" << endl;
+            //     return 0;
+            // }
+            // for (int i = 0; i < prevWrite; i++) {
+            //     wf.write((char *) &fileContent[i], sizeof(char));
+            // }
+            // wf.close();
+            // if(!wf.good()) {
+            //     cout << "Error occurred at writing time while saving uploaded file!" << endl;
+            //     return 0;
+            // }
 
             // Free things
             free(ivBlock);
@@ -1083,28 +1139,16 @@ public:
             free(plainBuffer);
         }
 
-        // Write data into a file
-        ofstream wf(filepath, ios::out | ios::binary);
-        if(!wf) {
-            cout << "Cannot open file to write upload file!" << endl;
-            return 0;
-        }
-        for (int i = 0; i < prevWrite; i++) {
-            wf.write((char *) &fileContent[i], sizeof(char));
-        }
-        wf.close();
-        if(!wf.good()) {
-            cout << "Error occurred at writing time while saving uploaded file!" << endl;
-            return 0;
-        }
+
 
         // Free things
+        free(upload_size);
         free(iv);
         free(concat);
         free(encryptedFilepath);
-        free(fileContent);
+        // free(fileContent);
 
-        cout << ">> Files downloaded successfully\n";
+        cout << "\n>> Files downloaded successfully\n";
 
         return 1;
     }

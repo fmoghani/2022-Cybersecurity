@@ -74,6 +74,19 @@ int sendInt(int socketfd, unsigned int n) {
     return 1;
 }
 
+int sendLongInt(int socketfd, uint32_t n) {
+
+    int ret;
+    
+    ret = send(socketfd, (char *) &n, sizeof(uint32_t), 0);
+    if (ret < 0) {
+        cerr << "Error sending int\n";
+        return 0;
+    }
+
+    return 1;
+}
+
 int readInt(int socketfd, unsigned int * n) {
 
     int ret;
@@ -87,26 +100,13 @@ int readInt(int socketfd, unsigned int * n) {
     return 1;
 }
 
-int sendLong(int socketfd, long n) {
+long int readLongInt(int socketfd, uint32_t * n) {
 
-    int ret;
+    long int ret;
 
-    ret = send(socketfd, (char *) &n, sizeof(n), 0);
-    if (ret <= 0) {
-        cerr << "Error sending long\n";
-        return 0;
-    }
-
-    return 1;
-}
-
-int readLong(int socketfd, long * n) {
-    
-    int ret;
-
-    ret = read(socketfd, (char *) n, sizeof(long *));
-    if (ret <= 0) {
-        cerr << "Error reading long\n";
+    ret = read(socketfd, (char *) n, sizeof(uint32_t));
+    if (ret < 0) {
+        cerr << "Error reading int\n";
         return 0;
     }
 

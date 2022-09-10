@@ -1191,8 +1191,8 @@ public:
  
         // Send file size to client 
         infile.seekg(0, std::ios::end);
-        int upload_size = infile.tellg();
-        ret = sendInt(clientfd, upload_size);
+        uint32_t upload_size = (uint32_t)infile.tellg();
+        ret = sendLongInt(clientfd, upload_size);
         if (!ret) {
             cerr << "Error sending download filesize to client\n";
             return 0;
@@ -1201,11 +1201,11 @@ public:
         //send file block by block
         infile.seekg(0, std::ios::beg);
         char plainBuffer[UPLOAD_BUFFER_SIZE];
-        int remainbytes = upload_size;
+        long int remainbytes = upload_size;
         while((!infile.eof() && (remainbytes > 0))){
 
             int readlength = sizeof (plainBuffer);
-            readlength = std::min(readlength,remainbytes);
+            readlength = std::min((long)readlength,remainbytes);
             remainbytes -= readlength;
             infile.read(plainBuffer, readlength);
 

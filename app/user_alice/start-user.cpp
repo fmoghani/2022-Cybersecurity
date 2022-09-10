@@ -1030,7 +1030,7 @@ public:
             unsigned int uploadBlockLen = *uploadBlockLenPtr;
             free(uploadBlockLenPtr);
 
-            // Receive upload bloc
+            // Receive upload block
             unsigned char * ivBlock = (unsigned char *) malloc(ivSize);
             unsigned char * concatBlock = (unsigned char *) malloc(uploadBlockLen + sessionKeySize);
             unsigned char * cyberBuffer = (unsigned char *) malloc(uploadBlockLen);
@@ -1064,7 +1064,7 @@ public:
             }
 
             // Decrypt block
-            unsigned char * plainBuffer = (unsigned char *) malloc(UPLOAD_BUFFER_SIZE);
+            unsigned char * plainBuffer = (unsigned char *) malloc(uploadBlockLen);
             if (!plainBuffer) {
                 cout << ">> Error allocatinf buffer for decrypted block\n";
                 return 0;

@@ -1,4 +1,5 @@
 make all --print-data-base --no-builtin-variables --no-builtin-rules --question
+<<<<<<< HEAD
 # GNU Make 3.81
 # Copyright (C) 2006  Free Software Foundation, Inc.
 # This is free software; see the source for copying conditions.
@@ -8,6 +9,19 @@ make all --print-data-base --no-builtin-variables --no-builtin-rules --question
 # This program built for i386-apple-darwin11.3.0
 
 # Make data base, printed on Fri Sep  9 22:59:51 2022
+=======
+makefile:17: warning: overriding recipe for target 'start-user'
+makefile:14: warning: ignoring old recipe for target 'start-user'
+
+# GNU Make 4.2.1
+# Built for x86_64-pc-linux-gnu
+# Copyright (C) 1988-2016 Free Software Foundation, Inc.
+# License GPLv3+: GNU GPL version 3 or later <http://gnu.org/licenses/gpl.html>
+# This is free software: you are free to change and redistribute it.
+# There is NO WARRANTY, to the extent permitted by law.
+
+# Make data base, printed on Thu Sep  8 23:28:17 2022
+>>>>>>> 98be7de71372c7c3c5352feb20c8bab9c3571513
 
 # Variables
 
@@ -30,20 +44,69 @@ SHELL = /bin/sh
 # environment
 VSCODE_NLS_CONFIG = {"locale":"en-gb","availableLanguages":{},"_languagePackSupport":true}
 # environment
+<<<<<<< HEAD
 _ = /usr/bin/make
 # makefile (from `makefile', line 2)
+=======
+VTE_VERSION = 6003
+# environment
+VSCODE_NLS_CONFIG = {"locale":"en-us","availableLanguages":{},"_languagePackSupport":true}
+# environment
+JOURNAL_STREAM = 8:30711
+# makefile (from 'makefile', line 2)
+>>>>>>> 98be7de71372c7c3c5352feb20c8bab9c3571513
 CFLAGS = -Wall -g
 # makefile (from `makefile', line 1)
 MAKEFILE_LIST :=  makefile
 # environment
+<<<<<<< HEAD
 __CFBundleIdentifier = com.microsoft.VSCode
 # environment
 VSCODE_CWD = /
+=======
+JAVA_HOME = /usr/lib/jvm/default-java
+# automatic
+@F = $(notdir $@)
+# environment
+IM_CONFIG_PHASE = 1
+# environment
+USERNAME = djolopez
+# environment
+MAKELEVEL := 0
+# environment
+XDG_DATA_DIRS = /usr/share/ubuntu:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop
+# environment
+DBUS_SESSION_BUS_ADDRESS = unix:path=/run/user/1000/bus,guid=dc6ee0e7a82ca8a95373c433631a5e08
+# environment
+MANAGERPID = 817
+# environment
+LESSOPEN = | /usr/bin/lesspipe %s
+# environment
+LC_NAME = fr_FR.UTF-8
+# environment
+VSCODE_CWD = /home/djolopez/Documents/INGE_S5_Pise/cybersecurity/project/2022-Cybersecurity/app
+# environment
+GSETTINGS_SCHEMA_DIR = /snap/code/105/usr/share/glib-2.0/schemas
+# default
+MAKE_HOST := x86_64-pc-linux-gnu
+# environment
+PATH = /home/djolopez/.local/bin:/opt/maven/bin:/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/usr/games:/usr/local/games:/snap/bin
+# environment
+GPG_AGENT_INFO = /run/user/1000/gnupg/S.gpg-agent:0:1
+# environment
+SESSION_MANAGER = local/djolopez-VirtualBox:@/tmp/.ICE-unix/1298,unix/djolopez-VirtualBox:/tmp/.ICE-unix/1298
+>>>>>>> 98be7de71372c7c3c5352feb20c8bab9c3571513
 # environment
 PATH = /Users/mac/opt/anaconda3/bin:/Users/mac/opt/anaconda3/condabin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:/Applications/VMware Fusion.app/Contents/Public:/Library/TeX/texbin:/usr/local/go/bin:/usr/local/share/dotnet:/opt/X11/bin:~/.dotnet/tools:/Library/Frameworks/Mono.framework/Versions/Current/Commands:/Users/mac/.zsh/misc
 # environment
 ELECTRON_RUN_AS_NODE = 1
+<<<<<<< HEAD
 # makefile (from `makefile', line 3)
+=======
+# environment
+INVOCATION_ID = 82bab742581b4553ac24b4daf5b0b7d4
+# makefile (from 'makefile', line 3)
+>>>>>>> 98be7de71372c7c3c5352feb20c8bab9c3571513
 LDFLAGS = -lcrypto -lstdc++fs 
 # default
 .FEATURES := target-specific order-only second-expansion else-if archives jobserver check-symlink
@@ -54,9 +117,17 @@ SSH_AUTH_SOCK = /private/tmp/com.apple.launchd.qXpKKKRVYG/Listeners
 # environment
 DISPLAY = /private/tmp/com.apple.launchd.OxGEuL9Nfc/org.xquartz:0
 # environment
+<<<<<<< HEAD
 CONDA_EXE = /Users/mac/opt/anaconda3/bin/conda
 # makefile (from `makefile', line 4)
 OPT = -ggdb3
+=======
+PWD = /home/djolopez/Documents/INGE_S5_Pise/cybersecurity/project/2022-Cybersecurity/app
+# default
+.LOADED := 
+# environment
+SSH_AGENT_PID = 1112
+>>>>>>> 98be7de71372c7c3c5352feb20c8bab9c3571513
 # environment
 PWD = /Users/mac/Documents/GitHub/2022-Cybersecurity/app
 # environment
@@ -64,9 +135,25 @@ ORIGINAL_XDG_CURRENT_DESKTOP = undefined
 # environment
 VSCODE_AMD_ENTRYPOINT = vs/workbench/api/node/extensionHostProcess
 # environment
+<<<<<<< HEAD
 HOME = /Users/mac
 # default
 MAKEFILEPATH = $(shell /usr/bin/xcode-select -print-path 2>/dev/null || echo /Developer)/Makefiles
+=======
+HOME = /home/djolopez
+# environment
+LESSCLOSE = /usr/bin/lesspipe %s %s
+# environment
+VSCODE_CLI = 1
+# environment
+VSCODE_CODE_CACHE_PATH = /home/djolopez/.config/Code/CachedData/e4503b30fc78200f846c62cf8091b76ff5547662
+# environment
+LOGNAME = djolopez
+# environment
+APPLICATION_INSIGHTS_NO_DIAGNOSTIC_CHANNEL = 1
+# environment
+SNAP_LIBRARY_PATH = /var/lib/snapd/lib/gl:/var/lib/snapd/lib/gl32:/var/lib/snapd/void
+>>>>>>> 98be7de71372c7c3c5352feb20c8bab9c3571513
 # environment
 VSCODE_CODE_CACHE_PATH = /Users/mac/Library/Application Support/Code/CachedData/784b0177c56c607789f9638da7b6bf3230d47a8c
 # environment
@@ -136,11 +223,22 @@ MAKEFILES :=
 # environment
 LC_ALL = C
 # environment
+<<<<<<< HEAD
 CONDA_PYTHON_EXE = /Users/mac/opt/anaconda3/bin/python
+=======
+DBUS_STARTER_BUS_TYPE = session
+# environment
+GNOME_TERMINAL_SCREEN = /org/gnome/Terminal/screen/42b565a5_5b0f_4744_857a_f499df2de6fa
+>>>>>>> 98be7de71372c7c3c5352feb20c8bab9c3571513
 # automatic
 ^F = $(notdir $^)
 # makefile (from `makefile', line 6)
 DEPS = ./utils.h
+<<<<<<< HEAD
+=======
+# environment
+GNOME_TERMINAL_SERVICE = :1.86
+>>>>>>> 98be7de71372c7c3c5352feb20c8bab9c3571513
 # default
 SUFFIXES := 
 # environment
@@ -156,7 +254,14 @@ VSCODE_PID = 33895
 # environment
 _CE_CONDA = 
 # environment
+<<<<<<< HEAD
 LANG = C
+=======
+VSCODE_PID = 2457
+ 
+# environment
+DBUS_STARTER_ADDRESS = unix:path=/run/user/1000/bus,guid=dc6ee0e7a82ca8a95373c433631a5e08
+>>>>>>> 98be7de71372c7c3c5352feb20c8bab9c3571513
 # variable set hash-table stats:
 # Load=73/1024=7%, Rehash=0, Collisions=2/103=2%
 
@@ -266,7 +371,11 @@ start-server: server/start-server.cpp
 # Not a target:
 server/start-server.cpp:
 #  Implicit rule search has been done.
+<<<<<<< HEAD
 #  Last modified 2022-09-08 23:26:17
+=======
+#  Last modified 2022-09-08 15:39:16.864808537
+>>>>>>> 98be7de71372c7c3c5352feb20c8bab9c3571513
 #  File has been updated.
 #  Successfully updated.
 # variable set hash-table stats:
@@ -285,7 +394,14 @@ server/start-server.cpp:
 # strcache size: total = 4096 / max = 4096 / min = 4096 / avg = 4096
 # strcache free: total = 4087 / max = 4087 / min = 4087 / avg = 4087
 
+<<<<<<< HEAD
 # Finished Make data base on Fri Sep  9 22:59:51 2022
+=======
+# strcache performance: lookups = 35 / hit rate = 40%
+# hash-table stats:
+# Load=21/8192=0%, Rehash=0, Collisions=1/35=3%
+# Finished Make data base on Thu Sep  8 23:28:17 2022
+>>>>>>> 98be7de71372c7c3c5352feb20c8bab9c3571513
 
  
 makefile:17: warning: overriding commands for target `start-user'

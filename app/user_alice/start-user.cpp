@@ -837,6 +837,9 @@ public:
         infile.seekg(0, std::ios::beg);
         // char plainBuffer[UPLOAD_BUFFER_SIZE];
         uint32_t remainbytes = upload_size;
+
+        cout << "\rRemaining " << remainbytes << " / " << upload_size << " bytes";
+
         while((!infile.eof()) && (remainbytes > 0)){
 
             char * plainBuffer = (char *) malloc(UPLOAD_BUFFER_SIZE);
@@ -892,6 +895,9 @@ public:
                 return 0;
             }
 
+            cout << "\r>> Remaining " << remainbytes << " / " << upload_size << " bytes"; 
+
+            // Free things
             free(concatBlock);
             free(cyperBuffer);
             free(ivBlock);

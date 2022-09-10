@@ -1200,12 +1200,17 @@ public:
 
         //send file block by block
         infile.seekg(0, std::ios::beg);
-        char plainBuffer[UPLOAD_BUFFER_SIZE];
-        long int remainbytes = upload_size;
+        // char plainBuffer[UPLOAD_BUFFER_SIZE];
+        uint32_t remainbytes = upload_size;
         while((!infile.eof() && (remainbytes > 0))){
 
-            int readlength = sizeof (plainBuffer);
-            readlength = std::min((long)readlength,remainbytes);
+            char * plainBuffer = (char *) malloc(UPLOAD_BUFFER_SIZE);
+            if (!plainBuffer) {
+                cerr << "Error allocating buffer for plaintext to send\n";
+                return 0;
+            }
+            int readlength = UPLOAD_BUFFER_SIZE;
+            readlength = std::min((long)readlength,(long)remainbytes);
             remainbytes -= readlength;
             infile.read(plainBuffer, readlength);
 
@@ -1232,6 +1237,7 @@ public:
                 return 0;
             }
             int encryptedSize = ret;
+            free(plainBuffer);
 
             // Hash and concatenate
             int totalSize = encryptedSize + sessionKeySize;

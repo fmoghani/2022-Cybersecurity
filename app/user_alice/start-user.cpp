@@ -1274,7 +1274,7 @@ public:
         free(numPtr);
 
         // Iterate the correct number of times, read and decrypt the filenames
-        for (int i = 0; i < filesNumber; i++) {
+        for (unsigned int i = 0; i < filesNumber; i++) {
 
             // Before receiving anything check if the counter if going to wrap around
             ret = checkCounter(counter);

@@ -844,7 +844,7 @@ public:
                 cerr << ">> Error allocating buffer for plaintext to send\n";
                 return 0;
             }
-            int readlength = sizeof(plainBuffer);
+            int readlength = UPLOAD_BUFFER_SIZE;
             readlength = std::min((long)readlength,(long)remainbytes);
             remainbytes -= readlength;
             infile.read(plainBuffer, readlength);

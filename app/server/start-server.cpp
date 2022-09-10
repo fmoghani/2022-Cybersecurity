@@ -955,13 +955,6 @@ public:
 
         cout << "\rRemaining " << remainedBlock << " / " << *upload_size << " bytes";
 
-        // Read file content
-        // unsigned char * fileContent = (unsigned char *) malloc(remainedBlock);
-        // if (!fileContent) {
-        //     cout << "Error allocating buffer for file content for upload\n";
-        //     return 0;
-        // }
-        // int prevWrite = 0;
         while(remainedBlock>0){
 
             // Before receiving anything check if counter wraps around
@@ -1027,12 +1020,9 @@ public:
                 return 0;
             }
             int plaintextLen = ret;
-
-            // Add data to the file content
-            // memcpy(fileContent + prevWrite, plainBuffer, plaintextLen);
             remainedBlock -= plaintextLen;
-            // prevWrite += plaintextLen;
 
+            // Check if we are writing for first time (if we need to create the file or just write in it)
             if(first_of_file){
                 ofstream wf(path, ios::out | ios::binary);
                 if(!wf) {
@@ -1065,7 +1055,7 @@ public:
                 }
             }
 
-            cout << "\r>> Remaining " << remainedBlock<< " / " << *upload_size << " bytes"; 
+            cout << "\rRemaining " << remainedBlock<< " / " << *upload_size << " bytes"; 
 
             // Free things
             free(ivBlock);
@@ -1075,27 +1065,10 @@ public:
             free(plainBuffer);
         }
 
-        // Write file content into a new file
-        // ofstream wf(path, ios::out | ios::binary);
-        // if(!wf) {
-        //     cout << "Cannot open file to write upload file!" << endl;
-        //     return 0;
-        // }
-        // for (int i = 0; i < prevWrite; i++) {
-        //     wf.write((char *) &fileContent[i], sizeof(char));
-        // }
-        // wf.close();
-
-        // if(!wf.good()) {
-        //     cout << "Error occurred at writing time while saving uploaded file!" << endl;
-        //     return 0;
-        // }
-
         // Free things
         free(upload_size);
-        // free(fileContent);
 
-        cout << "--- FILE UPLOADED ---\n";
+        cout << "\n--- FILE UPLOADED ---\n";
         
         return 1;
     }
@@ -1237,7 +1210,6 @@ public:
 
         //send file block by block
         infile.seekg(0, std::ios::beg);
-        // char plainBuffer[UPLOAD_BUFFER_SIZE];
         uint32_t remainbytes = upload_size;
         while((!infile.eof() && (remainbytes > 0))){
 

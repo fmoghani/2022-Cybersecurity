@@ -835,7 +835,6 @@ public:
 
         //send file block by block
         infile.seekg(0, std::ios::beg);
-        // char plainBuffer[UPLOAD_BUFFER_SIZE];
         uint32_t remainbytes = upload_size;
 
         cout << "\rRemaining " << remainbytes << " / " << upload_size << " bytes";
@@ -910,7 +909,7 @@ public:
         free(encryptedFilepath);
         free(charFilepath);
 
-        cout << ">> File uploaded successfully\n";
+        cout << "\n>> File uploaded successfully\n";
 
         return 1;
     }
@@ -1008,15 +1007,6 @@ public:
             return 0;
         }
         uint32_t remainedBlock = *upload_size;
-        
-
-        // Read and decrypt every block files
-        // unsigned char * fileContent = (unsigned char *) malloc(remainedBlock);
-        // if (!fileContent) {
-        //     cout << "Error allocating buffer for file content\n";
-        //     return 0;
-        // }
-        // int prevWrite = 0;
 
         bool first_of_file = true;
 
@@ -1086,14 +1076,9 @@ public:
                 return 0;
             }
             int plaintextLen = ret;
-
-            // Write data on the buffer
-            // memcpy(fileContent + prevWrite, plainBuffer, plaintextLen);
             remainedBlock -= plaintextLen;
-            // prevWrite += plaintextLen;
-            //
             
-            
+            // Check if we need to create the file or just write in it
             if(first_of_file){
                 ofstream wf(filepath, ios::out | ios::binary);
                 if(!wf) {
@@ -1126,21 +1111,7 @@ public:
                 }
             }
 
-            cout << "\r>> Remaining " << remainedBlock<< " / " << *upload_size << " bytes";    
-
-            // ofstream wf(filepath, ios::out | ios::binary);
-            // if(!wf) {
-            //     cout << "Cannot open file to write upload file!" << endl;
-            //     return 0;
-            // }
-            // for (int i = 0; i < prevWrite; i++) {
-            //     wf.write((char *) &fileContent[i], sizeof(char));
-            // }
-            // wf.close();
-            // if(!wf.good()) {
-            //     cout << "Error occurred at writing time while saving uploaded file!" << endl;
-            //     return 0;
-            // }
+            cout << "\r>> Remaining " << remainedBlock<< " / " << *upload_size << " bytes";
 
             // Free things
             free(ivBlock);
@@ -1150,14 +1121,11 @@ public:
             free(plainBuffer);
         }
 
-
-
         // Free things
         free(upload_size);
         free(iv);
         free(concat);
         free(encryptedFilepath);
-        // free(fileContent);
 
         cout << "\n>> Files downloaded successfully\n";
 

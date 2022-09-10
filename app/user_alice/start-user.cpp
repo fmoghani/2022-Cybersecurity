@@ -1005,7 +1005,7 @@ public:
         //     cout << "Error allocating buffer for file content\n";
         //     return 0;
         // }
-        int prevWrite = 0;
+        // int prevWrite = 0;
 
         bool first_of_file = true;
 

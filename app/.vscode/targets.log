@@ -9,7 +9,7 @@ makefile:14: warning: ignoring old recipe for target 'start-user'
 # This is free software: you are free to change and redistribute it.
 # There is NO WARRANTY, to the extent permitted by law.
 
-# Make data base, printed on Thu Sep  8 23:28:17 2022
+# Make data base, printed on Sun Sep 11 00:25:19 2022
 
 # Variables
 
@@ -46,13 +46,13 @@ CURDIR := /home/djolopez/Documents/INGE_S5_Pise/cybersecurity/project/2022-Cyber
 # makefile
 SHELL = /bin/sh
 # environment
-SNAP_DATA = /var/snap/code/105
+SNAP_DATA = /var/snap/code/106
 # environment
 VTE_VERSION = 6003
 # environment
 VSCODE_NLS_CONFIG = {"locale":"en-us","availableLanguages":{},"_languagePackSupport":true}
 # environment
-JOURNAL_STREAM = 8:30711
+JOURNAL_STREAM = 8:30909
 # makefile (from 'makefile', line 2)
 CFLAGS = -Wall -g
 # environment
@@ -78,9 +78,9 @@ MAKELEVEL := 0
 # environment
 XDG_DATA_DIRS = /usr/share/ubuntu:/usr/local/share/:/usr/share/:/var/lib/snapd/desktop
 # environment
-DBUS_SESSION_BUS_ADDRESS = unix:path=/run/user/1000/bus,guid=dc6ee0e7a82ca8a95373c433631a5e08
+DBUS_SESSION_BUS_ADDRESS = unix:path=/run/user/1000/bus,guid=b2437e3438623c3880e12ba8631cc529
 # environment
-MANAGERPID = 817
+MANAGERPID = 805
 # environment
 LESSOPEN = | /usr/bin/lesspipe %s
 # environment
@@ -88,7 +88,7 @@ LC_NAME = fr_FR.UTF-8
 # environment
 VSCODE_CWD = /home/djolopez/Documents/INGE_S5_Pise/cybersecurity/project/2022-Cybersecurity/app
 # environment
-GSETTINGS_SCHEMA_DIR = /snap/code/105/usr/share/glib-2.0/schemas
+GSETTINGS_SCHEMA_DIR = /snap/code/106/usr/share/glib-2.0/schemas
 # default
 MAKE_HOST := x86_64-pc-linux-gnu
 # environment
@@ -96,27 +96,25 @@ PATH = /home/djolopez/.local/bin:/opt/maven/bin:/usr/local/sbin:/usr/local/bin:/
 # environment
 GPG_AGENT_INFO = /run/user/1000/gnupg/S.gpg-agent:0:1
 # environment
-SESSION_MANAGER = local/djolopez-VirtualBox:@/tmp/.ICE-unix/1298,unix/djolopez-VirtualBox:/tmp/.ICE-unix/1298
+SESSION_MANAGER = local/djolopez-VirtualBox:@/tmp/.ICE-unix/1267,unix/djolopez-VirtualBox:/tmp/.ICE-unix/1267
 # environment
 XDG_RUNTIME_DIR = /run/user/1000
 # environment
 GDK_PIXBUF_MODULE_FILE = /home/djolopez/snap/code/common/.cache/gdk-pixbuf-loaders.cache
 # environment
-SNAP = /snap/code/105
+SNAP = /snap/code/106
 # environment
-SNAP_VERSION = e4503b30
+SNAP_VERSION = 784b0177
 # environment
 XDG_MENU_PREFIX = gnome-
 # environment
-DISABLE_WAYLAND = 1
-# environment
 ELECTRON_RUN_AS_NODE = 1
 # environment
-INVOCATION_ID = 82bab742581b4553ac24b4daf5b0b7d4
+INVOCATION_ID = 13d1a66ffc3e4a5091b397cf59f882ca
 # makefile (from 'makefile', line 3)
 LDFLAGS = -lcrypto -lstdc++fs 
 # environment
-GDK_PIXBUF_MODULEDIR = /snap/code/105/usr/lib/x86_64-linux-gnu/gdk-pixbuf-2.0/2.10.0/loaders
+GDK_PIXBUF_MODULEDIR = /snap/code/106/usr/lib/x86_64-linux-gnu/gdk-pixbuf-2.0/2.10.0/loaders
 # default
 .FEATURES := target-specific order-only second-expansion else-if shortest-stem undefine oneshell archives jobserver output-sync check-symlink load
 # environment
@@ -138,7 +136,7 @@ PWD = /home/djolopez/Documents/INGE_S5_Pise/cybersecurity/project/2022-Cybersecu
 # default
 .LOADED := 
 # environment
-SSH_AGENT_PID = 1112
+SSH_AGENT_PID = 1081
 # environment
 ORIGINAL_XDG_CURRENT_DESKTOP = ubuntu:GNOME
 # environment
@@ -152,7 +150,7 @@ LESSCLOSE = /usr/bin/lesspipe %s %s
 # environment
 VSCODE_CLI = 1
 # environment
-VSCODE_CODE_CACHE_PATH = /home/djolopez/.config/Code/CachedData/e4503b30fc78200f846c62cf8091b76ff5547662
+VSCODE_CODE_CACHE_PATH = /home/djolopez/.config/Code/CachedData/784b0177c56c607789f9638da7b6bf3230d47a8c
 # environment
 LOGNAME = djolopez
 # environment
@@ -188,7 +186,7 @@ MAKECMDGOALS := all
 # environment
 QT_IM_MODULE = ibus
 # environment
-SNAP_USER_DATA = /home/djolopez/snap/code/105
+SNAP_USER_DATA = /home/djolopez/snap/code/106
 # environment
 SHLVL = 0
 # makefile (from 'makefile', line 1)
@@ -200,7 +198,7 @@ MAKE_VERSION := 4.2.1
 # environment
 USER = djolopez
 # environment
-SNAP_REVISION = 105
+SNAP_REVISION = 106
 # environment
 LC_MONETARY = fr_FR.UTF-8
 # makefile
@@ -213,12 +211,14 @@ XDG_CURRENT_DESKTOP = Unity
 LC_TELEPHONE = fr_FR.UTF-8
 # default
 MAKE_COMMAND := make
+# environment
+OLDPWD = /home/djolopez/Documents/INGE_S5_Pise/cybersecurity/project/2022-Cybersecurity/app/server
 # default
 .VARIABLES := 
 # automatic
 *F = $(notdir $*)
 # environment
-VSCODE_IPC_HOOK = /run/user/1000/vscode-0941bf64-1.70.2-main.sock
+VSCODE_IPC_HOOK = /run/user/1000/vscode-0941bf64-1.71.0-main.sock
 # makefile
 MAKEFLAGS = pqrR
 # environment
@@ -250,13 +250,13 @@ LC_ALL = C
 # environment
 DBUS_STARTER_BUS_TYPE = session
 # environment
-GNOME_TERMINAL_SCREEN = /org/gnome/Terminal/screen/42b565a5_5b0f_4744_857a_f499df2de6fa
+GNOME_TERMINAL_SCREEN = /org/gnome/Terminal/screen/9aa7a3fb_db95_4ee6_ba1d_f634773a490e
 # automatic
 ^F = $(notdir $^)
 # makefile (from 'makefile', line 6)
 DEPS = ./utils.h
 # environment
-GNOME_TERMINAL_SERVICE = :1.86
+GNOME_TERMINAL_SERVICE = :1.81
 # default
 SUFFIXES := 
 # environment
@@ -278,10 +278,10 @@ LANG = C
 # environment
 TERM = xterm-256color
 # environment
-VSCODE_PID = 2457
+VSCODE_PID = 6364
  
 # environment
-DBUS_STARTER_ADDRESS = unix:path=/run/user/1000/bus,guid=dc6ee0e7a82ca8a95373c433631a5e08
+DBUS_STARTER_ADDRESS = unix:path=/run/user/1000/bus,guid=b2437e3438623c3880e12ba8631cc529
 # variable set hash-table stats:
 # Load=134/1024=13%, Rehash=0, Collisions=19/166=11%
 
@@ -291,7 +291,7 @@ DBUS_STARTER_ADDRESS = unix:path=/run/user/1000/bus,guid=dc6ee0e7a82ca8a95373c43
 
 # Directories
 
-# . (device 2053, inode 1196171): 10 files, no impossibilities.
+# . (device 2053, inode 1196356): 10 files, no impossibilities.
 
 # 10 files, no impossibilities in 1 directories.
 
@@ -325,7 +325,7 @@ user_khabib/start-user.cpp:
 # Not a target:
 makefile:
 #  Implicit rule search has been done.
-#  Last modified 2022-09-08 11:06:32.532360313
+#  Last modified 2022-09-10 19:13:49.426464698
 #  File has been updated.
 #  Successfully updated.
 
@@ -355,6 +355,7 @@ clean:
 #  recipe to execute (from 'makefile', line 20):
 	rm server/start-server
 	rm user/start-user
+	
 
 start-server: server/start-server.cpp
 #  Implicit rule search has not been done.
@@ -386,7 +387,7 @@ start-server: server/start-server.cpp
 # Not a target:
 server/start-server.cpp:
 #  Implicit rule search has been done.
-#  Last modified 2022-09-08 15:39:16.864808537
+#  Last modified 2022-09-11 00:24:52.408851406
 #  File has been updated.
 #  Successfully updated.
 
@@ -404,6 +405,6 @@ server/start-server.cpp:
 # strcache performance: lookups = 35 / hit rate = 40%
 # hash-table stats:
 # Load=21/8192=0%, Rehash=0, Collisions=1/35=3%
-# Finished Make data base on Thu Sep  8 23:28:17 2022
+# Finished Make data base on Sun Sep 11 00:25:19 2022
 
  

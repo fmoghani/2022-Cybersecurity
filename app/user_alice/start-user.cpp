@@ -763,7 +763,7 @@ public:
         // Check file size
         std::ifstream infile(filepath);
         infile.seekg(0, std::ios::end);
-        int upload_size = infile.tellg();
+        uint32_t upload_size = infile.tellg();
         int size = 1;
         if(upload_size > MAX_FILE_SIZE_FOR_UPLOAD){
             cout << ">> File size is larger than supported (maxSize = " << upload_size << " bytes)\n"; 
@@ -827,8 +827,7 @@ public:
         }
 
         // Send filesize to the server
-        cout << "upload size: " << upload_size << endl;
-        ret = sendInt(socketfd, upload_size);
+        ret = sendLongInt(socketfd, upload_size);
         if (!ret) {
             cerr << "Error sending upload filesize to server\n";
             return 0;
@@ -836,12 +835,17 @@ public:
 
         //send file block by block
         infile.seekg(0, std::ios::beg);
-        char plainBuffer[UPLOAD_BUFFER_SIZE];
-        int remainbytes = upload_size;
+        // char plainBuffer[UPLOAD_BUFFER_SIZE];
+        uint32_t remainbytes = upload_size;
         while((!infile.eof()) && (remainbytes > 0)){
 
+            char * plainBuffer = (char *) malloc(UPLOAD_BUFFER_SIZE);
+            if (!plainBuffer) {
+                cerr << ">> Error allocating buffer for plaintext to send\n";
+                return 0;
+            }
             int readlength = sizeof(plainBuffer);
-            readlength = std::min(readlength,remainbytes);
+            readlength = std::min((long)readlength,(long)remainbytes);
             remainbytes -= readlength;
             infile.read(plainBuffer, readlength);
 
@@ -865,6 +869,7 @@ public:
                 return 0;
             }
             int encryptedSizeBlock = ret;
+            free(plainBuffer);
 
             // Concat and hash
             int totalSizeBlock = encryptedSizeBlock + sessionKeySize;

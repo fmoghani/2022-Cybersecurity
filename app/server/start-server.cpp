@@ -1034,7 +1034,7 @@ public:
             // prevWrite += plaintextLen;
 
             if(first_of_file){
-                ofstream wf(filepath, ios::out | ios::binary);
+                ofstream wf(path, ios::out | ios::binary);
                 if(!wf) {
                     cout << "Cannot open file to write upload file!" << endl;
                     return 0;
@@ -1050,7 +1050,7 @@ public:
                 first_of_file = false;
             }
             else{
-                ofstream wf(filepath, ios::out | ios::binary | ios::app);
+                ofstream wf(path, ios::out | ios::binary | ios::app);
                 if(!wf) {
                     cout << "Cannot open file to write upload file!" << endl;
                     return 0;
